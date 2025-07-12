@@ -1,7 +1,7 @@
 import outlines
 import ollama
 import openai
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Literal, Optional
 import json
@@ -92,12 +92,42 @@ def chunked_iterable(iterable, size, debug=False):
         yield chunk
 
 #---------------------------------- Enums and Models ----------------------------------
+class LogID(BaseModel):
+    log_id: str = Field(
+        description="""
+        The ID of the log entry in the format of LOGID-<LETTERS> where
+        <LETTERS> indicates the log identifier at the beginning of
+        each log entry.
+        """,
+
+        # This is a regular expression that matches the LOGID-<LETTERS> format.
+        # The model will fill in the <LETTERS> part.
+        pattern=r"LOGID-([A-Z]+)",
+    )
+
+    # Find the log entry in a list of logs. Simple
+    # conveience function.
+    def find_in(self, logs: list[str]) -> Optional[str]:
+        for log in logs:
+            if self.log_id in log:
+                return log
+        return None
+
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
     INFO = "INFO"
+
+class AttackType(str, Enum):
+    BRUTE_FORCE = "BRUTE_FORCE"
+    SQL_INJECTION = "SQL_INJECTION"
+    XSS = "XSS"
+    FILE_INCLUSION = "FILE_INCLUSION"
+    COMMAND_INJECTION = "COMMAND_INJECTION"
+    PRIVILEGE_ESCALATION = "PRIVILEGE_ESCALATION"
+    UNKNOWN = "UNKNOWN"
 
 class WebTrafficPattern(BaseModel):
     url_path: str
@@ -111,15 +141,82 @@ class Statistics(BaseModel):
     request_count_by_ip: dict[str, int]
     request_count_by_url_path: dict[str, int]
 
-### [Complex Structured Generation] Top-level class for log analysis results
+class IPAddress(BaseModel):
+    ip_address: str = Field(
+        pattern=r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",
+    )
+
+# Class for an HTTP response code.
+class ResponseCode(BaseModel):
+    response_code: str = Field(
+        pattern=r"^\d{3}$",
+    )
+
+class WebSecurityEvent(BaseModel):
+    # The log entry IDs that are relevant to this event.
+    relevant_log_entry_ids: list[LogID]
+
+    # The reasoning for why this event is relevant.
+    reasoning: str
+
+    # The type of event.
+    event_type: str
+
+    # The severity of the event.
+    severity: SeverityLevel
+
+    # Whether this event requires human review.
+    requires_human_review: bool
+
+    # The confidence score for this event. I'm not sure if this
+    # is meaningful for language models, but it's here if we want it.
+    confidence_score: float = Field(
+        ge=0.0, 
+        le=1.0,
+        description="Confidence score between 0 and 1"
+    )
+
+    # Web-specific fields
+    url_pattern: str = Field(
+        min_length=1,
+        description="URL pattern that triggered the event"
+    )
+
+    http_method: Literal["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT"]
+    source_ips: list[IPAddress]
+    response_codes: list[ResponseCode]
+    user_agents: list[str]
+
+    # Possible attack patterns for this event.
+    possible_attack_patterns: list[AttackType]
+
+    # Recommended actions for this event.
+    recommended_actions: list[str]
+
+### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
-    # Common metadata for the logs.
-    # The highest severity event found.
-    highest_severity: Optional[SeverityLevel]
+    # A summary of the analysis.
+    summary: str
+    
+    # Observations about the logs.
+    observations: list[str]
+    
+    # Planning for the analysis.
+    planning: list[str]
+    
+    # Security events found in the logs.
+    # events: list[WebSecurityEvent]
+    
     # Traffic patterns found in the logs.
     traffic_patterns: list[WebTrafficPattern]
+    
     # Statistics for the logs.
     statistics: Statistics
+    
+    # The highest severity event found.
+    highest_severity: Optional[SeverityLevel]
+    
+    requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
 ### Specify the llm model
