@@ -1,9 +1,12 @@
 import outlines
 import ollama
+import openai
 from pydantic import BaseModel
 from enum import Enum
 from typing import Literal, Optional
 import json
+import os
+from dotenv import load_dotenv
 
 PROMPT_TEMPLATE = """
 You are an expert security analyst reviewing security logs.
@@ -55,26 +58,29 @@ Remember:
     - 2024-11-15T07:32:34−12:00 for datetime with offset
 
 You should return valid JSON in the schema
+{model_schema}
 
 <LOGS BEGIN>
 {logs}
 <LOGS END>
 """
 
-def chunked_iterable(iterable, size):
+def chunked_iterable(iterable, size, debug=False):
     chunk = []
     for item in iterable:
         chunk.append(item)
         if len(chunk) == size:
-            print("[DEBUG] Yielding chunk:")
-            for line in chunk:
-                print(line.rstrip())
+            if debug:
+                print("[DEBUG] Yielding chunk:")
+                for line in chunk:
+                    print(line.rstrip())
             yield chunk
             chunk = []
     if chunk:
-        print("[DEBUG] Yielding final chunk:")
-        for line in chunk:
-            print(line.rstrip())
+        if debug:
+            print("[DEBUG] Yielding final chunk:")
+            for line in chunk:
+                print(line.rstrip())
         yield chunk
 
 class SeverityLevel(str, Enum):
@@ -90,6 +96,7 @@ class WebTrafficPattern(BaseModel):
     hits_count: int
     response_codes: dict[str, int]  # Maps status code to count
     unique_ips: int
+    count_per_ip: dict[str, int]  # Maps IP to count
 
 ### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
@@ -99,23 +106,35 @@ class LogAnalysis(BaseModel):
     # The highest severity event found.
     highest_severity: Optional[SeverityLevel]
 
-# Create the model
+### Specify the llm model
 llm_model = "qwen2.5-coder:3b"
 # llm_model = "qwen2.5-coder:7b"
 # llm_model = "gemma3:4b"
 # llm_model = "call518/gemma3-tools-8192ctx:4b"
-client = ollama.Client()
-model = outlines.from_ollama(client, llm_model)
+
+### Ollama API
+# client = ollama.Client()
+# model = outlines.from_ollama(client, llm_model)
+
+### OpenAI API
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+client = openai.OpenAI(
+    base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
+    api_key=openai_api_key
+)
+model = outlines.from_openai(client, llm_model)
 
 # log_path = "sample-logs/access-10.log"
 log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
-chunk_size = 2
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
-    for i, chunk in enumerate(chunked_iterable(f, chunk_size)):
+    for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
         logs = "".join(chunk)
-        prompt = PROMPT_TEMPLATE.format(logs=logs)
+        model_schema=LogAnalysis.model_json_schema()
+        prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema)
         print(f"\n--- Chunk {i+1} ---")
         review = model(
             prompt,
