@@ -3,6 +3,7 @@ import ollama
 from pydantic import BaseModel
 from enum import Enum
 from typing import Literal, Optional
+import json
 
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
@@ -19,7 +20,7 @@ llm_model = "tinyllama"
 llm_model = "qwen2.5-coder:3b"
 model = outlines.from_ollama(ollama.Client(), llm_model)
 
-prompt = f"""
+PROMPT_TEMPLATE = """
 Your task is to:
 1. Identify potential security events or suspicious patterns
 2. Summarize normal and abnormal traffic patterns very briefly.
@@ -62,31 +63,43 @@ Remember:
 You should return valid JSON in the schema
 
 <LOGS BEGIN>
-
-54.36.149.41 - - [22/Jan/2019:03:56:14 +0330] "GET /filter/27|13%20%D9%85%DA%AF%D8%A7%D9%BE%DB%8C%DA%A9%D8%B3%D9%84,27|%DA%A9%D9%85%D8%AA%D8%B1%20%D8%A7%D8%B2%205%20%D9%85%DA%AF%D8%A7%D9%BE%DB%8C%DA%A9%D8%B3%D9%84,p53 HTTP/1.1" 200 30577 "-" "Mozilla/5.0 (compatible; AhrefsBot/6.1; +http://ahrefs.com/robot/)" "-"
-31.56.96.51 - - [22/Jan/2019:03:56:16 +0330] "GET /image/60844/productModel/200x200 HTTP/1.1" 200 5667 "https://www.zanbil.ir/m/filter/b113" "Mozilla/5.0 (Linux; Android 6.0; ALE-L21 Build/HuaweiALE-L21) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.158 Mobile Safari/537.36" "-"
-31.56.96.51 - - [22/Jan/2019:03:56:16 +0330] "GET /image/61474/productModel/200x200 HTTP/1.1" 200 5379 "https://www.zanbil.ir/m/filter/b113" "Mozilla/5.0 (Linux; Android 6.0; ALE-L21 Build/HuaweiALE-L21) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.158 Mobile Safari/537.36" "-"
-40.77.167.129 - - [22/Jan/2019:03:56:17 +0330] "GET /image/14925/productModel/100x100 HTTP/1.1" 200 1696 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
-91.99.72.15 - - [22/Jan/2019:03:56:17 +0330] "GET /product/31893/62100/%D8%B3%D8%B4%D9%88%D8%A7%D8%B1-%D8%AE%D8%A7%D9%86%DA%AF%DB%8C-%D9%BE%D8%B1%D9%86%D8%B3%D9%84%DB%8C-%D9%85%D8%AF%D9%84-PR257AT HTTP/1.1" 200 41483 "-" "Mozilla/5.0 (Windows NT 6.2; Win64; x64; rv:16.0)Gecko/16.0 Firefox/16.0" "-"
-40.77.167.129 - - [22/Jan/2019:03:56:17 +0330] "GET /image/23488/productModel/150x150 HTTP/1.1" 200 2654 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
-40.77.167.129 - - [22/Jan/2019:03:56:18 +0330] "GET /image/45437/productModel/150x150 HTTP/1.1" 200 3688 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
-40.77.167.129 - - [22/Jan/2019:03:56:18 +0330] "GET /image/576/article/100x100 HTTP/1.1" 200 14776 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
-66.249.66.194 - - [22/Jan/2019:03:56:18 +0330] "GET /filter/b41,b665,c150%7C%D8%A8%D8%AE%D8%A7%D8%B1%D9%BE%D8%B2,p56 HTTP/1.1" 200 34277 "-" "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" "-"
-40.77.167.129 - - [22/Jan/2019:03:56:18 +0330] "GET /image/57710/productModel/100x100 HTTP/1.1" 200 1695 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
-
+{logs}
 <LOGS END>
 """
 
-review = model(
-    prompt,
-    LogAnalysis,
-    # max_new_tokens=200,
-)
+def chunked_iterable(iterable, size):
+    chunk = []
+    for item in iterable:
+        chunk.append(item)
+        if len(chunk) == size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
 
-print(review)
+log_path = "sample-logs/access-10.log"
+chunk_size = 5
 
-# review = LogAnalysis.model_validate_json(review)
-# print(f"Rating: {review.rating.name}")
-# print(f"Pros: {review.pros}")
-# print(f"Cons: {review.cons}")
-# print(f"Summary: {review.summary}")
+
+
+with open(log_path, "r", encoding="utf-8") as f:
+    for i, chunk in enumerate(chunked_iterable(f, chunk_size)):
+        logs = "".join(chunk)
+        prompt = PROMPT_TEMPLATE.format(logs=logs)
+        print(f"\n--- Chunk {i+1} ---")
+        review = model(
+            prompt,
+            LogAnalysis,
+            # max_new_tokens=200,
+        )
+        
+        # Parse the review and print the character
+        try:
+            # Validate JSON
+            parsed = json.loads(review)
+            print(review)
+            # Validate Type
+            character = LogAnalysis.model_validate(parsed)
+            # print(character)
+        except Exception as e:
+            print("Error parsing character:", e)
