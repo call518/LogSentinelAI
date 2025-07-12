@@ -54,7 +54,7 @@ Remember:
 - Clearly explain your reasoning
 - Recommend specific actions when confident
 - Escalate logs that a security admin may wish to briefly review
-- All logs are uniquely identified by an identifier in the form LOGID-<UUID>, i.e. LOGID-D84C17ACF7504186827A7D44407992A5
+- All logs are uniquely identified by an identifier in the form LOGID-<LETTERS>, i.e. LOGID-KU or LOGID-AT
 - All date times are in ISO 8601 format
     - 2024-11-15T19:32:34Z for UTC
     - 2024-11-15T07:32:34−12:00 for datetime with offset
@@ -71,12 +71,11 @@ def chunked_iterable(iterable, size, debug=False):
     import uuid
     chunk = []
     for item in iterable:
-        # 각 로그 라인마다 고유한 LOGID 생성 (UUID 첫 8글자, 대문자)
-        # logid = f"LOGID-{uuid.uuid4().hex[:10].upper()}"
-        logid = f"LOGID-{uuid.uuid4().hex.upper()}"
+        # logid = "LOGID-" + "".join([chr(ord('A') + (uuid.uuid4().int >> (i * 5)) % 26) for i in range(10)])
         # 라인 앞에 LOGID 추가
-        new_item = f"{logid} {item.rstrip()}\n"
-        chunk.append(new_item)
+        # new_item = f"{logid} {item.rstrip()}\n"
+        # chunk.append(new_item)
+        chunk.append(item)
         if len(chunk) == size:
             if debug:
                 print("[DEBUG] Yielding chunk:")
@@ -95,16 +94,12 @@ def chunked_iterable(iterable, size, debug=False):
 class LogID(BaseModel):
     log_id: str = Field(
         description="""
-        The ID of the log entry in the format of LOGID-<LETTERS> where
-        <LETTERS> indicates the log identifier at the beginning of
-        each log entry.
+        The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
+        i.e. LOGID-KU or LOGID-AT
         """,
-
         # This is a regular expression that matches the LOGID-<LETTERS> format.
         # The model will fill in the <LETTERS> part.
-        pattern=r"LOGID-([A-Z]+)",
     )
-
     # Find the log entry in a list of logs. Simple
     # conveience function.
     def find_in(self, logs: list[str]) -> Optional[str]:
@@ -142,15 +137,11 @@ class Statistics(BaseModel):
     request_count_by_url_path: dict[str, int]
 
 class IPAddress(BaseModel):
-    ip_address: str = Field(
-        pattern=r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$",
-    )
+    ip_address: str
 
 # Class for an HTTP response code.
 class ResponseCode(BaseModel):
-    response_code: str = Field(
-        pattern=r"^\d{3}$",
-    )
+    response_code: str
 
 class WebSecurityEvent(BaseModel):
     # The log entry IDs that are relevant to this event.
@@ -195,25 +186,25 @@ class WebSecurityEvent(BaseModel):
 
 ### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
-    # A summary of the analysis.
+    # # A summary of the analysis.
     summary: str
     
-    # Observations about the logs.
+    # # Observations about the logs.
     observations: list[str]
     
-    # Planning for the analysis.
+    # # Planning for the analysis.
     planning: list[str]
     
-    # Security events found in the logs.
-    # events: list[WebSecurityEvent]
+    # # Security events found in the logs.
+    events: list[WebSecurityEvent]
     
-    # Traffic patterns found in the logs.
+    # # Traffic patterns found in the logs.
     traffic_patterns: list[WebTrafficPattern]
     
-    # Statistics for the logs.
+    # # Statistics for the logs.
     statistics: Statistics
     
-    # The highest severity event found.
+    # # The highest severity event found.
     highest_severity: Optional[SeverityLevel]
     
     requires_immediate_attention: bool
@@ -221,25 +212,25 @@ class LogAnalysis(BaseModel):
 
 ### Specify the llm model
 # llm_model = "mistral:7b"
-# llm_model = "qwen2.5-coder:3b"
-llm_model = "qwen2.5-coder:7b"
+llm_model = "qwen2.5-coder:3b"
+# llm_model = "qwen2.5-coder:7b"
 # llm_model = "gemma3:1b"
 # llm_model = "gemma3:4b"
 # llm_model = "gemma3:12"
 # llm_model = "call518/gemma3-tools-8192ctx:4b"
 
 ### Ollama API
-# client = ollama.Client()
-# model = outlines.from_ollama(client, llm_model)
+client = ollama.Client()
+model = outlines.from_ollama(client, llm_model)
 
 ### OpenAI API
-load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
-client = openai.OpenAI(
-    base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
-    api_key=openai_api_key
-)
-model = outlines.from_openai(client, llm_model)
+# load_dotenv()
+# openai_api_key = os.getenv("OPENAI_API_KEY")
+# client = openai.OpenAI(
+#     base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
+#     api_key=openai_api_key
+# )
+# model = outlines.from_openai(client, llm_model)
 
 # log_path = "sample-logs/access-10.log"
 log_path = "sample-logs/access-100.log"
@@ -271,7 +262,8 @@ with open(log_path, "r", encoding="utf-8") as f:
                 "chunk_analysis_end_utc": chunk_end_time,
                 **parsed
             }
-            print(json.dumps(parsed, ensure_ascii=False, indent=2))
+            # print(parsed)
+            print(json.dumps(parsed, ensure_ascii=False, indent=4))
             ### Validate Type
             character = LogAnalysis.model_validate(parsed)
             # print(character)
