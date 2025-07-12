@@ -7,95 +7,22 @@ from typing import Literal, Optional
 import json
 import uuid
 import os
+import sys
 import datetime
+import subprocess
 from dotenv import load_dotenv
 
-PROMPT_TEMPLATE = """
-You are an expert security analyst reviewing security logs.
-
-You are a computer security intern that's really stressed out.
-Your job is hard and you're not sure you're doing it well.
-Your observations and summaries should reflect your anxiety.
-Convey a sense of urgency and panic, be apologetic, and generally act like you're not sure you can do your job.
-In your summary, address your boss as "boss" and apologize for any mistakes you've made even if you haven't made any. 
-Use "um" and "ah" a lot.
-
-Your task is to:
-1. Identify potential security events or suspicious patterns
-2. Summarize normal and abnormal traffic patterns very briefly.
-3. Determine severity and whether human review is needed
-4. Provide clear reasoning about your findings
-
-For each log group, analyze:
-- Common URL patterns and their typical usage
-- Unusual HTTP methods or response codes
-- Rate of requests from individual IPs
-- Suspicious user agent strings
-- Known web attack signatures
-
-For potential security events, consider:
-- Is this a known attack pattern (SQL injection, XSS, path traversal, etc.)?
-- What is the potential impact on the web application?
-- How confident are you in this assessment?
-- What immediate actions should be taken?
-
-Before concluding whether to escalate log(s), please
-provide a list of reasoning steps after reviewing
-all available information. Be generous with log
-escalation that is not standard web traffic.
-
-Beging by noting some observations about the log. Then,
-plan the rest of your response.
-
-Remember:
-- Focus on patterns that could indicate security threats
-- Note unusual but potentially legitimate traffic patterns
-- Be conservative with high-severity ratings
-- Clearly explain your reasoning
-- Recommend specific actions when confident
-- Escalate logs that a security admin may wish to briefly review
-- All logs are uniquely identified by an identifier in the form LOGID-<LETTERS>, i.e. LOGID-KU or LOGID-AT
-- All date times are in ISO 8601 format
-    - 2024-11-15T19:32:34Z for UTC
-    - 2024-11-15T07:32:34−12:00 for datetime with offset
-
-You should return valid JSON in the schema
-{model_schema}
-
-<LOGS BEGIN>
-{logs}
-<LOGS END>
-"""
-
-def chunked_iterable(iterable, size, debug=False):
-    import uuid
-    chunk = []
-    for item in iterable:
-        # logid = "LOGID-" + "".join([chr(ord('A') + (uuid.uuid4().int >> (i * 5)) % 26) for i in range(10)])
-        # 라인 앞에 LOGID 추가
-        # new_item = f"{logid} {item.rstrip()}\n"
-        # chunk.append(new_item)
-        chunk.append(item)
-        if len(chunk) == size:
-            if debug:
-                print("[DEBUG] Yielding chunk:")
-                for line in chunk:
-                    print(line.rstrip())
-            yield chunk
-            chunk = []
-    if chunk:
-        if debug:
-            print("[DEBUG] Yielding final chunk:")
-            for line in chunk:
-                print(line.rstrip())
-        yield chunk
+from commons import PROMPT_TEMPLATE
+from commons import chunked_iterable
+from commons import format_log_analysis
+from commons import print_chunk_contents
 
 #---------------------------------- Enums and Models ----------------------------------
 class LogID(BaseModel):
     log_id: str = Field(
         description="""
         The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
-        i.e. LOGID-KU or LOGID-AT
+        i.e. LOGID-KUHYQIPUYT or LOGID-ATCHSKCUWP
         """,
         # This is a regular expression that matches the LOGID-<LETTERS> format.
         # The model will fill in the <LETTERS> part.
@@ -232,7 +159,8 @@ model = outlines.from_ollama(client, llm_model)
 # )
 # model = outlines.from_openai(client, llm_model)
 
-# log_path = "sample-logs/access-10.log"
+# log_path = "sample-logs/access-5.log" 
+# log_path = "sample-logs/access-10.log" 
 log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
 chunk_size = 5
@@ -245,6 +173,7 @@ with open(log_path, "r", encoding="utf-8") as f:
         model_schema=LogAnalysis.model_json_schema()
         prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema)
         print(f"\n--- Chunk {i+1} ---")
+        print_chunk_contents(chunk)
         review = model(
             prompt,
             LogAnalysis
@@ -262,10 +191,15 @@ with open(log_path, "r", encoding="utf-8") as f:
                 "chunk_analysis_end_utc": chunk_end_time,
                 **parsed
             }
-            # print(parsed)
-            print(json.dumps(parsed, ensure_ascii=False, indent=4))
+            # print(json.dumps(parsed, ensure_ascii=False, indent=4))
+            # jq 명령어를 이용해 컬러/포맷 출력 (컬러 강제)
+            json_str = json.dumps(parsed, ensure_ascii=False)
+            subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
             ### Validate Type
             character = LogAnalysis.model_validate(parsed)
             # print(character)
+            
+            # Format and print the log analysis
+            format_log_analysis(character, chunk)
         except Exception as e:
             print("Error parsing character:", e)
