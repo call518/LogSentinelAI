@@ -7,6 +7,7 @@ from typing import Literal, Optional
 import json
 import uuid
 import os
+import datetime
 from dotenv import load_dotenv
 
 PROMPT_TEMPLATE = """
@@ -150,6 +151,8 @@ chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
+        # 분석 시작 시간 기록
+        chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         logs = "".join(chunk)
         model_schema=LogAnalysis.model_json_schema()
         prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema)
@@ -158,12 +161,19 @@ with open(log_path, "r", encoding="utf-8") as f:
             prompt,
             LogAnalysis
         )
-        
+        # 분석 완료 시간 기록
+        chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         ### [Validate] Parse the review and print the character
         try:
+            # print(review)
             ### Validate JSON
             parsed = json.loads(review)
-            # print(review)
+            # 분석 시간 정보 추가
+            parsed = {
+                "chunk_analysis_start_utc": chunk_start_time,
+                "chunk_analysis_end_utc": chunk_end_time,
+                **parsed
+            }
             print(json.dumps(parsed, ensure_ascii=False, indent=2))
             ### Validate Type
             character = LogAnalysis.model_validate(parsed)
