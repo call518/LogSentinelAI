@@ -5,22 +5,16 @@ from enum import Enum
 from typing import Literal, Optional
 import json
 
-class SeverityLevel(str, Enum):
-    CRITICAL = "CRITICAL"
-    HIGH = "HIGH"
-    MEDIUM = "MEDIUM"
-    LOW = "LOW"
-    INFO = "INFO"
-
-class LogAnalysis(BaseModel):
-    highest_severity: Optional[SeverityLevel]
-
-# Create the model
-llm_model = "tinyllama"
-llm_model = "qwen2.5-coder:3b"
-model = outlines.from_ollama(ollama.Client(), llm_model)
-
 PROMPT_TEMPLATE = """
+You are an expert security analyst reviewing security logs.
+
+You are a computer security intern that's really stressed out.
+Your job is hard and you're not sure you're doing it well.
+Your observations and summaries should reflect your anxiety.
+Convey a sense of urgency and panic, be apologetic, and generally act like you're not sure you can do your job.
+In your summary, address your boss as "boss" and apologize for any mistakes you've made even if you haven't made any. 
+Use "um" and "ah" a lot.
+
 Your task is to:
 1. Identify potential security events or suspicious patterns
 2. Summarize normal and abnormal traffic patterns very briefly.
@@ -72,15 +66,52 @@ def chunked_iterable(iterable, size):
     for item in iterable:
         chunk.append(item)
         if len(chunk) == size:
+            print("[DEBUG] Yielding chunk:")
+            for line in chunk:
+                print(line.rstrip())
             yield chunk
             chunk = []
     if chunk:
+        print("[DEBUG] Yielding final chunk:")
+        for line in chunk:
+            print(line.rstrip())
         yield chunk
 
+class SeverityLevel(str, Enum):
+    CRITICAL = "CRITICAL"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    INFO = "INFO"
+
+class WebTrafficPattern(BaseModel):
+    url_path: str
+    http_method: str
+    hits_count: int
+    response_codes: dict[str, int]  # Maps status code to count
+    unique_ips: int
+
+### Top-level class for log analysis results
+class LogAnalysis(BaseModel):
+    # Traffic patterns found in the logs.
+    traffic_patterns: list[WebTrafficPattern]
+    
+    # The highest severity event found.
+    highest_severity: Optional[SeverityLevel]
+
+# Create the model
+# llm_model = "tinyllama"
+# llm_model = "qwen2.5-coder:1.5b"
+# llm_model = "qwen2.5-coder:3b"
+# llm_model = "qwen2.5-coder:7b"
+# llm_model = "gemma3:4b"
+llm_model = "call518/gemma3-tools-8192ctx:4b"
+model = outlines.from_ollama(ollama.Client(), llm_model)
+
 log_path = "sample-logs/access-10.log"
+# log_path = "sample-logs/access-100.log"
+# log_path = "sample-logs/access-10k.log"
 chunk_size = 5
-
-
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size)):
@@ -93,7 +124,7 @@ with open(log_path, "r", encoding="utf-8") as f:
             # max_new_tokens=200,
         )
         
-        # Parse the review and print the character
+        ### [Validate] Parse the review and print the character
         try:
             # Validate JSON
             parsed = json.loads(review)
