@@ -46,6 +46,7 @@ Remember:
 - All date times are in ISO 8601 format
     - 2024-11-15T19:32:34Z for UTC
     - 2024-11-15T07:32:34−12:00 for datetime with offset
+- Summary, observations, and planning sections must be written in Korean.
 
 You should return valid JSON in the schema
 {model_schema}
@@ -80,7 +81,7 @@ def chunked_iterable(iterable, size, debug=False):
 
 def print_chunk_contents(chunk):
     # Chunk 내용 출력 (/w LOGID, 순번, 분리)
-    print(f"\n[Chunk contents]")
+    print(f"\n[LOG DATA]")
     for idx, line in enumerate(chunk, 1):
         line = line.strip()
         # LOGID-문자열 추출 (시작 부분)
@@ -105,11 +106,11 @@ def format_log_analysis(analysis, logs):
     RESET = "\033[0m"
 
     print(f"{MAGENTA}\n===== HUMAN-READABLE LOG ANALYSIS SUMMARY ====={RESET}")
-    print(f"{RED}Summary:{RESET} {analysis.summary}")
-    print(f"{BLUE}\nObservations:{RESET}")
+    print(f"{YELLOW}Summary:{RESET} {analysis.summary}")
+    print(f"{YELLOW}\nObservations:{RESET}")
     for obs in analysis.observations:
         print(f"{CYAN}- {obs}{RESET}")
-    print(f"{BLUE}\nPlanning:{RESET}")
+    print(f"{YELLOW}\nPlanning:{RESET}")
     for plan in analysis.planning:
         print(f"{CYAN}- {plan}{RESET}")
     print(f"{YELLOW}\nSecurity Events:{RESET}")
@@ -125,21 +126,21 @@ def format_log_analysis(analysis, logs):
         print(f"{BLUE}  Source IPs:{RESET} {[ip.ip_address for ip in event.source_ips]}")
         print(f"{BLUE}  Response Codes:{RESET} {[rc.response_code for rc in event.response_codes]}")
         print(f"{BLUE}  User Agents:{RESET} {event.user_agents}")
-        print(f"{YELLOW}  Possible Attack Patterns:{RESET} {event.possible_attack_patterns}")
+        print(f"{RED}  Possible Attack Patterns:{RESET} {event.possible_attack_patterns}")
         print(f"{GREEN}  Recommended Actions:{RESET} {event.recommended_actions}")
         print("")
-    print(f"{CYAN}\nTraffic Patterns:{RESET}")
+    print(f"{YELLOW}\nTraffic Patterns:{RESET}")
     for tp in analysis.traffic_patterns:
         print(f"{CYAN}- URL Path:{RESET} {tp.url_path}, Method: {tp.http_method}, Hits: {tp.hits_count}, Unique IPs: {tp.unique_ips}")
         print(f"{BLUE}  Response Codes:{RESET} {tp.response_codes}")
         print(f"{BLUE}  Request IPs:{RESET} {tp.request_ips}")
-    print(f"{MAGENTA}\nStatistics:{RESET}")
+    print(f"{YELLOW}\nStatistics:{RESET}")
     print(f"{MAGENTA}  Requests by IP:{RESET}")
     for ip, count in analysis.statistics.request_count_by_ip.items():
         print(f"{CYAN}    {ip}:{RESET} {count}")
     print(f"{MAGENTA}  Requests by URL Path:{RESET}")
     for url, count in analysis.statistics.request_count_by_url_path.items():
         print(f"{CYAN}    {url}:{RESET} {count}")
-    print(f"{RED}\nHighest Severity:{RESET} {analysis.highest_severity.value}")
-    print(f"{RED}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
+    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity.value if analysis.highest_severity is not None else 'N/A'}")
+    print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
     print(f"{MAGENTA}=============================================={RESET}\n")
