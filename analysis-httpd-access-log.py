@@ -100,18 +100,17 @@ class LogAnalysis(BaseModel):
     highest_severity: Optional[SeverityLevel]
 
 # Create the model
-# llm_model = "tinyllama"
-# llm_model = "qwen2.5-coder:1.5b"
-# llm_model = "qwen2.5-coder:3b"
+llm_model = "qwen2.5-coder:3b"
 # llm_model = "qwen2.5-coder:7b"
 # llm_model = "gemma3:4b"
-llm_model = "call518/gemma3-tools-8192ctx:4b"
-model = outlines.from_ollama(ollama.Client(), llm_model)
+# llm_model = "call518/gemma3-tools-8192ctx:4b"
+client = ollama.Client()
+model = outlines.from_ollama(client, llm_model)
 
-log_path = "sample-logs/access-10.log"
-# log_path = "sample-logs/access-100.log"
+# log_path = "sample-logs/access-10.log"
+log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
-chunk_size = 5
+chunk_size = 2
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size)):
@@ -120,8 +119,7 @@ with open(log_path, "r", encoding="utf-8") as f:
         print(f"\n--- Chunk {i+1} ---")
         review = model(
             prompt,
-            LogAnalysis,
-            # max_new_tokens=200,
+            LogAnalysis
         )
         
         ### [Validate] Parse the review and print the character
