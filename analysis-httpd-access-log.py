@@ -83,6 +83,10 @@ def chunked_iterable(iterable, size, debug=False):
                 print(line.rstrip())
         yield chunk
 
+#---------------------------------- Enums and Models ----------------------------------
+class common_metadata(BaseModel):
+    logtime_iso8601: str
+
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
@@ -94,17 +98,23 @@ class WebTrafficPattern(BaseModel):
     url_path: str
     http_method: str
     hits_count: int
-    response_codes: dict[str, int]  # Maps status code to count
+    response_codes: dict[str, int]
     unique_ips: int
-    count_per_ip: dict[str, int]  # Maps IP to count
 
-### Top-level class for log analysis results
+class IpStatistics(BaseModel):
+    request_count_by_ip: dict[str, int]
+
+### [Complex Structured Generation] Top-level class for log analysis results
 class LogAnalysis(BaseModel):
-    # Traffic patterns found in the logs.
-    traffic_patterns: list[WebTrafficPattern]
-    
+    # Common metadata for the logs.
+    common_metadata: common_metadata
     # The highest severity event found.
     highest_severity: Optional[SeverityLevel]
+    # Traffic patterns found in the logs.
+    traffic_patterns: list[WebTrafficPattern]
+    # IP statistics for the logs.
+    ip_statistics: IpStatistics
+#--------------------------------------------------------------------------------------
 
 ### Specify the llm model
 llm_model = "qwen2.5-coder:3b"
@@ -128,7 +138,7 @@ model = outlines.from_openai(client, llm_model)
 # log_path = "sample-logs/access-10.log"
 log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
-chunk_size = 5
+chunk_size = 1
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
