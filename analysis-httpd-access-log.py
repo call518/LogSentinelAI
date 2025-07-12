@@ -61,18 +61,21 @@ Remember:
 You should return valid JSON in the schema
 {model_schema}
 
-<LOGID>
-{logid}
-
 <LOGS BEGIN>
 {logs}
 <LOGS END>
 """
 
 def chunked_iterable(iterable, size, debug=False):
+    import uuid
     chunk = []
     for item in iterable:
-        chunk.append(item)
+        # 각 로그 라인마다 고유한 LOGID 생성 (UUID 첫 8글자, 대문자)
+        # logid = f"LOGID-{uuid.uuid4().hex[:10].upper()}"
+        logid = f"LOGID-{uuid.uuid4().hex.upper()}"
+        # 라인 앞에 LOGID 추가
+        new_item = f"{logid} {item.rstrip()}\n"
+        chunk.append(new_item)
         if len(chunk) == size:
             if debug:
                 print("[DEBUG] Yielding chunk:")
@@ -88,9 +91,6 @@ def chunked_iterable(iterable, size, debug=False):
         yield chunk
 
 #---------------------------------- Enums and Models ----------------------------------
-class common_metadata(BaseModel):
-    logtime_iso8601: str
-
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
@@ -113,7 +113,6 @@ class Statistics(BaseModel):
 ### [Complex Structured Generation] Top-level class for log analysis results
 class LogAnalysis(BaseModel):
     # Common metadata for the logs.
-    common_metadata: common_metadata
     # The highest severity event found.
     highest_severity: Optional[SeverityLevel]
     # Traffic patterns found in the logs.
@@ -152,9 +151,8 @@ chunk_size = 5
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
         logs = "".join(chunk)
-        logid = f"LOGID-{uuid.uuid4().hex.upper()}"
         model_schema=LogAnalysis.model_json_schema()
-        prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema, logid=logid)
+        prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema)
         print(f"\n--- Chunk {i+1} ---")
         review = model(
             prompt,
@@ -163,13 +161,11 @@ with open(log_path, "r", encoding="utf-8") as f:
         
         ### [Validate] Parse the review and print the character
         try:
-            # Validate JSON
+            ### Validate JSON
             parsed = json.loads(review)
-            # Insert LOGID at the top level of the result
-            parsed = {"LOGID": logid, **parsed}
             # print(review)
-            # Validate Type
             print(json.dumps(parsed, ensure_ascii=False, indent=2))
+            ### Validate Type
             character = LogAnalysis.model_validate(parsed)
             # print(character)
         except Exception as e:
