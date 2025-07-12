@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from enum import Enum
 from typing import Literal, Optional
 import json
+import uuid
 import os
 from dotenv import load_dotenv
 
@@ -52,13 +53,16 @@ Remember:
 - Clearly explain your reasoning
 - Recommend specific actions when confident
 - Escalate logs that a security admin may wish to briefly review
-- All logs are uniquely identified by an identifier in the form LOGID-<LETTERS>, i.e. LOGID-KU
+- All logs are uniquely identified by an identifier in the form LOGID-<UUID>, i.e. LOGID-D84C17ACF7504186827A7D44407992A5
 - All date times are in ISO 8601 format
     - 2024-11-15T19:32:34Z for UTC
     - 2024-11-15T07:32:34−12:00 for datetime with offset
 
 You should return valid JSON in the schema
 {model_schema}
+
+<LOGID>
+{logid}
 
 <LOGS BEGIN>
 {logs}
@@ -100,9 +104,11 @@ class WebTrafficPattern(BaseModel):
     hits_count: int
     response_codes: dict[str, int]
     unique_ips: int
+    request_ips: list[str]
 
-class IpStatistics(BaseModel):
+class Statistics(BaseModel):
     request_count_by_ip: dict[str, int]
+    request_count_by_url_path: dict[str, int]
 
 ### [Complex Structured Generation] Top-level class for log analysis results
 class LogAnalysis(BaseModel):
@@ -112,14 +118,17 @@ class LogAnalysis(BaseModel):
     highest_severity: Optional[SeverityLevel]
     # Traffic patterns found in the logs.
     traffic_patterns: list[WebTrafficPattern]
-    # IP statistics for the logs.
-    ip_statistics: IpStatistics
+    # Statistics for the logs.
+    statistics: Statistics
 #--------------------------------------------------------------------------------------
 
 ### Specify the llm model
-llm_model = "qwen2.5-coder:3b"
-# llm_model = "qwen2.5-coder:7b"
+# llm_model = "mistral:7b"
+# llm_model = "qwen2.5-coder:3b"
+llm_model = "qwen2.5-coder:7b"
+# llm_model = "gemma3:1b"
 # llm_model = "gemma3:4b"
+# llm_model = "gemma3:12"
 # llm_model = "call518/gemma3-tools-8192ctx:4b"
 
 ### Ollama API
@@ -138,13 +147,14 @@ model = outlines.from_openai(client, llm_model)
 # log_path = "sample-logs/access-10.log"
 log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
-chunk_size = 1
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
         logs = "".join(chunk)
+        logid = f"LOGID-{uuid.uuid4().hex.upper()}"
         model_schema=LogAnalysis.model_json_schema()
-        prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema)
+        prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema, logid=logid)
         print(f"\n--- Chunk {i+1} ---")
         review = model(
             prompt,
@@ -155,8 +165,11 @@ with open(log_path, "r", encoding="utf-8") as f:
         try:
             # Validate JSON
             parsed = json.loads(review)
-            print(review)
+            # Insert LOGID at the top level of the result
+            parsed = {"LOGID": logid, **parsed}
+            # print(review)
             # Validate Type
+            print(json.dumps(parsed, ensure_ascii=False, indent=2))
             character = LogAnalysis.model_validate(parsed)
             # print(character)
         except Exception as e:
