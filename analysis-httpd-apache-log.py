@@ -18,7 +18,7 @@ from commons import format_log_analysis_httpd_apache_error_log
 from commons import print_chunk_contents
 
 ### Install the required packages
-# pip install outlines ollama openai python-dotenv numpy
+# uv add outlines ollama openai python-dotenv numpy
 
 #---------------------------------- Enums and Models ----------------------------------
 class LogID(BaseModel):

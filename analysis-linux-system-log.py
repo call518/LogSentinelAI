@@ -16,7 +16,7 @@ from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG, PROMPT_TEMPLATE_LINUX_SYST
 from commons import chunked_iterable, format_log_analysis_httpd_access_log, format_log_analysis_linux_system_log, print_chunk_contents
 
 ### Install the required packages
-# pip install outlines ollama openai python-dotenv numpy
+# uv add outlines ollama openai python-dotenv numpy
 
 ### 기존 httpd-access-log 관련 모델은 그대로 두고, 아래에 linux system log 분석용 모델 추가
 
