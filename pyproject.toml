@@ -5,5 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "numpy>=2.3.1",
+    "ollama>=0.5.1",
+    "openai>=1.95.1",
+    "outlines>=1.1.1",
     "python-dotenv>=1.1.1",
 ]
