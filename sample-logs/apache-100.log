@@ -1,0 +1,100 @@
+[Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
+[Thu Jun 09 06:07:04 2005] [notice] LDAP: SSL support unavailable
+[Thu Jun 09 06:07:04 2005] [notice] suEXEC mechanism enabled (wrapper: /usr/sbin/suexec)
+[Thu Jun 09 06:07:05 2005] [notice] Digest: generating secret for digest authentication ...
+[Thu Jun 09 06:07:05 2005] [notice] Digest: done
+[Thu Jun 09 06:07:05 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
+[Thu Jun 09 06:07:05 2005] [notice] LDAP: SSL support unavailable
+[Thu Jun 09 06:07:05 2005] [error] env.createBean2(): Factory error creating channel.jni:jni ( channel.jni, jni)
+[Thu Jun 09 06:07:05 2005] [error] config.update(): Can't create channel.jni:jni
+[Thu Jun 09 06:07:05 2005] [error] env.createBean2(): Factory error creating vm: ( vm, )
+[Thu Jun 09 06:07:05 2005] [error] config.update(): Can't create vm:
+[Thu Jun 09 06:07:05 2005] [error] env.createBean2(): Factory error creating worker.jni:onStartup ( worker.jni, onStartup)
+[Thu Jun 09 06:07:05 2005] [error] config.update(): Can't create worker.jni:onStartup
+[Thu Jun 09 06:07:05 2005] [error] env.createBean2(): Factory error creating worker.jni:onShutdown ( worker.jni, onShutdown)
+[Thu Jun 09 06:07:05 2005] [error] config.update(): Can't create worker.jni:onShutdown
+[Thu Jun 09 06:07:16 2005] [notice] mod_python: Creating 32 session mutexes based on 150 max processes and 0 max threads.
+[Thu Jun 09 06:07:19 2005] [notice] mod_security/1.9dev2 configured
+[Thu Jun 09 06:07:19 2005] [notice] Apache/2.0.49 (Fedora) configured -- resuming normal operations
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2330 in scoreboard slot 0
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2337 in scoreboard slot 7
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2332 in scoreboard slot 2
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2331 in scoreboard slot 1
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2333 in scoreboard slot 3
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2335 in scoreboard slot 5
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2334 in scoreboard slot 4
+[Thu Jun 09 06:07:19 2005] [notice] jk2_init() Found child 2336 in scoreboard slot 6
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 06:07:20 2005] [error] mod_jk child init 1 0
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 06:07:20 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 07:11:21 2005] [error] [client 204.100.200.22] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 12:08:57 2005] [error] [client 207.203.80.15] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 12:17:49 2005] [error] [client 216.68.171.39] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 12:48:10 2005] [error] [client 24.158.204.7] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 13:59:36 2005] [error] [client 216.85.154.124] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 14:22:15 2005] [error] [client 219.136.165.149] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 14:40:51 2005] [error] [client 218.114.142.11] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 15:06:08 2005] [error] [client 211.74.182.199] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 16:31:58 2005] [error] [client 218.61.75.217] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 17:04:03 2005] [error] [client 12.32.56.253] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 18:55:10 2005] [error] [client 24.159.188.244] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 18:56:23 2005] [error] [client 222.76.16.61] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:31 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [notice] jk2_init() Found child 4056 in scoreboard slot 8
+[Thu Jun 09 19:23:32 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 19:23:32 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [error] [client 81.199.21.119] File does not exist: /var/www/html/sumthin
+[Thu Jun 09 19:23:32 2005] [error] jk2_init() Can't find child 4057 in scoreboard
+[Thu Jun 09 19:23:32 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 19:23:32 2005] [error] mod_jk child init 1 -2
+[Thu Jun 09 19:23:32 2005] [error] jk2_init() Can't find child 4058 in scoreboard
+[Thu Jun 09 19:23:32 2005] [notice] workerEnv.init() ok /etc/httpd/conf/workers2.properties
+[Thu Jun 09 19:23:32 2005] [error] mod_jk child init 1 -2
+[Thu Jun 09 19:52:05 2005] [error] [client 219.150.171.68] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 20:05:25 2005] [error] [client 60.180.218.105] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 20:30:02 2005] [error] [client 12.223.73.171] Directory index forbidden by rule: /var/www/html/
+[Thu Jun 09 23:48:54 2005] [error] [client 143.127.131.4] Directory index forbidden by rule: /var/www/html/
+[Fri Jun 10 00:36:44 2005] [error] [client 65.106.172.142] Directory index forbidden by rule: /var/www/html/
+[Fri Jun 10 00:57:00 2005] [error] [client 222.166.160.169] Directory index forbidden by rule: /var/www/html/
+[Fri Jun 10 01:23:50 2005] [error] [client 63.203.254.140] Invalid method in request get /scripts/.%252e/.%252e/winnt/system32/cmd.exe?/c+dir
+[Fri Jun 10 01:24:12 2005] [error] [client 213.61.135.6] Invalid method in request get /scripts/.%252e/.%252e/winnt/system32/cmd.exe?/c+dir
+[Fri Jun 10 01:24:32 2005] [error] [client 201.252.246.11] Invalid method in request get /scripts/.%252e/.%252e/winnt/system32/cmd.exe?/c+dir
+[Fri Jun 10 02:42:34 2005] [error] [client 221.211.123.40] Directory index forbidden by rule: /var/www/html/
+[Fri Jun 10 02:45:13 2005] [error] [client 218.16.110.143] Directory index forbidden by rule: /var/www/html/
+[Fri Jun 10 03:04:53 2005] [error] [client 61.187.179.247] Directory index forbidden by rule: /var/www/html/
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin
+[Fri Jun 10 03:37:39 2005] [error] [client 194.116.250.2] File does not exist: /var/www/html/sumthin

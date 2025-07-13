@@ -7,7 +7,7 @@
 # Use "um" and "ah" a lot.
 # """
 
-PROMPT_TEMPLATE = """
+PROMPT_TEMPLATE_HTTPD_ACCESS_LOG = """
 You are an expert security analyst reviewing security logs.
 
 Your task is to:
@@ -97,7 +97,7 @@ def print_chunk_contents(chunk):
         print(f"{logid} {rest}")
     print("")
 
-def format_log_analysis(analysis, logs):
+def format_log_analysis_httpd_access_log(analysis, logs):
     # ANSI color codes
     RED = "\033[91m"
     GREEN = "\033[92m"

@@ -1,0 +1,10 @@
+[Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
+[Thu Jun 09 06:07:04 2005] [notice] LDAP: SSL support unavailable
+[Thu Jun 09 06:07:04 2005] [notice] suEXEC mechanism enabled (wrapper: /usr/sbin/suexec)
+[Thu Jun 09 06:07:05 2005] [notice] Digest: generating secret for digest authentication ...
+[Thu Jun 09 06:07:05 2005] [notice] Digest: done
+[Thu Jun 09 06:07:05 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
+[Thu Jun 09 06:07:05 2005] [notice] LDAP: SSL support unavailable
+[Thu Jun 09 06:07:05 2005] [error] env.createBean2(): Factory error creating channel.jni:jni ( channel.jni, jni)
+[Thu Jun 09 06:07:05 2005] [error] config.update(): Can't create channel.jni:jni
+[Thu Jun 09 06:07:05 2005] [error] env.createBean2(): Factory error creating vm: ( vm, )

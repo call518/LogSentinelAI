@@ -12,9 +12,9 @@ import datetime
 import subprocess
 from dotenv import load_dotenv
 
-from commons import PROMPT_TEMPLATE
+from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 from commons import chunked_iterable
-from commons import format_log_analysis
+from commons import format_log_analysis_httpd_access_log
 from commons import print_chunk_contents
 
 ### Install the required packages
@@ -181,7 +181,7 @@ with open(log_path, "r", encoding="utf-8") as f:
         chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         logs = "".join(chunk)
         model_schema=LogAnalysis.model_json_schema()
-        prompt = PROMPT_TEMPLATE.format(logs=logs, model_schema=model_schema)
+        prompt = PROMPT_TEMPLATE_HTTPD_ACCESS_LOG.format(logs=logs, model_schema=model_schema)
         print(f"\n--- Chunk {i+1} ---")
         print_chunk_contents(chunk)
         review = model(
@@ -210,6 +210,6 @@ with open(log_path, "r", encoding="utf-8") as f:
             # print(character)
             
             # Format and print the log analysis
-            format_log_analysis(character, chunk)
+            format_log_analysis_httpd_access_log(character, chunk)
         except Exception as e:
             print("Error parsing character:", e)
