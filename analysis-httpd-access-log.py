@@ -17,6 +17,9 @@ from commons import chunked_iterable
 from commons import format_log_analysis
 from commons import print_chunk_contents
 
+### Install the required packages
+# pip install outlines ollama openai python-dotenv numpy
+
 #---------------------------------- Enums and Models ----------------------------------
 class LogID(BaseModel):
     log_id: str = Field(
@@ -55,13 +58,13 @@ class WebTrafficPattern(BaseModel):
     url_path: str
     http_method: str
     hits_count: int
-    response_codes: dict[str, int]
+    response_codes: Optional[dict[str, int]]
     unique_ips: int
     request_ips: list[str]
 
 class Statistics(BaseModel):
-    request_count_by_ip: dict[str, int]
-    request_count_by_url_path: dict[str, int]
+    request_count_by_ip: Optional[dict[str, int]]
+    request_count_by_url_path: Optional[dict[str, int]]
 
 class IPAddress(BaseModel):
     ip_address: str
@@ -129,7 +132,7 @@ class LogAnalysis(BaseModel):
     traffic_patterns: list[WebTrafficPattern]
     
     # # Statistics for the logs.
-    statistics: Statistics
+    statistics: Optional[Statistics]
     
     # # The highest severity event found.
     highest_severity: Optional[SeverityLevel]
@@ -137,33 +140,40 @@ class LogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-### Specify the llm model
-# llm_model = "mistral:7b"
-llm_model = "qwen2.5-coder:3b"
-# llm_model = "qwen2.5-coder:7b"
-# llm_model = "gemma3:1b"
-# llm_model = "gemma3:4b"
-# llm_model = "gemma3:12"
-# llm_model = "call518/gemma3-tools-8192ctx:4b"
+# llm_provider = "ollama"
+llm_provider = "openai"
 
-### Ollama API
-client = ollama.Client()
-model = outlines.from_ollama(client, llm_model)
-
-### OpenAI API
-# load_dotenv()
-# openai_api_key = os.getenv("OPENAI_API_KEY")
-# client = openai.OpenAI(
-#     base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
-#     api_key=openai_api_key
-# )
-# model = outlines.from_openai(client, llm_model)
+if llm_provider == "ollama":
+    ### Ollama API
+    # llm_model = "mistral:7b"
+    llm_model = "qwen2.5-coder:3b"
+    # llm_model = "qwen2.5-coder:7b"
+    # llm_model = "gemma3:1b"
+    # llm_model = "gemma3:4b"
+    # llm_model = "gemma3:12b"
+    # llm_model = "call518/gemma3-tools-8192ctx:4b"
+    client = ollama.Client()
+    model = outlines.from_ollama(client, llm_model)
+elif llm_provider == "openai":
+    ### OpenAI API
+    load_dotenv()
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    llm_model = "gpt-4o-mini"
+    # llm_model = "gpt-4o"
+    client = openai.OpenAI(
+        base_url="https://api.openai.com/v1",  # OpenAI API endpoint
+        # base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
+        api_key=openai_api_key
+    )
+    model = outlines.from_openai(client, llm_model)
+else:
+    raise ValueError("Unsupported LLM provider. Use 'ollama' or 'openai'.")
 
 # log_path = "sample-logs/access-5.log" 
 # log_path = "sample-logs/access-10.log" 
 log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
-chunk_size = 5
+chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
