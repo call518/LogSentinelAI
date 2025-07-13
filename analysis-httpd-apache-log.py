@@ -12,9 +12,9 @@ import datetime
 import subprocess
 from dotenv import load_dotenv
 
-from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
+from commons import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
 from commons import chunked_iterable
-from commons import format_log_analysis_httpd_access_log
+from commons import format_log_analysis_httpd_apache_error_log
 from commons import print_chunk_contents
 
 ### Install the required packages
@@ -45,37 +45,50 @@ class SeverityLevel(str, Enum):
     LOW = "LOW"
     INFO = "INFO"
 
+class LogLevel(str, Enum):
+    """Apache log levels"""
+    ERROR = "error"
+    WARN = "warn"
+    NOTICE = "notice"
+    INFO = "info"
+    DEBUG = "debug"
+
 class AttackType(str, Enum):
-    BRUTE_FORCE = "BRUTE_FORCE"
-    SQL_INJECTION = "SQL_INJECTION"
-    XSS = "XSS"
-    FILE_INCLUSION = "FILE_INCLUSION"
+    DIRECTORY_TRAVERSAL = "DIRECTORY_TRAVERSAL"
     COMMAND_INJECTION = "COMMAND_INJECTION"
-    PRIVILEGE_ESCALATION = "PRIVILEGE_ESCALATION"
+    PATH_TRAVERSAL = "PATH_TRAVERSAL"
+    FILE_INCLUSION = "FILE_INCLUSION"
+    INVALID_HTTP_METHOD = "INVALID_HTTP_METHOD"
+    UNAUTHORIZED_ACCESS = "UNAUTHORIZED_ACCESS"
+    REPEATED_REQUESTS = "REPEATED_REQUESTS"
+    CONFIGURATION_ERROR = "CONFIGURATION_ERROR"
+    MODULE_ERROR = "MODULE_ERROR"
     UNKNOWN = "UNKNOWN"
 
-class WebTrafficPattern(BaseModel):
-    url_path: str
-    http_method: str
-    hits_count: int
-    response_codes: Optional[dict[str, int]]
-    unique_ips: int
-    request_ips: list[str]
+class ErrorPattern(BaseModel):
+    """Apache error log에서 발견되는 에러 패턴"""
+    error_type: str = Field(description="에러 유형 (예: Directory index forbidden, File does not exist)")
+    file_path: Optional[str] = Field(description="관련된 파일 경로")
+    occurrences: int = Field(description="발생 횟수")
+    client_ips: list[str] = Field(description="관련된 클라이언트 IP 목록")
+
+class ApacheModuleInfo(BaseModel):
+    """Apache 모듈 관련 정보"""
+    module_name: str = Field(description="모듈 이름")
+    operation: str = Field(description="모듈 작업 (예: init, configured)")
+    status: str = Field(description="상태 (예: ok, error)")
 
 class Statistics(BaseModel):
-    request_count_by_ip: Optional[dict[str, int]]
-    request_count_by_url_path: Optional[dict[str, int]]
+    error_count_by_ip: Optional[dict[str, int]] = Field(description="IP별 에러 발생 수")
+    error_count_by_type: Optional[dict[str, int]] = Field(description="에러 유형별 발생 수")
+    log_level_distribution: Optional[dict[str, int]] = Field(description="로그 레벨별 분포")
 
 class IPAddress(BaseModel):
     ip_address: str
 
-# Class for an HTTP response code.
-class ResponseCode(BaseModel):
-    response_code: str
-
-class WebSecurityEvent(BaseModel):
+class ApacheSecurityEvent(BaseModel):
     # The log entry IDs that are relevant to this event.
-    relevant_log_entry_ids: list[LogID]
+    relevant_log_entry_ids: list[str] = Field(description="관련된 로그 엔트리 ID 목록")
 
     # The reasoning for why this event is relevant.
     reasoning: str
@@ -84,32 +97,26 @@ class WebSecurityEvent(BaseModel):
     event_type: str
 
     # The severity of the event.
-    severity: SeverityLevel
+    severity: str = Field(description="CRITICAL, HIGH, MEDIUM, LOW, INFO 중 하나")
 
     # Whether this event requires human review.
     requires_human_review: bool
 
-    # The confidence score for this event. I'm not sure if this
-    # is meaningful for language models, but it's here if we want it.
+    # The confidence score for this event.
     confidence_score: float = Field(
         ge=0.0, 
         le=1.0,
         description="Confidence score between 0 and 1"
     )
 
-    # Web-specific fields
-    url_pattern: str = Field(
-        min_length=1,
-        description="URL pattern that triggered the event"
-    )
-
-    http_method: Literal["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT"]
-    source_ips: list[IPAddress]
-    response_codes: list[ResponseCode]
-    user_agents: list[str]
+    # Apache error log specific fields
+    log_level: str = Field(description="Apache 로그 레벨 (error, notice, warn, info)")
+    error_message: str = Field(description="에러 메시지 내용")
+    file_path: Optional[str] = Field(description="관련된 파일 경로")
+    source_ips: list[str] = Field(description="관련된 클라이언트 IP 목록")
 
     # Possible attack patterns for this event.
-    possible_attack_patterns: list[AttackType]
+    possible_attack_patterns: list[str] = Field(description="가능한 공격 패턴 목록")
 
     # Recommended actions for this event.
     recommended_actions: list[str]
@@ -126,16 +133,19 @@ class LogAnalysis(BaseModel):
     planning: list[str]
     
     # # Security events found in the logs.
-    events: list[WebSecurityEvent]
+    events: list[ApacheSecurityEvent]
     
-    # # Traffic patterns found in the logs.
-    traffic_patterns: list[WebTrafficPattern]
+    # # Error patterns found in the logs.
+    error_patterns: list[ErrorPattern]
+    
+    # # Apache module information
+    module_info: list[ApacheModuleInfo]
     
     # # Statistics for the logs.
     statistics: Optional[Statistics]
     
     # # The highest severity event found.
-    highest_severity: Optional[SeverityLevel]
+    highest_severity: Optional[str] = Field(description="가장 높은 심각도 (CRITICAL, HIGH, MEDIUM, LOW, INFO)")
     
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
@@ -171,8 +181,9 @@ else:
 
 # log_path = "sample-logs/access-5.log" 
 # log_path = "sample-logs/access-10.log" 
-log_path = "sample-logs/access-100.log"
+# log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
+log_path = "sample-logs/apache-100.log"
 chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
@@ -181,7 +192,7 @@ with open(log_path, "r", encoding="utf-8") as f:
         chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         logs = "".join(chunk)
         model_schema=LogAnalysis.model_json_schema()
-        prompt = PROMPT_TEMPLATE_HTTPD_ACCESS_LOG.format(logs=logs, model_schema=model_schema)
+        prompt = PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG.format(logs=logs, model_schema=model_schema)
         print(f"\n--- Chunk {i+1} ---")
         print_chunk_contents(chunk)
         review = model(
@@ -210,6 +221,6 @@ with open(log_path, "r", encoding="utf-8") as f:
             # print(character)
             
             # Format and print the log analysis
-            format_log_analysis_httpd_access_log(character, chunk)
+            format_log_analysis_httpd_apache_error_log(character, chunk)
         except Exception as e:
             print("Error parsing character:", e)
