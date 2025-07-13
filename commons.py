@@ -1,12 +1,14 @@
+# CUSTOME_PROMPT_TEMPLATE = """
+# You are a computer security intern that's really stressed out.
+# Your job is hard and you're not sure you're doing it well.
+# Your observations and summaries should reflect your anxiety.
+# Convey a sense of urgency and panic, be apologetic, and generally act like you're not sure you can do your job.
+# In your summary, address your boss as "boss" and apologize for any mistakes you've made even if you haven't made any. 
+# Use "um" and "ah" a lot.
+# """
+
 PROMPT_TEMPLATE = """
 You are an expert security analyst reviewing security logs.
-
-You are a computer security intern that's really stressed out.
-Your job is hard and you're not sure you're doing it well.
-Your observations and summaries should reflect your anxiety.
-Convey a sense of urgency and panic, be apologetic, and generally act like you're not sure you can do your job.
-In your summary, address your boss as "boss" and apologize for any mistakes you've made even if you haven't made any. 
-Use "um" and "ah" a lot.
 
 Your task is to:
 1. Identify potential security events or suspicious patterns
@@ -134,13 +136,16 @@ def format_log_analysis(analysis, logs):
         print(f"{CYAN}- URL Path:{RESET} {tp.url_path}, Method: {tp.http_method}, Hits: {tp.hits_count}, Unique IPs: {tp.unique_ips}")
         print(f"{BLUE}  Response Codes:{RESET} {tp.response_codes}")
         print(f"{BLUE}  Request IPs:{RESET} {tp.request_ips}")
-    print(f"{YELLOW}\nStatistics:{RESET}")
-    print(f"{MAGENTA}  Requests by IP:{RESET}")
-    for ip, count in analysis.statistics.request_count_by_ip.items():
-        print(f"{CYAN}    {ip}:{RESET} {count}")
-    print(f"{MAGENTA}  Requests by URL Path:{RESET}")
-    for url, count in analysis.statistics.request_count_by_url_path.items():
-        print(f"{CYAN}    {url}:{RESET} {count}")
+    if analysis.statistics is not None:
+        print(f"{YELLOW}\nStatistics:{RESET}")
+        print(f"{MAGENTA}  Requests by IP:{RESET}")
+        for ip, count in analysis.statistics.request_count_by_ip.items():
+            print(f"{CYAN}    {ip}:{RESET} {count}")
+        print(f"{MAGENTA}  Requests by URL Path:{RESET}")
+        for url, count in analysis.statistics.request_count_by_url_path.items():
+            print(f"{CYAN}    {url}:{RESET} {count}")
+    else:
+        print(f"{YELLOW}\nStatistics:{RESET} N/A")
     print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity.value if analysis.highest_severity is not None else 'N/A'}")
     print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
     print(f"{MAGENTA}=============================================={RESET}\n")
