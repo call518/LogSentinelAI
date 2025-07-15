@@ -128,7 +128,7 @@ else:
 
 # log_path = "sample-logs/linux-10.log"
 log_path = "sample-logs/linux-100.log"
-# log_path = "sample-logs/linux-10k.log"
+# log_path = "sample-logs/linux-2k.log"
 
 chunk_size = 10
 
