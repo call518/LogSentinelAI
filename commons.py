@@ -9,17 +9,15 @@
 
 import json
 import datetime
+import os
 from typing import Dict, Any, Optional
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError, RequestError
+from dotenv import load_dotenv
 
-# Elasticsearch 설정
-# 참고: 5601은 일반적으로 Kibana 포트이고, Elasticsearch는 9200 포트를 사용합니다.
-# 만약 실제로 5601에서 Elasticsearch가 실행되고 있다면 아래 주소를 수정하세요.
-ELASTICSEARCH_HOST = "http://localhost:9200"  # 일반적인 Elasticsearch 포트
-ELASTICSEARCH_USER = "elastic"
-ELASTICSEARCH_PASSWORD = "changeme"
-ELASTICSEARCH_INDEX = "sonarlog-security-analysis-alias"
+# .env 파일 로드
+load_dotenv()
+
 
 PROMPT_TEMPLATE_HTTPD_ACCESS_LOG = """
 You are an expert security analyst reviewing security logs.
@@ -234,7 +232,13 @@ def print_chunk_contents(chunk):
         print(f"{logid} {rest}")
     print("")
 
-def get_elasticsearch_client() -> Optional[Elasticsearch]:
+### Elasticsearch
+ELASTICSEARCH_HOST = "http://localhost:9200"  # 일반적인 Elasticsearch 포트
+ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER")
+ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD")
+ELASTICSEARCH_INDEX = "sonarlog-analysis"
+
+def _get_elasticsearch_client() -> Optional[Elasticsearch]:
     """
     Elasticsearch 클라이언트를 생성하고 연결을 테스트합니다.
     
@@ -264,7 +268,7 @@ def get_elasticsearch_client() -> Optional[Elasticsearch]:
         print(f"❌ Elasticsearch 클라이언트 생성 오류: {e}")
         return None
 
-def send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None) -> bool:
+def _send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None) -> bool:
     """
     분석 결과를 Elasticsearch에 전송합니다.
     
@@ -276,12 +280,12 @@ def send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Optiona
     Returns:
         bool: 전송 성공 여부
     """
-    client = get_elasticsearch_client()
+    client = _get_elasticsearch_client()
     if not client:
         return False
     
     try:
-        # 문서 ID 생성 (타임스탬프 + 로그타입 + 청크ID)
+        # 문서 식별 ID 생성 (타임스탬프 + 로그타입 + 청크ID)
         timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
         doc_id = f"{log_type}_{timestamp}"
         if chunk_id is not None:
@@ -291,8 +295,8 @@ def send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Optiona
         enriched_data = {
             **data,
             "@timestamp": datetime.datetime.utcnow().isoformat(),
-            "log_type": log_type,
-            "document_id": doc_id
+            "@log_type": log_type,
+            "@document_id": doc_id
         }
         
         # Elasticsearch에 문서 인덱싱
@@ -316,99 +320,107 @@ def send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Optiona
         print(f"❌ Elasticsearch 전송 중 오류 발생: {e}")
         return False
 
-# def create_elasticsearch_index_if_not_exists() -> bool:
-#     """
-#     Elasticsearch 인덱스가 존재하지 않으면 생성합니다.
-    
-#     Returns:
-#         bool: 인덱스 생성/확인 성공 여부
-#     """
-#     client = get_elasticsearch_client()
-#     if not client:
-#         return False
-    
-#     try:
-#         # 인덱스 존재 여부 확인
-#         if client.indices.exists(index=ELASTICSEARCH_INDEX):
-#             print(f"✅ Elasticsearch 인덱스 이미 존재: {ELASTICSEARCH_INDEX}")
-#             return True
-        
-#         # 인덱스 매핑 정의
-#         index_mapping = {
-#             "mappings": {
-#                 "properties": {
-#                     "@timestamp": {"type": "date"},
-#                     "chunk_analysis_start_utc": {"type": "date"},
-#                     "chunk_analysis_end_utc": {"type": "date"},
-#                     "log_type": {"type": "keyword"},
-#                     "document_id": {"type": "keyword"},
-#                     "summary": {"type": "text", "analyzer": "standard"},
-#                     "observations": {"type": "text", "analyzer": "standard"},
-#                     "planning": {"type": "text", "analyzer": "standard"},
-#                     "highest_severity": {"type": "keyword"},
-#                     "requires_immediate_attention": {"type": "boolean"},
-#                     "log_hash_mapping": {
-#                         "type": "object",
-#                         "properties": {
-#                             "LOGID-*": {"type": "text", "index": False}
-#                         }
-#                     },
-#                     "events": {
-#                         "type": "nested",
-#                         "properties": {
-#                             "event_type": {"type": "keyword"},
-#                             "severity": {"type": "keyword"},
-#                             "confidence_score": {"type": "float"},
-#                             "requires_human_review": {"type": "boolean"},
-#                             "source_ips": {"type": "ip"},
-#                             "possible_attack_patterns": {"type": "keyword"}
-#                         }
-#                     },
-#                     "statistics": {"type": "object", "enabled": True}
-#                 }
-#             },
-#             "settings": {
-#                 "number_of_shards": 1,
-#                 "number_of_replicas": 0
-#             }
-#         }
-        
-#         # 인덱스 생성
-#         response = client.indices.create(
-#             index=ELASTICSEARCH_INDEX,
-#             body=index_mapping
-#         )
-        
-#         if response.get('acknowledged'):
-#             print(f"✅ Elasticsearch 인덱스 생성 성공: {ELASTICSEARCH_INDEX}")
-#             return True
-#         else:
-#             print(f"❌ Elasticsearch 인덱스 생성 실패: {response}")
-#             return False
-            
-#     except RequestError as e:
-#         print(f"❌ Elasticsearch 인덱스 생성 요청 오류: {e}")
-#         return False
-#     except Exception as e:
-#         print(f"❌ Elasticsearch 인덱스 생성 중 오류 발생: {e}")
-#         return False
-
-def generate_log_hash(log_content: str) -> str:
+def _create_elasticsearch_index_template_if_not_exists() -> bool:
     """
-    로그 내용으로부터 해시값을 생성합니다.
-    
-    Args:
-        log_content: 원본 로그 내용
+    Elasticsearch 인덱스 템플릿을 생성하여 동적 매핑을 허용합니다.
     
     Returns:
-        str: LOGID-{HASH} 형태의 문자열
+        bool: 템플릿 생성/확인 성공 여부
     """
-    import hashlib
-    hash_object = hashlib.md5(log_content.encode('utf-8'))
-    hash_hex = hash_object.hexdigest()
-    return f"LOGID-{hash_hex.upper()}"
+    client = _get_elasticsearch_client()
+    if not client:
+        return False
+    
+    try:
+        template_name = "sonarlog-template"
+        
+        # 템플릿 존재 여부 확인
+        if client.indices.exists_template(name=template_name):
+            print(f"✅ Elasticsearch 템플릿 이미 존재: {template_name}")
+            return True
+        
+        # 인덱스 템플릿 정의 (동적 매핑 허용)
+        template_body = {
+            "index_patterns": ["sonarlog-*"],
+            "template": {
+                "settings": {
+                    "number_of_shards": 1,
+                    "number_of_replicas": 0
+                },
+                "mappings": {
+                    "dynamic": True,  # 동적 매핑 허용
+                    "properties": {
+                        "@timestamp": {"type": "date"},
+                        "chunk_analysis_start_utc": {"type": "date"},
+                        "chunk_analysis_end_utc": {"type": "date"},
+                        "log_type": {"type": "keyword"},
+                        "document_id": {"type": "keyword"},
+                        "summary": {"type": "text", "analyzer": "standard"},
+                        "observations": {"type": "text", "analyzer": "standard"},
+                        "planning": {"type": "text", "analyzer": "standard"},
+                        "highest_severity": {"type": "keyword"},
+                        "requires_immediate_attention": {"type": "boolean"},
+                        "events": {
+                            "type": "nested",
+                            "dynamic": True,  # 중첩 객체도 동적 매핑 허용
+                            "properties": {
+                                "relevant_log_entry": {
+                                    "type": "nested",
+                                    "dynamic": True
+                                },
+                                "event_type": {"type": "keyword"},
+                                "severity": {"type": "keyword"},
+                                "confidence_score": {"type": "float"},
+                                "requires_human_review": {"type": "boolean"},
+                                "source_ips": {
+                                    "type": "nested",
+                                    "properties": {
+                                        "ip_address": {"type": "ip"}
+                                    }
+                                },
+                                "response_codes": {
+                                    "type": "nested",
+                                    "properties": {
+                                        "response_code": {"type": "keyword"}
+                                    }
+                                },
+                                "possible_attack_patterns": {"type": "keyword"}
+                            }
+                        },
+                        "traffic_patterns": {
+                            "type": "nested",
+                            "dynamic": True
+                        },
+                        "statistics": {
+                            "type": "object",
+                            "dynamic": True
+                        }
+                    }
+                }
+            }
+        }
+        
+        # 템플릿 생성
+        response = client.indices.put_template(
+            name=template_name,
+            body=template_body
+        )
+        
+        if response.get('acknowledged'):
+            print(f"✅ Elasticsearch 템플릿 생성 성공: {template_name}")
+            return True
+        else:
+            print(f"❌ Elasticsearch 템플릿 생성 실패: {response}")
+            return False
+            
+    except RequestError as e:
+        print(f"❌ Elasticsearch 템플릿 생성 요청 오류: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Elasticsearch 템플릿 생성 중 오류 발생: {e}")
+        return False
 
-def extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
+def _extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
     """
     LOGID가 포함된 라인에서 LOGID와 원본 로그 내용을 분리합니다.
     
@@ -426,21 +438,7 @@ def extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
     else:
         return "UNKNOWN-LOGID", logid_line
 
-def verify_log_hash(logid: str, original_content: str) -> bool:
-    """
-    LOGID의 해시값이 원본 로그 내용과 일치하는지 검증합니다.
-    
-    Args:
-        logid: LOGID-{HASH} 형태의 문자열
-        original_content: 원본 로그 내용
-    
-    Returns:
-        bool: 해시값이 일치하면 True, 아니면 False
-    """
-    expected_logid = generate_log_hash(original_content)
-    return logid == expected_logid
-
-def create_log_hash_mapping(chunk: list[str]) -> Dict[str, str]:
+def _create_log_hash_mapping(chunk: list[str]) -> Dict[str, str]:
     """
     청크의 모든 로그에 대해 LOGID -> 원본 로그 내용 매핑을 생성합니다.
     
@@ -452,11 +450,11 @@ def create_log_hash_mapping(chunk: list[str]) -> Dict[str, str]:
     """
     mapping = {}
     for line in chunk:
-        logid, original_content = extract_log_content_from_logid_line(line.strip())
+        logid, original_content = _extract_log_content_from_logid_line(line.strip())
         mapping[logid] = original_content
     return mapping
 
-def format_and_send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None, chunk: Optional[list] = None) -> bool:
+def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None, chunk: Optional[list] = None) -> bool:
     """
     분석 결과를 포맷팅하고 Elasticsearch에 전송하는 통합 함수입니다.
     
@@ -469,14 +467,14 @@ def format_and_send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: st
     Returns:
         bool: 전송 성공 여부
     """
-    # 인덱스 존재 여부 확인 및 생성
-    # create_elasticsearch_index_if_not_exists()
+    # 인덱스 템플릿 존재 여부 확인 및 생성
+    _create_elasticsearch_index_template_if_not_exists()
     
     # 로그 해시 매핑 추가 (chunk가 제공된 경우)
     if chunk:
-        log_hash_mapping = create_log_hash_mapping(chunk)
+        log_hash_mapping = _create_log_hash_mapping(chunk)
         analysis_data["log_hash_mapping"] = log_hash_mapping
         print(f"📝 로그 해시 매핑 {len(log_hash_mapping)}개 항목 추가됨")
     
     # Elasticsearch에 전송
-    return send_to_elasticsearch(analysis_data, log_type, chunk_id)
+    return _send_to_elasticsearch(analysis_data, log_type, chunk_id)

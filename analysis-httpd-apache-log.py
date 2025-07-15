@@ -14,29 +14,12 @@ from dotenv import load_dotenv
 from commons import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
-from commons import format_and_send_to_elasticsearch
+from commons import send_to_elasticsearch
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
 
 #---------------------------------- Enums and Models ----------------------------------
-# class LogID(BaseModel):
-#     log_id: str = Field(
-#         description="""
-#         The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
-#         i.e. LOGID-KUHYQIPUYT or LOGID-ATCHSKCUWP
-#         """,
-#         # This is a regular expression that matches the LOGID-<LETTERS> format.
-#         # The model will fill in the <LETTERS> part.
-#     )
-#     # Find the log entry in a list of logs. Simple
-#     # conveience function.
-#     # def find_in(self, logs: list[str]) -> Optional[str]:
-#     #     for log in logs:
-#     #         if self.log_id in log:
-#     #             return log
-#     #     return None
-
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
@@ -85,73 +68,43 @@ class Statistics(BaseModel):
 class IPAddress(BaseModel):
     ip_address: str
 
+class LogEntry(BaseModel):
+    log_id: str
+    log_message: str
+
 class ApacheSecurityEvent(BaseModel):
-    # The log entry IDs that are relevant to this event.
-    # relevant_log_entry_ids: list[LogID]
-    relevant_log_entry_ids: list[str] = Field(description="관련된 로그 엔트리 ID 목록")
-
-    # The reasoning for why this event is relevant.
+    relevant_log_entry: list[LogEntry] = Field(description="관련된 로그 엔트리 목록")
     reasoning: str
-
-    # The type of event.
     event_type: str
-
-    # The severity of the event.
     severity: str = Field(description="CRITICAL, HIGH, MEDIUM, LOW, INFO 중 하나")
-
-    # Whether this event requires human review.
     requires_human_review: bool
-
-    # The confidence score for this event.
     confidence_score: float = Field(
         ge=0.0, 
         le=1.0,
         description="Confidence score between 0 and 1"
     )
-
-    # Apache error log specific fields
     log_level: str = Field(description="Apache 로그 레벨 (error, notice, warn, info)")
     error_message: str = Field(description="에러 메시지 내용")
     file_path: Optional[str] = Field(description="관련된 파일 경로")
     source_ips: list[str] = Field(description="관련된 클라이언트 IP 목록")
-
-    # Possible attack patterns for this event.
     possible_attack_patterns: list[str] = Field(description="가능한 공격 패턴 목록")
-
-    # Recommended actions for this event.
     recommended_actions: list[str]
 
 ### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
-    # # A summary of the analysis.
     summary: str
-    
-    # # Observations about the logs.
     observations: list[str]
-    
-    # # Planning for the analysis.
     planning: list[str]
-    
-    # # Security events found in the logs.
     events: list[ApacheSecurityEvent]
-    
-    # # Error patterns found in the logs.
     error_patterns: list[ErrorPattern]
-    
-    # # Apache module information
     module_info: list[ApacheModuleInfo]
-    
-    # # Statistics for the logs.
     statistics: Optional[Statistics]
-    
-    # # The highest severity event found.
     highest_severity: Optional[str] = Field(description="가장 높은 심각도 (CRITICAL, HIGH, MEDIUM, LOW, INFO)")
-    
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-# llm_provider = "ollama"
-llm_provider = "vllm"
+llm_provider = "ollama"
+# llm_provider = "vllm"
 # llm_provider = "openai"
 
 if llm_provider == "ollama":
@@ -194,7 +147,7 @@ else:
 log_path = "sample-logs/apache-100.log"
 # log_path = "sample-logs/apache-10k.log"
 
-chunk_size = 5
+chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
@@ -222,17 +175,18 @@ with open(log_path, "r", encoding="utf-8") as f:
                 "chunk_analysis_end_utc": chunk_end_time,
                 **parsed
             }
-            # print(json.dumps(parsed, ensure_ascii=False, indent=4))
-            # jq 명령어를 이용해 컬러/포맷 출력 (컬러 강제)
-            json_str = json.dumps(parsed, ensure_ascii=False)
-            subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
+            
+            print(json.dumps(parsed, ensure_ascii=False, indent=4))
+            # json_str = json.dumps(parsed, ensure_ascii=False)
+            # subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
+            
             ### Validate Type
             character = LogAnalysis.model_validate(parsed)
             # print(character)
             
             # Send to Elasticsearch
             print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
-            success = format_and_send_to_elasticsearch(parsed, "httpd_apache_error", i+1, chunk)
+            success = send_to_elasticsearch(parsed, "httpd_apache_error", i+1, chunk)
             if success:
                 print(f"✅ Chunk {i+1} 데이터 Elasticsearch 전송 완료")
             else:

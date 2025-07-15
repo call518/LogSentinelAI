@@ -14,12 +14,10 @@ from dotenv import load_dotenv
 from commons import PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
-from commons import format_and_send_to_elasticsearch
+from commons import send_to_elasticsearch
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
-
-### 기존 httpd-access-log 관련 모델은 그대로 두고, 아래에 linux system log 분석용 모델 추가
 
 #---------------------- Linux System Log용 Enums 및 Models ----------------------
 class LinuxSeverityLevel(str, Enum):
@@ -46,6 +44,10 @@ class LinuxEventType(str, Enum):
     ANOMALY = "ANOMALY"
     UNKNOWN = "UNKNOWN"
 
+class LogEntry(BaseModel):
+    log_id: str
+    log_message: str
+
 class LinuxSecurityEvent(BaseModel):
     event_type: LinuxEventType
     severity: LinuxSeverityLevel
@@ -55,9 +57,9 @@ class LinuxSecurityEvent(BaseModel):
     process: Optional[str] = None
     service: Optional[str] = None
     escalation_reason: Optional[str] = None
-    # relevant_log_entry_ids: list[LogID]
-    relevant_log_entry_ids: list[str] = Field(description="관련된 로그 엔트리 ID 목록")
+    relevant_log_entry: list[LogEntry] = Field(description="관련된 로그 엔트리 목록")
     requires_human_review: bool
+    recommended_actions: list[str]
     confidence_score: float = Field(ge=0.0, le=1.0)
 
 class LinuxStatistics(BaseModel):
@@ -84,8 +86,8 @@ class LinuxLogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-# llm_provider = "ollama"
-llm_provider = "vllm"
+llm_provider = "ollama"
+# llm_provider = "vllm"
 # llm_provider = "openai"
 
 if llm_provider == "ollama":
@@ -128,7 +130,7 @@ else:
 log_path = "sample-logs/linux-100.log"
 # log_path = "sample-logs/linux-10k.log"
 
-chunk_size = 5
+chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
@@ -150,14 +152,17 @@ with open(log_path, "r", encoding="utf-8") as f:
                 "chunk_analysis_end_utc": chunk_end_time,
                 **parsed
             }
-            json_str = json.dumps(parsed, ensure_ascii=False)
-            subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
+            
+            print(json.dumps(parsed, ensure_ascii=False, indent=4))
+            #json_str = json.dumps(parsed, ensure_ascii=False)
+            #subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
+            
             character = LinuxLogAnalysis.model_validate(parsed)
-            format_log_analysis_linux_system_log(character, chunk)
+            # print(character)
             
             # Send to Elasticsearch
             print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
-            success = format_and_send_to_elasticsearch(parsed, "linux_system", i+1, chunk)
+            success = send_to_elasticsearch(parsed, "linux_system", i+1, chunk)
             if success:
                 print(f"✅ Chunk {i+1} 데이터 Elasticsearch 전송 완료")
             else:

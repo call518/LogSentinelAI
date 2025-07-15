@@ -14,27 +14,12 @@ from dotenv import load_dotenv
 from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
-from commons import format_and_send_to_elasticsearch
+from commons import send_to_elasticsearch
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
 
 #---------------------------------- Enums and Models ----------------------------------
-# class LogID(BaseModel):
-#     log_id: str = Field(
-#         description="""
-#         The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
-#         i.e. LOGID-KUHYQIPUYT or LOGID-ATCHSKCUWP
-#         """,
-#         # This is a regular expression that matches the LOGID-<LETTERS> format.
-#         # The model will fill in the <LETTERS> part.
-#     )
-#     # def find_in(self, logs: list[str]) -> Optional[str]:
-#     #     for log in logs:
-#     #         if self.log_id in log:
-#     #             return log
-#     #     return None
-
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
@@ -70,71 +55,41 @@ class IPAddress(BaseModel):
 class ResponseCode(BaseModel):
     response_code: str
 
+class LogEntry(BaseModel):
+    log_id: str
+    log_message: str
+    
 class WebSecurityEvent(BaseModel):
-    # The log entry IDs that are relevant to this event.
-    # relevant_log_entry_ids: list[LogID]
-    relevant_log_entry_ids: list[str] = Field(description="관련된 로그 엔트리 ID 목록")
-
-    # The reasoning for why this event is relevant.
+    relevant_log_entry: list[LogEntry] = Field(description="관련된 로그 엔트리 목록")
     reasoning: str
-
-    # The type of event.
     event_type: str
-
-    # The severity of the event.
     severity: SeverityLevel
-
-    # Whether this event requires human review.
     requires_human_review: bool
-
-    # The confidence score for this event. I'm not sure if this
-    # is meaningful for language models, but it's here if we want it.
     confidence_score: float = Field(
         ge=0.0, 
         le=1.0,
         description="Confidence score between 0.0 and 1.0 (e.g., 0.8 for 80% confidence, not 80)"
     )
-
-    # Web-specific fields
     url_pattern: str = Field(
         min_length=1,
         description="URL pattern that triggered the event"
     )
-
     http_method: Literal["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT"]
     source_ips: list[IPAddress]
     response_codes: list[ResponseCode]
     user_agents: list[str]
-
-    # Possible attack patterns for this event.
     possible_attack_patterns: list[AttackType]
-
-    # Recommended actions for this event.
     recommended_actions: list[str]
     
 ### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
-    # # A summary of the analysis.
     summary: str
-    
-    # # Observations about the logs.
     observations: list[str]
-    
-    # # Planning for the analysis.
     planning: list[str]
-    
-    # # Security events found in the logs.
     events: list[WebSecurityEvent]
-    
-    # # Traffic patterns found in the logs.
     traffic_patterns: list[WebTrafficPattern]
-    
-    # # Statistics for the logs.
     statistics: Optional[Statistics]
-    
-    # # The highest severity event found.
     highest_severity: Optional[SeverityLevel]
-    
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
@@ -145,10 +100,10 @@ llm_provider = "ollama"
 if llm_provider == "ollama":
     ### Ollama API
     # llm_model = "mistral:7b"
-    llm_model = "qwen2.5-coder:3b"
+    # llm_model = "qwen2.5-coder:3b"
     # llm_model = "qwen2.5-coder:7b"
     # llm_model = "gemma3:1b"
-    # llm_model = "gemma3:4b"
+    llm_model = "gemma3:4b"
     # llm_model = "gemma3:12b"
     # llm_model = "call518/gemma3-tools-8192ctx:4b"
     client = ollama.Client()
@@ -182,7 +137,7 @@ else:
 log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
 
-chunk_size = 5
+chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
@@ -210,17 +165,18 @@ with open(log_path, "r", encoding="utf-8") as f:
                 "chunk_analysis_end_utc": chunk_end_time,
                 **parsed
             }
-            # print(json.dumps(parsed, ensure_ascii=False, indent=4))
-            # jq 명령어를 이용해 컬러/포맷 출력 (컬러 강제)
-            json_str = json.dumps(parsed, ensure_ascii=False)
-            subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
+            
+            print(json.dumps(parsed, ensure_ascii=False, indent=4))
+            # json_str = json.dumps(parsed, ensure_ascii=False)
+            # subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
+            
             ### Validate Type
             character = LogAnalysis.model_validate(parsed)
             # print(character)
             
             # Send to Elasticsearch
             print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
-            success = format_and_send_to_elasticsearch(parsed, "httpd_access", i+1, chunk)
+            success = send_to_elasticsearch(parsed, "httpd_access", i+1, chunk)
             if success:
                 print(f"✅ Chunk {i+1} 데이터 Elasticsearch 전송 완료")
             else:
