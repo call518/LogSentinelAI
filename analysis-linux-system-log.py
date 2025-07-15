@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Literal, Optional
 import json
-import uuid
 import os
 import sys
 import datetime
@@ -82,8 +81,8 @@ class LinuxLogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-llm_provider = "ollama"
-# llm_provider = "vllm"
+# llm_provider = "ollama"
+llm_provider = "vllm"
 # llm_provider = "openai"
 
 if llm_provider == "ollama":
@@ -126,7 +125,7 @@ else:
 log_path = "sample-logs/linux-100.log"
 # log_path = "sample-logs/linux-10k.log"
 
-chunk_size = 10
+chunk_size = 20
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):

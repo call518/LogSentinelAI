@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Literal, Optional
 import json
-import uuid
 import os
 import sys
 import datetime
@@ -94,7 +93,7 @@ class WebSecurityEvent(BaseModel):
     confidence_score: float = Field(
         ge=0.0, 
         le=1.0,
-        description="Confidence score between 0 and 1"
+        description="Confidence score between 0.0 and 1.0 (e.g., 0.8 for 80% confidence, not 80)"
     )
 
     # Web-specific fields
@@ -113,6 +112,8 @@ class WebSecurityEvent(BaseModel):
 
     # Recommended actions for this event.
     recommended_actions: list[str]
+    
+    related_log_entries: Optional[list] = None
 
 ### Top-level class for log analysis results
 class LogAnalysis(BaseModel):

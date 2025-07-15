@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Literal, Optional
 import json
-import uuid
 import os
 import sys
 import datetime
@@ -99,6 +98,8 @@ class ApacheSecurityEvent(BaseModel):
     # The severity of the event.
     severity: str = Field(description="CRITICAL, HIGH, MEDIUM, LOW, INFO 중 하나")
 
+    related_log_entries: Optional[list] = None
+
     # Whether this event requires human review.
     requires_human_review: bool
 
@@ -150,8 +151,8 @@ class LogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-llm_provider = "ollama"
-# llm_provider = "vllm"
+# llm_provider = "ollama"
+llm_provider = "vllm"
 # llm_provider = "openai"
 
 if llm_provider == "ollama":

@@ -48,6 +48,7 @@ Remember:
 - All date times are in ISO 8601 format
     - 2024-11-15T19:32:34Z for UTC
     - 2024-11-15T07:32:34−12:00 for datetime with offset
+- Confidence scores must be between 0.0 and 1.0 (use 0.8 for 80% confidence, NOT 80)
 - (NOTE) Summary, observations, and planning sections must be written in Korean.
 
 You should return valid JSON in the schema
@@ -108,6 +109,7 @@ Remember:
 - Escalate logs that a security admin should review
 - All logs are uniquely identified by an identifier in the form LOGID-<LETTERS>, i.e. LOGID-KU or LOGID-AT
 - All date times are in the format [Day Month DD HH:MM:SS YYYY]
+- Confidence scores must be between 0.0 and 1.0 (use 0.8 for 80% confidence, NOT 80)
 - (NOTE) Summary, observations, and planning sections must be written in Korean.
 
 You should return valid JSON in the schema
@@ -159,6 +161,7 @@ Remember:
 - Escalate logs that a security admin may wish to briefly review
 - All logs are uniquely identified by an identifier in the form LOGID-<LETTERS>, i.e. LOGID-KU or LOGID-AT
 - All date times are in the format 'Jun 14 15:16:01' or similar
+- Confidence scores must be between 0.0 and 1.0 (use 0.8 for 80% confidence, NOT 80)
 - (NOTE) Summary, observations, and planning sections must be written in Korean.
 
 You should return valid JSON in the schema
@@ -173,7 +176,7 @@ def chunked_iterable(iterable, size, debug=False):
     import uuid
     chunk = []
     for item in iterable:
-        logid = "LOGID-" + "".join([chr(ord('A') + (uuid.uuid4().int >> (i * 5)) % 26) for i in range(10)])
+        logid = "LOGID-" + "".join([chr(ord('A') + (uuid.uuid4().int >> (i * 5)) % 26) for i in range(20)])
         # 라인 앞에 LOGID 추가
         new_item = f"{logid} {item.rstrip()}\n"
         chunk.append(new_item)
@@ -229,7 +232,7 @@ def format_log_analysis_httpd_access_log(analysis, logs):
     print(f"{YELLOW}\nSecurity Events:{RESET}")
     for event in analysis.events:
         print(f"{YELLOW}  Event Type:{RESET} {event.event_type}")
-        print(f"{RED}  Severity:{RESET} {event.severity.value}")
+        print(f"{RED}  Severity:{RESET} {event.severity}")
         print(f"{GREEN}  Reasoning:{RESET} {event.reasoning}")
         print(f"{BLUE}  Relevant Log IDs:{RESET} {[lid.log_id for lid in event.relevant_log_entry_ids]}")
         print(f"{MAGENTA}  Requires Human Review:{RESET} {event.requires_human_review}")
@@ -241,7 +244,9 @@ def format_log_analysis_httpd_access_log(analysis, logs):
         print(f"{BLUE}  User Agents:{RESET} {event.user_agents}")
         print(f"{RED}  Possible Attack Patterns:{RESET} {event.possible_attack_patterns}")
         print(f"{GREEN}  Recommended Actions:{RESET} {event.recommended_actions}")
-        print("")
+        print(f"{BLUE}  Related Log Entries:{RESET}")
+        for entry in (getattr(event, 'related_log_entries', []) or []):
+            print(f"    {getattr(entry, 'raw', entry)}")
     print(f"{YELLOW}\nTraffic Patterns:{RESET}")
     for tp in analysis.traffic_patterns:
         print(f"{CYAN}- URL Path:{RESET} {tp.url_path}, Method: {tp.http_method}, Hits: {tp.hits_count}, Unique IPs: {tp.unique_ips}")
@@ -249,15 +254,17 @@ def format_log_analysis_httpd_access_log(analysis, logs):
         print(f"{BLUE}  Request IPs:{RESET} {tp.request_ips}")
     if analysis.statistics is not None:
         print(f"{YELLOW}\nStatistics:{RESET}")
-        print(f"{MAGENTA}  Requests by IP:{RESET}")
-        for ip, count in analysis.statistics.request_count_by_ip.items():
-            print(f"{CYAN}    {ip}:{RESET} {count}")
-        print(f"{MAGENTA}  Requests by URL Path:{RESET}")
-        for url, count in analysis.statistics.request_count_by_url_path.items():
-            print(f"{CYAN}    {url}:{RESET} {count}")
+        if hasattr(analysis.statistics, 'request_count_by_ip') and analysis.statistics.request_count_by_ip:
+            print(f"{MAGENTA}  Requests by IP:{RESET}")
+            for ip, count in analysis.statistics.request_count_by_ip.items():
+                print(f"{CYAN}    {ip}:{RESET} {count}")
+        if hasattr(analysis.statistics, 'request_count_by_url_path') and analysis.statistics.request_count_by_url_path:
+            print(f"{MAGENTA}  Requests by URL Path:{RESET}")
+            for url, count in analysis.statistics.request_count_by_url_path.items():
+                print(f"{CYAN}    {url}:{RESET} {count}")
     else:
         print(f"{YELLOW}\nStatistics:{RESET} N/A")
-    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity.value if analysis.highest_severity is not None else 'N/A'}")
+    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity if analysis.highest_severity is not None else 'N/A'}")
     print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
     print(f"{MAGENTA}=============================================={RESET}\n")
 
@@ -282,7 +289,7 @@ def format_log_analysis_httpd_apache_error_log(analysis, logs):
     print(f"{YELLOW}\nSecurity Events:{RESET}")
     for event in analysis.events:
         print(f"{YELLOW}  Event Type:{RESET} {event.event_type}")
-        print(f"{RED}  Severity:{RESET} {event.severity.value}")
+        print(f"{RED}  Severity:{RESET} {event.severity}")
         print(f"{GREEN}  Reasoning:{RESET} {event.reasoning}")
         print(f"{BLUE}  Relevant Log IDs:{RESET} {event.relevant_log_entry_ids}")
         print(f"{MAGENTA}  Requires Human Review:{RESET} {event.requires_human_review}")
@@ -293,7 +300,9 @@ def format_log_analysis_httpd_apache_error_log(analysis, logs):
         print(f"{BLUE}  Error Message:{RESET} {event.error_message}")
         print(f"{RED}  Possible Attack Patterns:{RESET} {event.possible_attack_patterns}")
         print(f"{GREEN}  Recommended Actions:{RESET} {event.recommended_actions}")
-        print("")
+        print(f"{BLUE}  Related Log Entries:{RESET}")
+        for entry in (getattr(event, 'related_log_entries', []) or []):
+            print(f"    {getattr(entry, 'raw', entry)}")
     print(f"{YELLOW}\nError Patterns:{RESET}")
     for ep in analysis.error_patterns:
         print(f"{CYAN}- Error Type:{RESET} {ep.error_type}, Count: {ep.occurrences}, File: {ep.file_path}")
@@ -317,7 +326,7 @@ def format_log_analysis_httpd_apache_error_log(analysis, logs):
                 print(f"{CYAN}    {level}:{RESET} {count}")
     else:
         print(f"{YELLOW}\nStatistics:{RESET} N/A")
-    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity.value if analysis.highest_severity is not None else 'N/A'}")
+    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity if analysis.highest_severity is not None else 'N/A'}")
     print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
     print(f"{MAGENTA}================================================={RESET}\n")
 
@@ -341,7 +350,7 @@ def format_log_analysis_linux_system_log(analysis, logs):
     print(f"{YELLOW}\nSecurity Events:{RESET}")
     for event in analysis.events:
         print(f"{YELLOW}  Event Type:{RESET} {event.event_type}")
-        print(f"{RED}  Severity:{RESET} {event.severity.value}")
+        print(f"{RED}  Severity:{RESET} {event.severity}")
         print(f"{GREEN}  Description:{RESET} {event.description}")
         print(f"{BLUE}  Source IP:{RESET} {event.source_ip}")
         print(f"{BLUE}  Username:{RESET} {event.username}")
@@ -353,7 +362,6 @@ def format_log_analysis_linux_system_log(analysis, logs):
         print(f"{BLUE}  Related Log Entries:{RESET}")
         for entry in (getattr(event, 'related_log_entries', []) or []):
             print(f"    {getattr(entry, 'raw', entry)}")
-        print("")
     if analysis.statistics is not None:
         print(f"{YELLOW}\nStatistics:{RESET}")
         if getattr(analysis.statistics, 'auth_failures_by_ip', None):
@@ -394,6 +402,6 @@ def format_log_analysis_linux_system_log(analysis, logs):
                 print(f"{CYAN}    {typ}:{RESET} {count}")
     else:
         print(f"{YELLOW}\nStatistics:{RESET} N/A")
-    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity.value if analysis.highest_severity is not None else 'N/A'}")
+    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity if analysis.highest_severity is not None else 'N/A'}")
     print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
     print(f"{MAGENTA}=============================================={RESET}\n")
