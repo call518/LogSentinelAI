@@ -82,7 +82,8 @@ class LinuxLogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-llm_provider = "ollama"
+# llm_provider = "ollama"
+llm_provider = "vllm"
 # llm_provider = "openai"
 
 if llm_provider == "ollama":
@@ -96,6 +97,16 @@ if llm_provider == "ollama":
     # llm_model = "call518/gemma3-tools-8192ctx:4b"
     client = ollama.Client()
     model = outlines.from_ollama(client, llm_model)
+elif llm_provider == "vllm":
+    ### Local vLLM API
+    openai_api_key = "dummy"
+    llm_model = "vLLM-Qwen2.5-3B-Instruct"
+    # llm_model = "gpt-4o"
+    client = openai.OpenAI(
+        base_url="http://127.0.0.1:5000/v1",  # Local vLLM API endpoint
+        api_key=openai_api_key
+    )
+    model = outlines.from_openai(client, llm_model)
 elif llm_provider == "openai":
     ### OpenAI API
     load_dotenv()
@@ -111,9 +122,10 @@ elif llm_provider == "openai":
 else:
     raise ValueError("Unsupported LLM provider. Use 'ollama' or 'openai'.")
 
-## 분석 대상 로그 파일을 선택 (기존 access log 분석 코드와 분리)
-# log_path = "sample-logs/access-100.log"
+# log_path = "sample-logs/linux-10.log"
 log_path = "sample-logs/linux-100.log"
+# log_path = "sample-logs/linux-10k.log"
+
 chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:

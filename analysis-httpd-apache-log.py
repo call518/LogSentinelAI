@@ -179,11 +179,10 @@ elif llm_provider == "openai":
 else:
     raise ValueError("Unsupported LLM provider. Use 'ollama' or 'openai'.")
 
-# log_path = "sample-logs/access-5.log" 
-# log_path = "sample-logs/access-10.log" 
-# log_path = "sample-logs/access-100.log"
-# log_path = "sample-logs/access-10k.log"
+# log_path = "sample-logs/apache-10.log"
 log_path = "sample-logs/apache-100.log"
+# log_path = "sample-logs/apache-10k.log"
+
 chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
