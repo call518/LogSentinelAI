@@ -15,27 +15,28 @@ from commons import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
 from commons import chunked_iterable
 from commons import format_log_analysis_httpd_apache_error_log
 from commons import print_chunk_contents
+from commons import format_and_send_to_elasticsearch
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
 
 #---------------------------------- Enums and Models ----------------------------------
-class LogID(BaseModel):
-    log_id: str = Field(
-        description="""
-        The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
-        i.e. LOGID-KUHYQIPUYT or LOGID-ATCHSKCUWP
-        """,
-        # This is a regular expression that matches the LOGID-<LETTERS> format.
-        # The model will fill in the <LETTERS> part.
-    )
-    # Find the log entry in a list of logs. Simple
-    # conveience function.
-    def find_in(self, logs: list[str]) -> Optional[str]:
-        for log in logs:
-            if self.log_id in log:
-                return log
-        return None
+# class LogID(BaseModel):
+#     log_id: str = Field(
+#         description="""
+#         The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
+#         i.e. LOGID-KUHYQIPUYT or LOGID-ATCHSKCUWP
+#         """,
+#         # This is a regular expression that matches the LOGID-<LETTERS> format.
+#         # The model will fill in the <LETTERS> part.
+#     )
+#     # Find the log entry in a list of logs. Simple
+#     # conveience function.
+#     # def find_in(self, logs: list[str]) -> Optional[str]:
+#     #     for log in logs:
+#     #         if self.log_id in log:
+#     #             return log
+#     #     return None
 
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
@@ -87,6 +88,7 @@ class IPAddress(BaseModel):
 
 class ApacheSecurityEvent(BaseModel):
     # The log entry IDs that are relevant to this event.
+    # relevant_log_entry_ids: list[LogID]
     relevant_log_entry_ids: list[str] = Field(description="관련된 로그 엔트리 ID 목록")
 
     # The reasoning for why this event is relevant.
@@ -97,8 +99,6 @@ class ApacheSecurityEvent(BaseModel):
 
     # The severity of the event.
     severity: str = Field(description="CRITICAL, HIGH, MEDIUM, LOW, INFO 중 하나")
-
-    related_log_entries: Optional[list] = None
 
     # Whether this event requires human review.
     requires_human_review: bool
@@ -195,7 +195,7 @@ else:
 log_path = "sample-logs/apache-100.log"
 # log_path = "sample-logs/apache-10k.log"
 
-chunk_size = 10
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
@@ -233,5 +233,14 @@ with open(log_path, "r", encoding="utf-8") as f:
             
             # Format and print the log analysis
             format_log_analysis_httpd_apache_error_log(character, chunk)
+            
+            # Send to Elasticsearch
+            print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
+            success = format_and_send_to_elasticsearch(parsed, "httpd_apache_error", i+1, chunk)
+            if success:
+                print(f"✅ Chunk {i+1} 데이터 Elasticsearch 전송 완료")
+            else:
+                print(f"❌ Chunk {i+1} 데이터 Elasticsearch 전송 실패")
+                
         except Exception as e:
             print("Error parsing character:", e)

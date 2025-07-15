@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG, PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
 from commons import chunked_iterable, format_log_analysis_httpd_access_log, format_log_analysis_linux_system_log, print_chunk_contents
+from commons import format_and_send_to_elasticsearch
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
@@ -53,7 +54,8 @@ class LinuxSecurityEvent(BaseModel):
     process: Optional[str] = None
     service: Optional[str] = None
     escalation_reason: Optional[str] = None
-    related_log_entries: Optional[list] = None
+    # relevant_log_entry_ids: list[LogID]
+    relevant_log_entry_ids: list[str] = Field(description="관련된 로그 엔트리 ID 목록")
     requires_human_review: bool
     confidence_score: float = Field(ge=0.0, le=1.0)
 
@@ -125,7 +127,7 @@ else:
 log_path = "sample-logs/linux-100.log"
 # log_path = "sample-logs/linux-10k.log"
 
-chunk_size = 20
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
@@ -151,5 +153,14 @@ with open(log_path, "r", encoding="utf-8") as f:
             subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
             character = LinuxLogAnalysis.model_validate(parsed)
             format_log_analysis_linux_system_log(character, chunk)
+            
+            # Send to Elasticsearch
+            print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
+            success = format_and_send_to_elasticsearch(parsed, "linux_system", i+1, chunk)
+            if success:
+                print(f"✅ Chunk {i+1} 데이터 Elasticsearch 전송 완료")
+            else:
+                print(f"❌ Chunk {i+1} 데이터 Elasticsearch 전송 실패")
+                
         except Exception as e:
             print("Error parsing Linux log analysis:", e)

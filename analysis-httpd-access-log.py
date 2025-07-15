@@ -15,27 +15,26 @@ from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 from commons import chunked_iterable
 from commons import format_log_analysis_httpd_access_log
 from commons import print_chunk_contents
+from commons import format_and_send_to_elasticsearch
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
 
 #---------------------------------- Enums and Models ----------------------------------
-class LogID(BaseModel):
-    log_id: str = Field(
-        description="""
-        The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
-        i.e. LOGID-KUHYQIPUYT or LOGID-ATCHSKCUWP
-        """,
-        # This is a regular expression that matches the LOGID-<LETTERS> format.
-        # The model will fill in the <LETTERS> part.
-    )
-    # Find the log entry in a list of logs. Simple
-    # conveience function.
-    def find_in(self, logs: list[str]) -> Optional[str]:
-        for log in logs:
-            if self.log_id in log:
-                return log
-        return None
+# class LogID(BaseModel):
+#     log_id: str = Field(
+#         description="""
+#         The ID of the log entry in the format of LOGID-<LETTERS>, where <LETTERS> indicates the log identifier at the beginning of each log entry and consists of uppercase alphabet letters only (A–Z, no digits).
+#         i.e. LOGID-KUHYQIPUYT or LOGID-ATCHSKCUWP
+#         """,
+#         # This is a regular expression that matches the LOGID-<LETTERS> format.
+#         # The model will fill in the <LETTERS> part.
+#     )
+#     # def find_in(self, logs: list[str]) -> Optional[str]:
+#     #     for log in logs:
+#     #         if self.log_id in log:
+#     #             return log
+#     #     return None
 
 class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
@@ -74,7 +73,8 @@ class ResponseCode(BaseModel):
 
 class WebSecurityEvent(BaseModel):
     # The log entry IDs that are relevant to this event.
-    relevant_log_entry_ids: list[LogID]
+    # relevant_log_entry_ids: list[LogID]
+    relevant_log_entry_ids: list[str] = Field(description="관련된 로그 엔트리 ID 목록")
 
     # The reasoning for why this event is relevant.
     reasoning: str
@@ -113,8 +113,6 @@ class WebSecurityEvent(BaseModel):
     # Recommended actions for this event.
     recommended_actions: list[str]
     
-    related_log_entries: Optional[list] = None
-
 ### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
     # # A summary of the analysis.
@@ -185,7 +183,7 @@ else:
 log_path = "sample-logs/access-100.log"
 # log_path = "sample-logs/access-10k.log"
 
-chunk_size = 10
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
@@ -223,5 +221,14 @@ with open(log_path, "r", encoding="utf-8") as f:
             
             # Format and print the log analysis
             format_log_analysis_httpd_access_log(character, chunk)
+            
+            # Send to Elasticsearch
+            print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
+            success = format_and_send_to_elasticsearch(parsed, "httpd_access", i+1, chunk)
+            if success:
+                print(f"✅ Chunk {i+1} 데이터 Elasticsearch 전송 완료")
+            else:
+                print(f"❌ Chunk {i+1} 데이터 Elasticsearch 전송 실패")
+                
         except Exception as e:
             print("Error parsing character:", e)
