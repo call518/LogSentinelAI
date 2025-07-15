@@ -11,8 +11,9 @@ import datetime
 import subprocess
 from dotenv import load_dotenv
 
-from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG, PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
-from commons import chunked_iterable, format_log_analysis_httpd_access_log, format_log_analysis_linux_system_log, print_chunk_contents
+from commons import PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
+from commons import chunked_iterable
+from commons import print_chunk_contents
 from commons import format_and_send_to_elasticsearch
 
 ### Install the required packages

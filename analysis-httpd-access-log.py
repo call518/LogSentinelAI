@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 
 from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 from commons import chunked_iterable
-from commons import format_log_analysis_httpd_access_log
 from commons import print_chunk_contents
 from commons import format_and_send_to_elasticsearch
 
@@ -218,9 +217,6 @@ with open(log_path, "r", encoding="utf-8") as f:
             ### Validate Type
             character = LogAnalysis.model_validate(parsed)
             # print(character)
-            
-            # Format and print the log analysis
-            format_log_analysis_httpd_access_log(character, chunk)
             
             # Send to Elasticsearch
             print(f"\n🔄 Elasticsearch로 데이터 전송 중...")

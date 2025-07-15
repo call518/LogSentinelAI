@@ -234,198 +234,6 @@ def print_chunk_contents(chunk):
         print(f"{logid} {rest}")
     print("")
 
-def format_log_analysis_httpd_access_log(analysis, logs):
-    # ANSI color codes
-    RED = "\033[91m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    BLUE = "\033[94m"
-    MAGENTA = "\033[95m"
-    CYAN = "\033[96m"
-    RESET = "\033[0m"
-
-    print(f"{MAGENTA}\n===== HUMAN-READABLE LOG ANALYSIS SUMMARY ====={RESET}")
-    print(f"{YELLOW}Summary:{RESET} {analysis.summary}")
-    print(f"{YELLOW}\nObservations:{RESET}")
-    for obs in analysis.observations:
-        print(f"{CYAN}- {obs}{RESET}")
-    print(f"{YELLOW}\nPlanning:{RESET}")
-    for plan in analysis.planning:
-        print(f"{CYAN}- {plan}{RESET}")
-    print(f"{YELLOW}\nSecurity Events:{RESET}")
-    for event in analysis.events:
-        print(f"{YELLOW}  Event Type:{RESET} {event.event_type}")
-        print(f"{RED}  Severity:{RESET} {event.severity}")
-        print(f"{GREEN}  Reasoning:{RESET} {event.reasoning}")
-        print(f"{BLUE}  Relevant Log IDs:{RESET} {[lid.log_id for lid in event.relevant_log_entry_ids]}")
-        print(f"{MAGENTA}  Requires Human Review:{RESET} {event.requires_human_review}")
-        print(f"{CYAN}  Confidence Score:{RESET} {event.confidence_score}")
-        print(f"{BLUE}  URL Pattern:{RESET} {event.url_pattern}")
-        print(f"{BLUE}  HTTP Method:{RESET} {event.http_method}")
-        print(f"{BLUE}  Source IPs:{RESET} {[ip.ip_address for ip in event.source_ips]}")
-        print(f"{BLUE}  Response Codes:{RESET} {[rc.response_code for rc in event.response_codes]}")
-        print(f"{BLUE}  User Agents:{RESET} {event.user_agents}")
-        print(f"{RED}  Possible Attack Patterns:{RESET} {event.possible_attack_patterns}")
-        print(f"{GREEN}  Recommended Actions:{RESET} {event.recommended_actions}")
-    print(f"{YELLOW}\nTraffic Patterns:{RESET}")
-    for tp in analysis.traffic_patterns:
-        print(f"{CYAN}- URL Path:{RESET} {tp.url_path}, Method: {tp.http_method}, Hits: {tp.hits_count}, Unique IPs: {tp.unique_ips}")
-        print(f"{BLUE}  Response Codes:{RESET} {tp.response_codes}")
-        print(f"{BLUE}  Request IPs:{RESET} {tp.request_ips}")
-    if analysis.statistics is not None:
-        print(f"{YELLOW}\nStatistics:{RESET}")
-        if hasattr(analysis.statistics, 'request_count_by_ip') and analysis.statistics.request_count_by_ip:
-            print(f"{MAGENTA}  Requests by IP:{RESET}")
-            for ip, count in analysis.statistics.request_count_by_ip.items():
-                print(f"{CYAN}    {ip}:{RESET} {count}")
-        if hasattr(analysis.statistics, 'request_count_by_url_path') and analysis.statistics.request_count_by_url_path:
-            print(f"{MAGENTA}  Requests by URL Path:{RESET}")
-            for url, count in analysis.statistics.request_count_by_url_path.items():
-                print(f"{CYAN}    {url}:{RESET} {count}")
-    else:
-        print(f"{YELLOW}\nStatistics:{RESET} N/A")
-    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity if analysis.highest_severity is not None else 'N/A'}")
-    print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
-    print(f"{MAGENTA}=============================================={RESET}\n")
-
-def format_log_analysis_httpd_apache_error_log(analysis, logs):
-    # ANSI color codes
-    RED = "\033[91m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    BLUE = "\033[94m"
-    MAGENTA = "\033[95m"
-    CYAN = "\033[96m"
-    RESET = "\033[0m"
-
-    print(f"{MAGENTA}\n===== HUMAN-READABLE APACHE ERROR LOG ANALYSIS SUMMARY ====={RESET}")
-    print(f"{YELLOW}Summary:{RESET} {analysis.summary}")
-    print(f"{YELLOW}\nObservations:{RESET}")
-    for obs in analysis.observations:
-        print(f"{CYAN}- {obs}{RESET}")
-    print(f"{YELLOW}\nPlanning:{RESET}")
-    for plan in analysis.planning:
-        print(f"{CYAN}- {plan}{RESET}")
-    print(f"{YELLOW}\nSecurity Events:{RESET}")
-    for event in analysis.events:
-        print(f"{YELLOW}  Event Type:{RESET} {event.event_type}")
-        print(f"{RED}  Severity:{RESET} {event.severity}")
-        print(f"{GREEN}  Reasoning:{RESET} {event.reasoning}")
-        print(f"{BLUE}  Relevant Log IDs:{RESET} {event.relevant_log_entry_ids}")
-        print(f"{MAGENTA}  Requires Human Review:{RESET} {event.requires_human_review}")
-        print(f"{CYAN}  Confidence Score:{RESET} {event.confidence_score}")
-        print(f"{BLUE}  Log Level:{RESET} {event.log_level}")
-        print(f"{BLUE}  File Path:{RESET} {event.file_path}")
-        print(f"{BLUE}  Source IPs:{RESET} {event.source_ips}")
-        print(f"{BLUE}  Error Message:{RESET} {event.error_message}")
-        print(f"{RED}  Possible Attack Patterns:{RESET} {event.possible_attack_patterns}")
-        print(f"{GREEN}  Recommended Actions:{RESET} {event.recommended_actions}")
-        print(f"{BLUE}  Related Log Entries:{RESET}")
-        for entry in (getattr(event, 'related_log_entries', []) or []):
-            print(f"    {getattr(entry, 'raw', entry)}")
-    print(f"{YELLOW}\nError Patterns:{RESET}")
-    for ep in analysis.error_patterns:
-        print(f"{CYAN}- Error Type:{RESET} {ep.error_type}, Count: {ep.occurrences}, File: {ep.file_path}")
-        print(f"{BLUE}  Client IPs:{RESET} {ep.client_ips}")
-    print(f"{YELLOW}\nModule Information:{RESET}")
-    for mi in analysis.module_info:
-        print(f"{CYAN}- Module:{RESET} {mi.module_name}, Operation: {mi.operation}, Status: {mi.status}")
-    if analysis.statistics is not None:
-        print(f"{YELLOW}\nStatistics:{RESET}")
-        if hasattr(analysis.statistics, 'error_count_by_ip') and analysis.statistics.error_count_by_ip:
-            print(f"{MAGENTA}  Errors by IP:{RESET}")
-            for ip, count in analysis.statistics.error_count_by_ip.items():
-                print(f"{CYAN}    {ip}:{RESET} {count}")
-        if hasattr(analysis.statistics, 'error_count_by_type') and analysis.statistics.error_count_by_type:
-            print(f"{MAGENTA}  Errors by Type:{RESET}")
-            for error_type, count in analysis.statistics.error_count_by_type.items():
-                print(f"{CYAN}    {error_type}:{RESET} {count}")
-        if hasattr(analysis.statistics, 'log_level_distribution') and analysis.statistics.log_level_distribution:
-            print(f"{MAGENTA}  Log Level Distribution:{RESET}")
-            for level, count in analysis.statistics.log_level_distribution.items():
-                print(f"{CYAN}    {level}:{RESET} {count}")
-    else:
-        print(f"{YELLOW}\nStatistics:{RESET} N/A")
-    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity if analysis.highest_severity is not None else 'N/A'}")
-    print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
-    print(f"{MAGENTA}================================================={RESET}\n")
-
-def format_log_analysis_linux_system_log(analysis, logs):
-    RED = "\033[91m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    BLUE = "\033[94m"
-    MAGENTA = "\033[95m"
-    CYAN = "\033[96m"
-    RESET = "\033[0m"
-
-    print(f"{MAGENTA}\n===== HUMAN-READABLE LINUX SYSTEM LOG ANALYSIS SUMMARY ====={RESET}")
-    print(f"{YELLOW}Summary:{RESET} {analysis.summary}")
-    print(f"{YELLOW}\nObservations:{RESET}")
-    for obs in analysis.observations:
-        print(f"{CYAN}- {obs}{RESET}")
-    print(f"{YELLOW}\nPlanning:{RESET}")
-    for plan in analysis.planning:
-        print(f"{CYAN}- {plan}{RESET}")
-    print(f"{YELLOW}\nSecurity Events:{RESET}")
-    for event in analysis.events:
-        print(f"{YELLOW}  Event Type:{RESET} {event.event_type}")
-        print(f"{RED}  Severity:{RESET} {event.severity}")
-        print(f"{GREEN}  Description:{RESET} {event.description}")
-        print(f"{BLUE}  Source IP:{RESET} {event.source_ip}")
-        print(f"{BLUE}  Username:{RESET} {event.username}")
-        print(f"{BLUE}  Process:{RESET} {getattr(event, 'process', None)}")
-        print(f"{BLUE}  Service:{RESET} {getattr(event, 'service', None)}")
-        print(f"{BLUE}  Escalation Reason:{RESET} {getattr(event, 'escalation_reason', None)}")
-        print(f"{MAGENTA}  Requires Human Review:{RESET} {event.requires_human_review}")
-        print(f"{CYAN}  Confidence Score:{RESET} {event.confidence_score}")
-        print(f"{BLUE}  Related Log Entries:{RESET}")
-        for entry in (getattr(event, 'related_log_entries', []) or []):
-            print(f"    {getattr(entry, 'raw', entry)}")
-    if analysis.statistics is not None:
-        print(f"{YELLOW}\nStatistics:{RESET}")
-        if getattr(analysis.statistics, 'auth_failures_by_ip', None):
-            print(f"{MAGENTA}  Auth Failures by IP:{RESET}")
-            for ip, count in analysis.statistics.auth_failures_by_ip.items():
-                print(f"{CYAN}    {ip}:{RESET} {count}")
-        if getattr(analysis.statistics, 'ftp_connections_by_ip', None):
-            print(f"{MAGENTA}  FTP Connections by IP:{RESET}")
-            for ip, count in analysis.statistics.ftp_connections_by_ip.items():
-                print(f"{CYAN}    {ip}:{RESET} {count}")
-        if getattr(analysis.statistics, 'session_opened_count', None) is not None:
-            print(f"{MAGENTA}  Session Opened Count:{RESET} {analysis.statistics.session_opened_count}")
-        if getattr(analysis.statistics, 'session_closed_count', None) is not None:
-            print(f"{MAGENTA}  Session Closed Count:{RESET} {analysis.statistics.session_closed_count}")
-        if getattr(analysis.statistics, 'sudo_usage_by_user', None):
-            print(f"{MAGENTA}  Sudo Usage by User:{RESET}")
-            for user, count in analysis.statistics.sudo_usage_by_user.items():
-                print(f"{CYAN}    {user}:{RESET} {count}")
-        if getattr(analysis.statistics, 'cron_jobs_by_user', None):
-            print(f"{MAGENTA}  Cron Jobs by User:{RESET}")
-            for user, count in analysis.statistics.cron_jobs_by_user.items():
-                print(f"{CYAN}    {user}:{RESET} {count}")
-        if getattr(analysis.statistics, 'service_events', None):
-            print(f"{MAGENTA}  Service Events:{RESET}")
-            for svc, count in analysis.statistics.service_events.items():
-                print(f"{CYAN}    {svc}:{RESET} {count}")
-        if getattr(analysis.statistics, 'user_management_events', None):
-            print(f"{MAGENTA}  User Management Events:{RESET}")
-            for evt, count in analysis.statistics.user_management_events.items():
-                print(f"{CYAN}    {evt}:{RESET} {count}")
-        if getattr(analysis.statistics, 'kernel_events', None):
-            print(f"{MAGENTA}  Kernel Events:{RESET}")
-            for evt, count in analysis.statistics.kernel_events.items():
-                print(f"{CYAN}    {evt}:{RESET} {count}")
-        if getattr(analysis.statistics, 'anomaly_counts', None):
-            print(f"{MAGENTA}  Anomaly Counts:{RESET}")
-            for typ, count in analysis.statistics.anomaly_counts.items():
-                print(f"{CYAN}    {typ}:{RESET} {count}")
-    else:
-        print(f"{YELLOW}\nStatistics:{RESET} N/A")
-    print(f"{YELLOW}\nHighest Severity:{RESET} {analysis.highest_severity if analysis.highest_severity is not None else 'N/A'}")
-    print(f"{YELLOW}\nRequires Immediate Attention:{RESET} {analysis.requires_immediate_attention}")
-    print(f"{MAGENTA}=============================================={RESET}\n")
-
 def get_elasticsearch_client() -> Optional[Elasticsearch]:
     """
     Elasticsearch 클라이언트를 생성하고 연결을 테스트합니다.
@@ -508,82 +316,82 @@ def send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Optiona
         print(f"❌ Elasticsearch 전송 중 오류 발생: {e}")
         return False
 
-def create_elasticsearch_index_if_not_exists() -> bool:
-    """
-    Elasticsearch 인덱스가 존재하지 않으면 생성합니다.
+# def create_elasticsearch_index_if_not_exists() -> bool:
+#     """
+#     Elasticsearch 인덱스가 존재하지 않으면 생성합니다.
     
-    Returns:
-        bool: 인덱스 생성/확인 성공 여부
-    """
-    client = get_elasticsearch_client()
-    if not client:
-        return False
+#     Returns:
+#         bool: 인덱스 생성/확인 성공 여부
+#     """
+#     client = get_elasticsearch_client()
+#     if not client:
+#         return False
     
-    try:
-        # 인덱스 존재 여부 확인
-        if client.indices.exists(index=ELASTICSEARCH_INDEX):
-            print(f"✅ Elasticsearch 인덱스 이미 존재: {ELASTICSEARCH_INDEX}")
-            return True
+#     try:
+#         # 인덱스 존재 여부 확인
+#         if client.indices.exists(index=ELASTICSEARCH_INDEX):
+#             print(f"✅ Elasticsearch 인덱스 이미 존재: {ELASTICSEARCH_INDEX}")
+#             return True
         
-        # 인덱스 매핑 정의
-        index_mapping = {
-            "mappings": {
-                "properties": {
-                    "@timestamp": {"type": "date"},
-                    "chunk_analysis_start_utc": {"type": "date"},
-                    "chunk_analysis_end_utc": {"type": "date"},
-                    "log_type": {"type": "keyword"},
-                    "document_id": {"type": "keyword"},
-                    "summary": {"type": "text", "analyzer": "standard"},
-                    "observations": {"type": "text", "analyzer": "standard"},
-                    "planning": {"type": "text", "analyzer": "standard"},
-                    "highest_severity": {"type": "keyword"},
-                    "requires_immediate_attention": {"type": "boolean"},
-                    "log_hash_mapping": {
-                        "type": "object",
-                        "properties": {
-                            "LOGID-*": {"type": "text", "index": False}
-                        }
-                    },
-                    "events": {
-                        "type": "nested",
-                        "properties": {
-                            "event_type": {"type": "keyword"},
-                            "severity": {"type": "keyword"},
-                            "confidence_score": {"type": "float"},
-                            "requires_human_review": {"type": "boolean"},
-                            "source_ips": {"type": "ip"},
-                            "possible_attack_patterns": {"type": "keyword"}
-                        }
-                    },
-                    "statistics": {"type": "object", "enabled": True}
-                }
-            },
-            "settings": {
-                "number_of_shards": 1,
-                "number_of_replicas": 0
-            }
-        }
+#         # 인덱스 매핑 정의
+#         index_mapping = {
+#             "mappings": {
+#                 "properties": {
+#                     "@timestamp": {"type": "date"},
+#                     "chunk_analysis_start_utc": {"type": "date"},
+#                     "chunk_analysis_end_utc": {"type": "date"},
+#                     "log_type": {"type": "keyword"},
+#                     "document_id": {"type": "keyword"},
+#                     "summary": {"type": "text", "analyzer": "standard"},
+#                     "observations": {"type": "text", "analyzer": "standard"},
+#                     "planning": {"type": "text", "analyzer": "standard"},
+#                     "highest_severity": {"type": "keyword"},
+#                     "requires_immediate_attention": {"type": "boolean"},
+#                     "log_hash_mapping": {
+#                         "type": "object",
+#                         "properties": {
+#                             "LOGID-*": {"type": "text", "index": False}
+#                         }
+#                     },
+#                     "events": {
+#                         "type": "nested",
+#                         "properties": {
+#                             "event_type": {"type": "keyword"},
+#                             "severity": {"type": "keyword"},
+#                             "confidence_score": {"type": "float"},
+#                             "requires_human_review": {"type": "boolean"},
+#                             "source_ips": {"type": "ip"},
+#                             "possible_attack_patterns": {"type": "keyword"}
+#                         }
+#                     },
+#                     "statistics": {"type": "object", "enabled": True}
+#                 }
+#             },
+#             "settings": {
+#                 "number_of_shards": 1,
+#                 "number_of_replicas": 0
+#             }
+#         }
         
-        # 인덱스 생성
-        response = client.indices.create(
-            index=ELASTICSEARCH_INDEX,
-            body=index_mapping
-        )
+#         # 인덱스 생성
+#         response = client.indices.create(
+#             index=ELASTICSEARCH_INDEX,
+#             body=index_mapping
+#         )
         
-        if response.get('acknowledged'):
-            print(f"✅ Elasticsearch 인덱스 생성 성공: {ELASTICSEARCH_INDEX}")
-            return True
-        else:
-            print(f"❌ Elasticsearch 인덱스 생성 실패: {response}")
-            return False
+#         if response.get('acknowledged'):
+#             print(f"✅ Elasticsearch 인덱스 생성 성공: {ELASTICSEARCH_INDEX}")
+#             return True
+#         else:
+#             print(f"❌ Elasticsearch 인덱스 생성 실패: {response}")
+#             return False
             
-    except RequestError as e:
-        print(f"❌ Elasticsearch 인덱스 생성 요청 오류: {e}")
-        return False
-    except Exception as e:
-        print(f"❌ Elasticsearch 인덱스 생성 중 오류 발생: {e}")
-        return False
+#     except RequestError as e:
+#         print(f"❌ Elasticsearch 인덱스 생성 요청 오류: {e}")
+#         return False
+#     except Exception as e:
+#         print(f"❌ Elasticsearch 인덱스 생성 중 오류 발생: {e}")
+#         return False
 
 def generate_log_hash(log_content: str) -> str:
     """
@@ -662,7 +470,7 @@ def format_and_send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: st
         bool: 전송 성공 여부
     """
     # 인덱스 존재 여부 확인 및 생성
-    create_elasticsearch_index_if_not_exists()
+    # create_elasticsearch_index_if_not_exists()
     
     # 로그 해시 매핑 추가 (chunk가 제공된 경우)
     if chunk:
