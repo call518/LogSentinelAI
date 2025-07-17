@@ -86,15 +86,21 @@ class LinuxLogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-llm_provider = "ollama"
-# llm_provider = "vllm"
+# llm_provider = "ollama"
+llm_provider = "vllm"
 # llm_provider = "openai"
 
 if llm_provider == "ollama":
     ### Ollama API
     # llm_model = "mistral:7b"
+    # llm_model = "qwen2.5-coder:0.5b"
+    # llm_model = "qwen2.5-coder:1.5b"
     llm_model = "qwen2.5-coder:3b"
     # llm_model = "qwen2.5-coder:7b"
+    # llm_model = "qwen3:0.6b"
+    # llm_model = "qwen3:1.7b"
+    # llm_model = "qwen3:4b"
+    # llm_model = "qwen3:8b"
     # llm_model = "gemma3:1b"
     # llm_model = "gemma3:4b"
     # llm_model = "gemma3:12b"

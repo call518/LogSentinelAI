@@ -103,8 +103,8 @@ class LogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-llm_provider = "ollama"
-# llm_provider = "vllm"
+# llm_provider = "ollama"
+llm_provider = "vllm"
 # llm_provider = "openai"
 
 if llm_provider == "ollama":

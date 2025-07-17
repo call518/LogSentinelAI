@@ -320,106 +320,6 @@ def _send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Option
         print(f"❌ Elasticsearch 전송 중 오류 발생: {e}")
         return False
 
-def _create_elasticsearch_index_template_if_not_exists() -> bool:
-    """
-    Elasticsearch 인덱스 템플릿을 생성하여 동적 매핑을 허용합니다.
-    
-    Returns:
-        bool: 템플릿 생성/확인 성공 여부
-    """
-    client = _get_elasticsearch_client()
-    if not client:
-        return False
-    
-    try:
-        template_name = "sonarlog-template"
-        
-        # 템플릿 존재 여부 확인
-        if client.indices.exists_template(name=template_name):
-            print(f"✅ Elasticsearch 템플릿 이미 존재: {template_name}")
-            return True
-        
-        # 인덱스 템플릿 정의 (동적 매핑 허용)
-        template_body = {
-            "index_patterns": ["sonarlog-*"],
-            "template": {
-                "settings": {
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0
-                },
-                "mappings": {
-                    "dynamic": True,  # 동적 매핑 허용
-                    "properties": {
-                        "@timestamp": {"type": "date"},
-                        "chunk_analysis_start_utc": {"type": "date"},
-                        "chunk_analysis_end_utc": {"type": "date"},
-                        "log_type": {"type": "keyword"},
-                        "document_id": {"type": "keyword"},
-                        "summary": {"type": "text", "analyzer": "standard"},
-                        "observations": {"type": "text", "analyzer": "standard"},
-                        "planning": {"type": "text", "analyzer": "standard"},
-                        "highest_severity": {"type": "keyword"},
-                        "requires_immediate_attention": {"type": "boolean"},
-                        "events": {
-                            "type": "nested",
-                            "dynamic": True,  # 중첩 객체도 동적 매핑 허용
-                            "properties": {
-                                "relevant_log_entry": {
-                                    "type": "nested",
-                                    "dynamic": True
-                                },
-                                "event_type": {"type": "keyword"},
-                                "severity": {"type": "keyword"},
-                                "confidence_score": {"type": "float"},
-                                "requires_human_review": {"type": "boolean"},
-                                "source_ips": {
-                                    "type": "nested",
-                                    "properties": {
-                                        "ip_address": {"type": "ip"}
-                                    }
-                                },
-                                "response_codes": {
-                                    "type": "nested",
-                                    "properties": {
-                                        "response_code": {"type": "keyword"}
-                                    }
-                                },
-                                "possible_attack_patterns": {"type": "keyword"}
-                            }
-                        },
-                        "traffic_patterns": {
-                            "type": "nested",
-                            "dynamic": True
-                        },
-                        "statistics": {
-                            "type": "object",
-                            "dynamic": True
-                        }
-                    }
-                }
-            }
-        }
-        
-        # 템플릿 생성
-        response = client.indices.put_template(
-            name=template_name,
-            body=template_body
-        )
-        
-        if response.get('acknowledged'):
-            print(f"✅ Elasticsearch 템플릿 생성 성공: {template_name}")
-            return True
-        else:
-            print(f"❌ Elasticsearch 템플릿 생성 실패: {response}")
-            return False
-            
-    except RequestError as e:
-        print(f"❌ Elasticsearch 템플릿 생성 요청 오류: {e}")
-        return False
-    except Exception as e:
-        print(f"❌ Elasticsearch 템플릿 생성 중 오류 발생: {e}")
-        return False
-
 def _extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
     """
     LOGID가 포함된 라인에서 LOGID와 원본 로그 내용을 분리합니다.
@@ -467,9 +367,6 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
     Returns:
         bool: 전송 성공 여부
     """
-    # 인덱스 템플릿 존재 여부 확인 및 생성
-    _create_elasticsearch_index_template_if_not_exists()
-    
     # 로그 해시 매핑 추가 (chunk가 제공된 경우)
     if chunk:
         log_hash_mapping = _create_log_hash_mapping(chunk)
