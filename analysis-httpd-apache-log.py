@@ -21,6 +21,14 @@ from commons import send_to_elasticsearch
 
 #---------------------------------- Enums and Models ----------------------------------
 class SeverityLevel(str, Enum):
+    """
+    Severity levels for security events (BALANCED APPROACH):
+    - CRITICAL: Confirmed successful attacks with system compromise
+    - HIGH: Strong attack indicators with high confidence and potential damage
+    - MEDIUM: Suspicious patterns warranting investigation (use for legitimate security concerns)
+    - LOW: Minor anomalies or isolated security events
+    - INFO: Normal error events and routine activities
+    """
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -76,7 +84,9 @@ class ApacheSecurityEvent(BaseModel):
     relevant_log_entry: list[LogEntry] = Field(description="관련된 로그 엔트리 목록")
     reasoning: str
     event_type: str
-    severity: str = Field(description="CRITICAL, HIGH, MEDIUM, LOW, INFO 중 하나")
+    severity: SeverityLevel = Field(
+        description="Severity level - Use balanced judgment based on error patterns and potential security impact"
+    )
     requires_human_review: bool
     confidence_score: float = Field(
         ge=0.0, 
@@ -95,7 +105,10 @@ class LogAnalysis(BaseModel):
     summary: str
     observations: list[str]
     planning: list[str]
-    events: list[ApacheSecurityEvent]
+    events: list[ApacheSecurityEvent] = Field(
+        min_items=1,
+        description="Security events found - MUST contain at least one event per chunk, never empty"
+    )
     error_patterns: list[ErrorPattern]
     module_info: list[ApacheModuleInfo]
     statistics: Optional[Statistics]
@@ -110,8 +123,14 @@ llm_provider = "vllm"
 if llm_provider == "ollama":
     ### Ollama API
     # llm_model = "mistral:7b"
+    # llm_model = "qwen2.5-coder:0.5b"
+    # llm_model = "qwen2.5-coder:1.5b"
     llm_model = "qwen2.5-coder:3b"
     # llm_model = "qwen2.5-coder:7b"
+    # llm_model = "qwen3:0.6b"
+    # llm_model = "qwen3:1.7b"
+    # llm_model = "qwen3:4b"
+    # llm_model = "qwen3:8b"
     # llm_model = "gemma3:1b"
     # llm_model = "gemma3:4b"
     # llm_model = "gemma3:12b"
@@ -144,10 +163,10 @@ else:
     raise ValueError("Unsupported LLM provider. Use 'ollama' or 'openai'.")
 
 # log_path = "sample-logs/apache-10.log"
-log_path = "sample-logs/apache-100.log"
-# log_path = "sample-logs/apache-10k.log"
+# log_path = "sample-logs/apache-100.log"
+log_path = "sample-logs/apache-10k.log"
 
-chunk_size = 10
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):

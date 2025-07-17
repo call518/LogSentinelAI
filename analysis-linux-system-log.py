@@ -21,6 +21,14 @@ from commons import send_to_elasticsearch
 
 #---------------------- Linux System Log용 Enums 및 Models ----------------------
 class LinuxSeverityLevel(str, Enum):
+    """
+    Severity levels for security events (BALANCED APPROACH):
+    - CRITICAL: Confirmed successful attacks or system compromise
+    - HIGH: Strong attack indicators with high confidence and potential system damage
+    - MEDIUM: Suspicious patterns warranting investigation (use for legitimate security concerns)
+    - LOW: Minor security events or isolated anomalies
+    - INFO: Normal system events and routine activities
+    """
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -50,7 +58,9 @@ class LogEntry(BaseModel):
 
 class LinuxSecurityEvent(BaseModel):
     event_type: LinuxEventType
-    severity: LinuxSeverityLevel
+    severity: LinuxSeverityLevel = Field(
+        description="Severity level - Use balanced judgment based on error patterns and potential security impact"
+    )
     description: str
     source_ip: Optional[str]
     username: Optional[str]
@@ -80,7 +90,10 @@ class LinuxLogAnalysis(BaseModel):
     summary: str
     observations: list[str]
     planning: list[str]
-    events: list[LinuxSecurityEvent]
+    events: list[LinuxSecurityEvent] = Field(
+        min_items=1,
+        description="Security events found - MUST contain at least one event per chunk, never empty"
+    )
     statistics: Optional[LinuxStatistics]
     highest_severity: Optional[LinuxSeverityLevel]
     requires_immediate_attention: bool
@@ -133,10 +146,10 @@ else:
     raise ValueError("Unsupported LLM provider. Use 'ollama' or 'openai'.")
 
 # log_path = "sample-logs/linux-10.log"
-log_path = "sample-logs/linux-100.log"
-# log_path = "sample-logs/linux-2k.log"
+# log_path = "sample-logs/linux-100.log"
+log_path = "sample-logs/linux-2k.log"
 
-chunk_size = 10
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):

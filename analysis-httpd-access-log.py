@@ -21,6 +21,16 @@ from commons import send_to_elasticsearch
 
 #---------------------------------- Enums and Models ----------------------------------
 class SeverityLevel(str, Enum):
+    """
+    Severity levels for HTTP Access Log security events (MORE SENSITIVE):
+    - CRITICAL: Confirmed successful attacks with system compromise
+    - HIGH: Strong attack indicators with high confidence
+    - MEDIUM: Suspicious patterns requiring investigation
+    - LOW: Minor anomalies worth noting (single errors, unusual patterns)
+    - INFO: Any deviation from normal web traffic (4xx/5xx codes, POST requests, parameters)
+    
+    For HTTP access logs, be generous with INFO/LOW events to provide better visibility.
+    """
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -63,7 +73,9 @@ class WebSecurityEvent(BaseModel):
     relevant_log_entry: list[LogEntry] = Field(description="관련된 로그 엔트리 목록")
     reasoning: str
     event_type: str
-    severity: SeverityLevel
+    severity: SeverityLevel = Field(
+        description="Severity level - Be generous with INFO/LOW events for HTTP access logs. Most unusual patterns should generate events."
+    )
     requires_human_review: bool
     confidence_score: float = Field(
         ge=0.0, 
@@ -86,10 +98,15 @@ class LogAnalysis(BaseModel):
     summary: str
     observations: list[str]
     planning: list[str]
-    events: list[WebSecurityEvent]
+    events: list[WebSecurityEvent] = Field(
+        min_items=1,
+        description="Security events found - MUST contain at least one event per chunk, never empty"
+    )
     traffic_patterns: list[WebTrafficPattern]
     statistics: Optional[Statistics]
-    highest_severity: Optional[SeverityLevel]
+    highest_severity: Optional[SeverityLevel] = Field(
+        description="Highest severity found in this analysis - should reflect actual threat assessment"
+    )
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
@@ -140,10 +157,10 @@ else:
     raise ValueError("Unsupported LLM provider. Use 'ollama' or 'openai'.")
 
 # log_path = "sample-logs/access-10.log" 
-log_path = "sample-logs/access-100.log"
-# log_path = "sample-logs/access-10k.log"
+# log_path = "sample-logs/access-100.log"
+log_path = "sample-logs/access-10k.log"
 
-chunk_size = 10
+chunk_size = 2
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
