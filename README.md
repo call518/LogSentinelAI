@@ -1,25 +1,25 @@
 # SonarLog - AI-Powered Log Security Analysis
 
-SonarLog은 LLM(Large Language Model)을 활용하여 다양한 로그 파일을 분석하고 보안 이벤트를 탐지하는 시스템입니다. Apache HTTP 로그, Linux 시스템 로그 등을 자동으로 분석하여 보안 위협을 식별하고 Elasticsearch에 구조화된 데이터로 저장합니다.
+SonarLog is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch.
 
-## 🌟 주요 기능
+## 🌟 Key Features
 
-- **다중 로그 형식 지원**: HTTP Access Log, Apache Error Log, Linux System Log
-- **AI 기반 보안 분석**: LLM을 통한 지능적인 보안 이벤트 탐지
-- **구조화된 데이터 출력**: Pydantic 모델을 사용한 JSON 스키마 검증
-- **Elasticsearch 통합**: 실시간 로그 분석 결과 저장 및 검색
-- **Kibana 대시보드**: 시각화된 보안 분석 결과 모니터링
-- **LOGID 추적**: 원본 로그와 분석 결과의 완전한 추적성 보장
+- **Multi-format Log Support**: HTTP Access Log, Apache Error Log, Linux System Log
+- **AI-based Security Analysis**: Intelligent security event detection through LLM
+- **Structured Data Output**: JSON schema validation using Pydantic models
+- **Elasticsearch Integration**: Real-time log analysis result storage and search
+- **Kibana Dashboard**: Visualized security analysis result monitoring
+- **LOGID Tracking**: Complete traceability between original logs and analysis results
 
-## 📊 대시보드 예시
+## 📊 Dashboard Example
 
 ![Kibana Dashboard](img/ex-dashboard.png)
 
-## 📋 JSON 출력 예시
+## 📋 JSON Output Example
 
 ![JSON Output](img/ex-json.png)
 
-## 🏗️ 시스템 아키텍처
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -42,145 +42,145 @@ SonarLog은 LLM(Large Language Model)을 활용하여 다양한 로그 파일을
                                                └─────────────────┘
 ```
 
-## 🚀 설치 및 설정
+## 🚀 Installation & Setup
 
-### 1. 의존성 설치
+### 1. Install Dependencies
 
 ```bash
-# Python 가상환경 생성 (옵션)
+# Create Python virtual environment (optional)
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # .venv\Scripts\activate   # Windows
 
-# 패키지 설치
+# Install packages
 pip install -r requirements.txt
 ```
 
-### 2. 환경 변수 설정
+### 2. Environment Variable Setup
 
 ```bash
-# .env 파일 생성
+# Create .env file
 cp .env.template .env
 
-# OpenAI API 키 설정 (OpenAI 사용 시)
+# Set OpenAI API key (when using OpenAI)
 echo "OPENAI_API_KEY=your_api_key_here" >> .env
 ```
 
-### 3. LLM 모델 설정
+### 3. LLM Model Setup
 
-#### Option 1: Ollama (로컬 실행)
+#### Option 1: Ollama (Local Execution)
 ```bash
-# Ollama 설치 및 모델 다운로드
+# Install Ollama and download model
 ollama pull qwen2.5-coder:3b
 ollama serve
 ```
 
-#### Option 2: vLLM (GPU 가속)
+#### Option 2: vLLM (GPU Acceleration)
 ```bash
-# vLLM 설치 및 서버 실행
+# Install vLLM and run server
 pip install vllm
 python -m vllm.entrypoints.openai.api_server --model qwen2.5-coder:3b
 ```
 
 #### Option 3: OpenAI API
-- `.env` 파일에 `OPENAI_API_KEY` 설정
+- Set `OPENAI_API_KEY` in `.env` file
 
-### 4. Elasticsearch 설정
+### 4. Elasticsearch Setup
 
 - Github: https://github.com/call518/Docker-ELK
 
 ```bash
-# Docker Compose로 Elasticsearch + Kibana 실행
+# Run Elasticsearch + Kibana with Docker Compose
 docker-compose up -d
 
-# 또는 로컬 Elasticsearch 설치
-# Elasticsearch 9200 포트, Kibana 5601 포트 확인
+# Or install local Elasticsearch
+# Check Elasticsearch port 9200, Kibana port 5601
 ```
 
-## 💻 사용법
+## 💻 Usage
 
-### HTTP Access Log 분석
+### HTTP Access Log Analysis
 
 ```bash
 python analysis-httpd-access-log.py
 ```
 
-### Apache Error Log 분석
+### Apache Error Log Analysis
 
 ```bash
 python analysis-httpd-apache-log.py
 ```
 
-### Linux System Log 분석
+### Linux System Log Analysis
 
 ```bash
 python analysis-linux-system-log.py
 ```
 
-## 📁 프로젝트 구조
+## 📁 Project Structure
 
 ```
 SonarLog/
-├── analysis-httpd-access-log.py    # HTTP 접근 로그 분석기
-├── analysis-httpd-apache-log.py    # Apache 에러 로그 분석기
-├── analysis-linux-system-log.py    # Linux 시스템 로그 분석기
-├── commons.py                      # 공통 함수 및 유틸리티
-├── requirements.txt                # Python 의존성
-├── .env.template                   # 환경변수 템플릿
-├── sample-logs/                    # 샘플 로그 파일들
+├── analysis-httpd-access-log.py    # HTTP access log analyzer
+├── analysis-httpd-apache-log.py    # Apache error log analyzer
+├── analysis-linux-system-log.py    # Linux system log analyzer
+├── commons.py                      # Common functions and utilities
+├── requirements.txt                # Python dependencies
+├── .env.template                   # Environment variables template
+├── sample-logs/                    # Sample log files
 │   ├── access-10.log
 │   ├── apache-10.log
 │   └── linux-10.log
-├── img/                           # 문서 이미지
+├── img/                           # Documentation images
 │   ├── ex-dashboard.png
 │   └── ex-json.png
-└── Kibana-Dashboard-SonarLog.ndjson # Kibana 대시보드 설정
+└── Kibana-Dashboard-SonarLog.ndjson # Kibana dashboard configuration
 ```
 
-## 🔧 설정 옵션
+## 🔧 Configuration Options
 
-### LLM 제공자 변경
+### Change LLM Provider
 
-`commons.py`에서 LLM 제공자를 변경할 수 있습니다:
+You can change the LLM provider in `commons.py`:
 
 ```python
-# initialize_llm_model 함수에서 설정
+# Set in initialize_llm_model function
 model = initialize_llm_model("ollama")    # Ollama
 model = initialize_llm_model("vllm")      # vLLM
 model = initialize_llm_model("openai")    # OpenAI
 ```
 
-### 청크 크기 조정
+### Adjust Chunk Size
 
-로그 처리 성능을 위해 청크 크기를 조정할 수 있습니다:
+You can adjust chunk size for log processing performance:
 
 ```python
-# 각 분석 스크립트에서
-chunk_size = 10  # 기본값, 필요에 따라 조정
+# In each analysis script
+chunk_size = 10  # Default value, adjust as needed
 ```
 
-## 📊 출력 데이터 스키마
+## 📊 Output Data Schema
 
-### Security Event 구조
+### Security Event Structure
 
 ```json
 {
   "event_type": "SQL_INJECTION",
   "severity": "HIGH",
-  "description": "SQL 인젝션 공격 시도 탐지",
+  "description": "SQL injection attack attempt detected",
   "confidence_score": 0.85,
   "url_pattern": "/api/users",
   "http_method": "POST",
   "source_ips": ["192.168.1.100"],
   "response_codes": ["403"],
   "attack_patterns": ["SQL_INJECTION"],
-  "recommended_actions": ["IP 차단", "WAF 규칙 추가"],
+  "recommended_actions": ["Block IP", "Add WAF rule"],
   "requires_human_review": true,
   "related_log_ids": ["LOGID-ABC123", "LOGID-DEF456"]
 }
 ```
 
-### Elasticsearch 문서 구조
+### Elasticsearch Document Structure
 
 ```json
 {
@@ -196,46 +196,46 @@ chunk_size = 10  # 기본값, 필요에 따라 조정
 }
 ```
 
-## 🎯 주요 특징
+## 🎯 Key Features
 
-### 1. 지능적인 보안 탐지
-- **다양한 공격 패턴 인식**: SQL Injection, XSS, Brute Force, Command Injection 등
-- **컨텍스트 기반 분석**: 로그 패턴과 연관성을 고려한 분석
-- **신뢰도 점수**: 각 탐지 결과에 대한 신뢰도 제공
+### 1. Intelligent Security Detection
+- **Various Attack Pattern Recognition**: SQL Injection, XSS, Brute Force, Command Injection, etc.
+- **Context-based Analysis**: Analysis considering log patterns and correlations
+- **Confidence Score**: Confidence level for each detection result
 
-### 2. 완전한 추적성
-- **LOGID 시스템**: 각 로그 라인에 고유 식별자 부여
-- **원본 데이터 보존**: 분석 결과와 함께 원본 로그 데이터 저장
-- **관련 로그 매핑**: 보안 이벤트와 관련된 로그 라인들 연결
+### 2. Complete Traceability
+- **LOGID System**: Unique identifier assignment for each log line
+- **Original Data Preservation**: Original log data stored with analysis results
+- **Related Log Mapping**: Connection between security events and related log lines
 
-### 3. 확장 가능한 아키텍처
-- **모듈화된 설계**: 각 로그 타입별 독립적인 분석기
-- **공통 함수 라이브러리**: 중복 코드 제거 및 유지보수성 향상
-- **플러그인 방식**: 새로운 로그 형식 쉽게 추가 가능
+### 3. Scalable Architecture
+- **Modular Design**: Independent analyzer for each log type
+- **Common Function Library**: Reduced code duplication and improved maintainability
+- **Plugin Approach**: Easy addition of new log formats
 
-## 📈 성능 최적화
+## 📈 Performance Optimization
 
-### 청크 기반 처리
-- 대용량 로그 파일을 작은 청크로 나누어 처리
-- 메모리 효율성 및 병렬 처리 지원
+### Chunk-based Processing
+- Process large log files by dividing into small chunks
+- Memory efficiency and parallel processing support
 
-### 토큰 최적화
-- LLM 입력 토큰 수 최소화를 위한 프롬프트 최적화
-- 구조화된 출력을 통한 파싱 효율성 향상
+### Token Optimization
+- Prompt optimization to minimize LLM input tokens
+- Parsing efficiency improvement through structured output
 
-## 🔍 모니터링 및 알람
+## 🔍 Monitoring & Alerting
 
-### Kibana 대시보드
-- 실시간 보안 이벤트 모니터링
-- 공격 트렌드 및 패턴 분석
-- 지리적 위치 기반 공격 시각화
+### Kibana Dashboard
+- Real-time security event monitoring
+- Attack trend and pattern analysis
+- Geographic location-based attack visualization
 
-### 알람 설정
-- 고위험 보안 이벤트 자동 알람
-- 임계치 기반 알람 규칙
-- 이메일/Slack 통합 지원
+### Alert Configuration
+- Automatic alerts for high-risk security events
+- Threshold-based alert rules
+- Email/Slack integration support
 
-## 🤝 기여하기
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -243,17 +243,17 @@ chunk_size = 10  # 기본값, 필요에 따라 조정
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 라이선스
+## 📝 License
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+This project is distributed under the MIT License. See [LICENSE](LICENSE) file for more details.
 
-## 🆘 지원 및 문의
+## 🆘 Support & Contact
 
-- **Issues**: [GitHub Issues](https://gitlab.com/call518-ai-tutorial/sonarlog/issues)
-- **Documentation**: [Wiki](https://gitlab.com/call518-ai-tutorial/sonarlog/wiki)
+- **Issues**: [GitHub Issues](https://github.com/call518/SonarLog/issues)
+- **Documentation**: [Wiki](https://github.com/call518/SonarLog/wiki)
 - **Email**: call518@gmail.com
 
-## 🏷️ 버전 정보
+## 🏷️ Version Information
 
 - **Current Version**: 1.0.0
 - **Python**: 3.11+
