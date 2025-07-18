@@ -165,7 +165,6 @@ SonarLog/
 ├── sample-logs/                   # Sample log files
 │   ├── access-100.log             # 100 HTTP access log entries
 │   ├── access-10k.log             # 10,000 HTTP access log entries
-│   ├── apache-10.log              # 10 Apache error log entries
 │   ├── apache-100.log             # 100 Apache error log entries
 │   ├── apache-10k.log             # 10,000 Apache error log entries
 │   ├── linux-100.log              # 100 Linux system log entries
@@ -367,6 +366,37 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 - ✅ Comprehensive codebase refactoring
 - ✅ Enhanced severity level calibration
 - ✅ Improved mandatory event generation
+
+## 📋 ToDo & Roadmap
+
+### 🎯 Upcoming Features
+
+#### Real-time Log Analysis
+- **Real-time Log File Monitoring**: Implement file watcher to detect new log entries
+- **Sampling vs. Full Processing**: Add configurable sampling strategies for high-volume logs
+- **Stream Processing**: Support for continuous log stream analysis
+- **Performance Modes**: 
+  - Full processing mode for comprehensive analysis
+  - Sampling mode for high-throughput scenarios
+
+#### Performance Enhancements
+- **LLM Processing Optimization**: Improve throughput (logs per second)
+- **Batch Processing**: Process multiple log chunks in parallel
+- **Model Caching**: Cache LLM responses for similar log patterns
+- **Async Processing**: Implement asynchronous log analysis pipeline
+
+#### Network Log Analysis
+- **Tcpdump Support**: Add analyzer for network packet capture logs
+- **Network Security Events**: Detect network-based attacks (DDoS, port scanning, etc.)
+- **Protocol Analysis**: Support for HTTP, DNS, TCP/UDP traffic analysis
+- **Traffic Pattern Recognition**: Identify suspicious network behavior patterns
+
+### 🚀 Future Enhancements
+- **Machine Learning Integration**: Anomaly detection using ML models
+- **Custom Rule Engine**: User-defined security rules and patterns
+- **Multi-tenant Support**: Support for multiple organizations/tenants
+- **Advanced Visualization**: Enhanced Kibana dashboards with geo-mapping
+- **API Integration**: RESTful API for external system integration
 
 ---
 
