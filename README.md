@@ -335,7 +335,7 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🏷️ Version Information
 
-- **Current Version**: 1.2.2
+- **Current Version**: 1.3.0
 - **Python**: 3.11+
 - **Elasticsearch**: 8.16+
 - **Kibana**: 8.16+
@@ -347,7 +347,19 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🔄 Version History
 
-### v1.2.2 (Current)
+### v1.3.0 (Current)
+- ✅ Repository migrated to GitHub (https://github.com/call518/SonarLog)
+- ✅ Updated README.md with GitHub URLs and contact information
+- ✅ Added comprehensive ToDo & Roadmap section
+- ✅ Updated project structure documentation
+- ✅ Enhanced QuickStart guide with real-world PoC environment details
+
+### v1.2.3
+- ✅ Complete Korean to English internationalization
+- ✅ Enhanced documentation with English as primary language
+- ✅ Improved technical descriptions and setup instructions
+
+### v1.2.2
 - ✅ Complete code internationalization (English)
 - ✅ Enhanced LOGID traceability system
 - ✅ Improved error handling and resilience
@@ -366,6 +378,20 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 - ✅ Comprehensive codebase refactoring
 - ✅ Enhanced severity level calibration
 - ✅ Improved mandatory event generation
+
+### v1.0.2
+- ✅ Severity measurement level adjustment and optimization
+- ✅ Enhanced security event detection accuracy
+
+### v1.0.1
+- ✅ Added Linux system log analysis support
+- ✅ Expanded log format compatibility
+
+### v1.0.0
+- ✅ Initial stable release
+- ✅ HTTP access log and Apache error log analysis
+- ✅ Elasticsearch integration
+- ✅ Ollama and OpenAI API support
 
 ## 📋 ToDo & Roadmap
 
