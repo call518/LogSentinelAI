@@ -87,6 +87,8 @@ python -m vllm.entrypoints.openai.api_server --model qwen2.5-coder:3b
 
 ### 4. Elasticsearch 설정
 
+- Github: https://github.com/call518/Docker-ELK
+
 ```bash
 # Docker Compose로 Elasticsearch + Kibana 실행
 docker-compose up -d
