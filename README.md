@@ -1,6 +1,6 @@
 # SonarLog - AI-Powered Log Security Analysis
 
-SonarLog is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch.
+SonarLog is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
 
 ## 🌟 Key Features
 
@@ -44,77 +44,107 @@ SonarLog is a system that leverages LLM (Large Language Model) to analyze variou
 
 ## 🚀 Installation & Setup
 
-### 1. Install Dependencies
+### 1. Basic Requirements
+
+- **Tested Environment**: Windows 11 + WSL2 (v2.5.9) + Docker Desktop (v4.39.0)
+- **Hardware**: NVIDIA GeForce GTX 1660 SUPER GPU
+- **Software**: Python 3.11.13
+
+### 2. QuickStart Guide
+
+#### Step 1: Project Setup
 
 ```bash
-# Create Python virtual environment (optional)
+# Clone repository
+git clone https://gitlab.com/call518-ai-tutorial/sonarlog.git
+cd sonarlog
+
+# Create Python virtual environment
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # .venv\Scripts\activate   # Windows
 
 # Install packages
 pip install -r requirements.txt
-```
 
-### 2. Environment Variable Setup
-
-```bash
-# Create .env file
+# Configure environment variables
 cp .env.template .env
-
-# Set OpenAI API key (when using OpenAI)
-echo "OPENAI_API_KEY=your_api_key_here" >> .env
+# Edit .env file to add required settings (e.g., OPENAI_API_KEY if using OpenAI)
 ```
 
-### 3. LLM Model Setup
+#### Step 2: Set up vLLM Server (GPU Acceleration)
 
-#### Option 1: Ollama (Local Execution)
 ```bash
-# Install Ollama and download model
+# Option A: Clone and use vLLM-Tutorial
+git clone https://github.com/call518/vLLM-Tutorial.git
+cd vLLM-Tutorial
+
+# Install Hugging Face CLI for model download
+pip install huggingface_hub
+
+# Download model (optional)
+huggingface-cli download lmstudio-community/Qwen2.5-3B-Instruct-GGUF Qwen2.5-3B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-3B-Instruct/
+huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local-dir ./config
+
+# Run vLLM with Docker
+./run-docker-vllm---Qwen2.5-3B-Instruct.sh
+
+# Verify API is working
+curl -s -X GET http://localhost:5000/v1/models | jq
+
+# Option B: Alternative LLM setups
+# Ollama (Local Execution)
 ollama pull qwen2.5-coder:3b
 ollama serve
-```
 
-#### Option 2: vLLM (GPU Acceleration)
-```bash
-# Install vLLM and run server
+# OR simple vLLM setup (without Docker)
 pip install vllm
 python -m vllm.entrypoints.openai.api_server --model qwen2.5-coder:3b
+
+# OR use OpenAI API (cloud)
+# Set OPENAI_API_KEY in .env file
 ```
 
-#### Option 3: OpenAI API
-- Set `OPENAI_API_KEY` in `.env` file
-
-### 4. Elasticsearch Setup
-
-- Github: https://github.com/call518/Docker-ELK
+#### Step 3: Set up Elasticsearch and Kibana
 
 ```bash
-# Run Elasticsearch + Kibana with Docker Compose
-docker-compose up -d
+# Clone Docker-ELK repository
+git clone https://github.com/call518/Docker-ELK.git
+cd Docker-ELK
 
-# Or install local Elasticsearch
-# Check Elasticsearch port 9200, Kibana port 5601
+# Initialize ELK stack
+docker compose up setup
+
+# Generate Kibana encryption keys (recommended)
+docker compose up kibana-genkeys
+# Copy the output keys to kibana/config/kibana.yml
+
+# Start ELK stack
+docker compose up -d
+
+# Access Kibana at http://localhost:5601
+# Default credentials: elastic / changeme
 ```
 
-## 💻 Usage
-
-### HTTP Access Log Analysis
+#### Step 4: Run SonarLog Analysis
 
 ```bash
+# Run HTTP access log analysis
 python analysis-httpd-access-log.py
-```
 
-### Apache Error Log Analysis
-
-```bash
+# Run Apache error log analysis
 python analysis-httpd-apache-log.py
+
+# Run Linux system log analysis
+python analysis-linux-system-log.py
 ```
 
-### Linux System Log Analysis
+#### Step 5: Import Kibana Dashboard
 
 ```bash
-python analysis-linux-system-log.py
+# Log into Kibana
+# Navigate to Stack Management > Saved Objects > Import
+# Import the Kibana-Dashboard-SonarLog.ndjson file
 ```
 
 ## 📁 Project Structure
@@ -236,7 +266,7 @@ log_path = "sample-logs/access-10k.log"     # 10,000 entries (default)
 }
 ```
 
-## 🎯 Key Features
+## 🎯 Advanced Features
 
 ### 1. Intelligent Security Detection
 - **Various Attack Pattern Recognition**: SQL Injection, XSS, Brute Force, Command Injection, etc.
@@ -317,9 +347,9 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
   - `elasticsearch` for data storage
   - `ollama`, `openai` for LLM providers
 
-## 🔄 Recent Updates
+## 🔄 Version History
 
-### v1.2.2 (Latest)
+### v1.2.2 (Current)
 - ✅ Complete code internationalization (English)
 - ✅ Enhanced LOGID traceability system
 - ✅ Improved error handling and resilience
