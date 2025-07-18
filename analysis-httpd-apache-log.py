@@ -60,7 +60,7 @@ class ErrorPattern(BaseModel):
     error_type: str = Field(description="에러 유형 (예: Directory index forbidden, File does not exist)")
     file_path: Optional[str] = Field(description="관련된 파일 경로")
     occurrences: int = Field(description="발생 횟수")
-    client_ips: list[str] = Field(description="관련된 클라이언트 IP 목록")
+    client_ips: list[str] = Field(default=[], description="관련된 클라이언트 IP 목록")
 
 class ApacheModuleInfo(BaseModel):
     """Apache 모듈 관련 정보"""
@@ -81,7 +81,7 @@ class LogEntry(BaseModel):
     log_message: str
 
 class ApacheSecurityEvent(BaseModel):
-    relevant_log_entry: list[LogEntry] = Field(description="관련된 로그 엔트리 목록")
+    relevant_log_entry: list[LogEntry] = Field(default=[], description="관련된 로그 엔트리 목록")
     reasoning: str
     event_type: str
     severity: SeverityLevel = Field(
@@ -96,21 +96,21 @@ class ApacheSecurityEvent(BaseModel):
     log_level: str = Field(description="Apache 로그 레벨 (error, notice, warn, info)")
     error_message: str = Field(description="에러 메시지 내용")
     file_path: Optional[str] = Field(description="관련된 파일 경로")
-    source_ips: list[str] = Field(description="관련된 클라이언트 IP 목록")
-    possible_attack_patterns: list[str] = Field(description="가능한 공격 패턴 목록")
-    recommended_actions: list[str]
+    source_ips: list[str] = Field(default=[], description="관련된 클라이언트 IP 목록")
+    possible_attack_patterns: list[str] = Field(default=[], description="가능한 공격 패턴 목록")
+    recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
 
 ### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
     summary: str
-    observations: list[str]
-    planning: list[str]
+    observations: list[str] = Field(default=[], description="관찰사항 목록")
+    planning: list[str] = Field(default=[], description="계획사항 목록")
     events: list[ApacheSecurityEvent] = Field(
         min_items=1,
         description="Security events found - MUST contain at least one event per chunk, never empty"
     )
-    error_patterns: list[ErrorPattern]
-    module_info: list[ApacheModuleInfo]
+    error_patterns: list[ErrorPattern] = Field(default=[], description="에러 패턴 목록")
+    module_info: list[ApacheModuleInfo] = Field(default=[], description="모듈 정보 목록")
     statistics: Optional[Statistics]
     highest_severity: Optional[str] = Field(description="가장 높은 심각도 (CRITICAL, HIGH, MEDIUM, LOW, INFO)")
     requires_immediate_attention: bool
@@ -140,7 +140,8 @@ if llm_provider == "ollama":
 elif llm_provider == "vllm":
     ### Local vLLM API
     openai_api_key = "dummy"
-    llm_model = "vLLM-Qwen2.5-3B-Instruct"
+    # llm_model = "Qwen/Qwen2.5-0.5B-Instruct"
+    llm_model = "Qwen/Qwen2.5-3B-Instruct"
     # llm_model = "gpt-4o"
     client = openai.OpenAI(
         base_url="http://127.0.0.1:5000/v1",  # Local vLLM API endpoint
@@ -166,7 +167,7 @@ else:
 # log_path = "sample-logs/apache-100.log"
 log_path = "sample-logs/apache-10k.log"
 
-chunk_size = 5
+chunk_size = 3
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
@@ -188,10 +189,28 @@ with open(log_path, "r", encoding="utf-8") as f:
             # print(review)
             ### Validate JSON
             parsed = json.loads(review)
+            
+            # Clean up null values in list fields to prevent Elasticsearch errors
+            def clean_null_lists(obj):
+                if isinstance(obj, dict):
+                    for key, value in obj.items():
+                        if isinstance(value, list):
+                            obj[key] = [item for item in value if item is not None]
+                        elif isinstance(value, dict):
+                            clean_null_lists(value)
+                        elif isinstance(value, list):
+                            for item in value:
+                                if isinstance(item, dict):
+                                    clean_null_lists(item)
+                return obj
+            
+            parsed = clean_null_lists(parsed)
+            
             # 분석 시간 정보 추가
             parsed = {
                 "chunk_analysis_start_utc": chunk_start_time,
                 "chunk_analysis_end_utc": chunk_end_time,
+                "analysis_result": "success",
                 **parsed
             }
             
@@ -211,5 +230,37 @@ with open(log_path, "r", encoding="utf-8") as f:
             else:
                 print(f"❌ Chunk {i+1} 데이터 Elasticsearch 전송 실패")
                 
+        except json.JSONDecodeError as e:
+            print(f"JSON 파싱 오류: {e}")
+            # 실패 시 최소한의 정보만 기록
+            failure_data = {
+                "chunk_analysis_start_utc": chunk_start_time,
+                "chunk_analysis_end_utc": chunk_end_time,
+                "analysis_result": "failed",
+                "error_type": "json_parse_error",
+                "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
+                "chunk_id": i+1
+            }
+            print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
+            success = send_to_elasticsearch(failure_data, "httpd_apache_error", i+1, chunk)
+            if success:
+                print(f"✅ Chunk {i+1} 실패 정보 Elasticsearch 전송 완료")
+            else:
+                print(f"❌ Chunk {i+1} 실패 정보 Elasticsearch 전송 실패")
         except Exception as e:
-            print("Error parsing character:", e)
+            print(f"분석 처리 오류: {e}")
+            # 기타 실패 시 최소한의 정보만 기록
+            failure_data = {
+                "chunk_analysis_start_utc": chunk_start_time,
+                "chunk_analysis_end_utc": chunk_end_time,
+                "analysis_result": "failed",
+                "error_type": "processing_error",
+                "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
+                "chunk_id": i+1
+            }
+            print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
+            success = send_to_elasticsearch(failure_data, "httpd_apache_error", i+1, chunk)
+            if success:
+                print(f"✅ Chunk {i+1} 실패 정보 Elasticsearch 전송 완료")
+            else:
+                print(f"❌ Chunk {i+1} 실패 정보 Elasticsearch 전송 실패")

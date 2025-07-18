@@ -50,6 +50,11 @@ IMPORTANT: Always create security events for the following patterns (minimum INF
 - Requests with query parameters (potential injection attempts)
 - Large request sizes or unusual patterns
 
+ESCALATION RULES for higher severity:
+- MEDIUM: Multiple 404s from same IP (3+ requests), POST requests with unusual parameters, repeated requests from same IP to different endpoints (5+ requests), complex query parameter patterns, bot scanning behavior
+- LOW: Single 404s, isolated POST requests, normal bot activity (googlebot, bingbot), simple parameter usage
+- Consider IP reputation: Known bots (googlebot, bingbot) should generally be LOW, unknown IPs with suspicious patterns should be MEDIUM
+
 MANDATORY: NEVER return an empty events array. Every log chunk MUST generate at least one security event.
 If you cannot find obvious security issues, create INFO-level events for:
 - Any HTTP request patterns observed
@@ -69,14 +74,14 @@ standard GET requests to common web resources.
 Beging by noting some observations about the log. Then,
 plan the rest of your response.
 
-Severity Level Guidelines for HTTP Access Logs (MORE SENSITIVE):
+Severity Level Guidelines for HTTP Access Logs (ENHANCED SENSITIVITY):
 - CRITICAL: Confirmed successful attacks with evidence of data breach or system compromise
 - HIGH: Strong attack indicators (repeated SQL injection attempts, directory traversal to sensitive files, sustained brute force attacks)
-- MEDIUM: Suspicious patterns requiring investigation (scanning activities, unusual access sequences, potential vulnerability probing)
-- LOW: Minor anomalies worth noting (single 404s to sensitive paths, unexpected user agents, rate limiting hits)
-- INFO: Any deviation from normal patterns (all 4xx/5xx codes, POST requests, requests with parameters, multiple requests from same IP)
+- MEDIUM: Suspicious patterns requiring investigation (multiple 404s from same IP, unusual POST patterns, bot scanning activities, complex parameter manipulation)
+- LOW: Minor anomalies worth noting (single 404s to existing resources, unexpected user agents, rate limiting hits, bot activities from known crawlers)
+- INFO: Standard deviations from normal patterns (all other 4xx/5xx codes, POST requests to expected endpoints, normal bot traffic)
 
-For HTTP access logs, be more inclusive in creating events. Most web traffic anomalies should generate at least INFO-level events.
+Be more aggressive in escalating severity for suspicious patterns. Multiple similar requests from same IP should trigger MEDIUM level.
 
 Remember:
 - NEVER RETURN EMPTY EVENTS ARRAY - This is mandatory
@@ -97,10 +102,6 @@ Remember:
 - Confidence scores must be between 0.0 and 1.0 (use 0.8 for 80% confidence, NOT 80)
 - (NOTE) Summary, observations, and planning sections must be written in Korean.
 - CRITICAL: The events array must NEVER be empty. Always create at least one security event per chunk.
-- IMPORTANT: Return ONLY valid JSON format. Do not include any text before or after the JSON.
-- IMPORTANT: Ensure all strings in JSON are properly escaped and quoted.
-- IMPORTANT: Korean text and special characters must be properly handled in JSON strings.
-- IMPORTANT: Do not use trailing commas in JSON objects or arrays.
 
 You should return valid JSON in the schema
 {model_schema}
@@ -450,16 +451,17 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
         analysis_data: 분석 결과 데이터
         log_type: 로그 타입 ("httpd_access", "httpd_apache_error", "linux_system")
         chunk_id: 청크 번호 (선택적)
-        chunk: 원본 로그 청크 (해시 매핑 생성용, 선택적)
+        chunk: 원본 로그 청크 (현재는 사용하지 않음, 호환성을 위해 유지)
     
     Returns:
         bool: 전송 성공 여부
     """
-    # 로그 해시 매핑 추가 (chunk가 제공된 경우)
-    if chunk:
-        log_hash_mapping = _create_log_hash_mapping(chunk)
-        analysis_data["log_hash_mapping"] = log_hash_mapping
-        print(f"📝 로그 해시 매핑 {len(log_hash_mapping)}개 항목 추가됨")
+    # log_hash_mapping은 토큰 낭비를 줄이기 위해 제거됨
+    # 필요시 별도로 관리할 수 있음
+    # if chunk:
+    #     log_hash_mapping = _create_log_hash_mapping(chunk)
+    #     analysis_data["log_hash_mapping"] = log_hash_mapping
+    #     print(f"📝 로그 해시 매핑 {len(log_hash_mapping)}개 항목 추가됨")
     
     # Elasticsearch에 전송
     return _send_to_elasticsearch(analysis_data, log_type, chunk_id)
