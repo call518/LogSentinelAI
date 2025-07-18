@@ -56,8 +56,8 @@ SonarLog is a system that leverages LLM (Large Language Model) to analyze variou
 
 ```bash
 # Clone repository
-git clone https://gitlab.com/call518-ai-tutorial/sonarlog.git
-cd sonarlog
+git clone https://github.com/call518/SonarLog.git
+cd SonarLog
 
 # Create Python virtual environment
 python -m venv .venv
@@ -156,24 +156,23 @@ SonarLog/
 ├── analysis-linux-system-log.py    # Linux system log analyzer
 ├── commons.py                      # Common functions and utilities
 ├── requirements.txt                # Python dependencies
-├── .env.template                   # Environment variables template
-├── .gitignore                      # Git ignore file
-├── LICENSE                         # MIT License
-├── ex-01.ipynb                     # Jupyter notebook examples
-├── ex-02-ollama.ipynb              # Ollama-specific examples
-├── sample-logs/                    # Sample log files
-│   ├── access-10.log              # 10 HTTP access log entries
-│   ├── access-100.log             # 100 HTTP access log entries  
+├── .env                           # Environment variables (created from template)
+├── .env.template                  # Environment variables template
+├── .gitignore                     # Git ignore file
+├── LICENSE                        # MIT License
+├── README.md                      # This file
+├── README-Outlines.md             # Documentation outlines
+├── sample-logs/                   # Sample log files
+│   ├── access-100.log             # 100 HTTP access log entries
 │   ├── access-10k.log             # 10,000 HTTP access log entries
 │   ├── apache-10.log              # 10 Apache error log entries
 │   ├── apache-100.log             # 100 Apache error log entries
 │   ├── apache-10k.log             # 10,000 Apache error log entries
-│   ├── linux-10.log               # 10 Linux system log entries
 │   ├── linux-100.log              # 100 Linux system log entries
 │   └── linux-2k.log               # 2,000 Linux system log entries
 ├── img/                           # Documentation images
-│   ├── ex-dashboard.png
-│   └── ex-json.png
+│   ├── ex-dashboard.png           # Kibana dashboard example
+│   └── ex-json.png                # JSON output example
 └── Kibana-Dashboard-SonarLog.ndjson # Kibana dashboard configuration
 ```
 
@@ -330,9 +329,9 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🆘 Support & Contact
 
-- **Issues**: [GitLab Issues](https://gitlab.com/call518-ai-tutorial/sonarlog/issues)
-- **Documentation**: [GitLab Wiki](https://gitlab.com/call518-ai-tutorial/sonarlog/wiki)
-- **Repository**: [GitLab Repository](https://gitlab.com/call518-ai-tutorial/sonarlog)
+- **Issues**: [GitHub Issues](https://github.com/call518/SonarLog/issues)
+- **Documentation**: [GitHub Wiki](https://github.com/call518/SonarLog/wiki)
+- **Repository**: [GitHub Repository](https://github.com/call518/SonarLog)
 - **Email**: support@sonarlog.dev
 
 ## 🏷️ Version Information
