@@ -249,8 +249,8 @@ chunk_size = 10  # 기본값, 필요에 따라 조정
 
 ## 🆘 지원 및 문의
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/sonarlog/issues)
-- **Documentation**: [Wiki](https://github.com/your-repo/sonarlog/wiki)
+- **Issues**: [GitHub Issues](https://gitlab.com/call518-ai-tutorial/sonarlog/issues)
+- **Documentation**: [Wiki](https://gitlab.com/call518-ai-tutorial/sonarlog/wiki)
 - **Email**: call518@gmail.com
 
 ## 🏷️ 버전 정보
