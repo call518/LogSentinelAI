@@ -172,8 +172,8 @@ def assign_logid_to_packets(packets):
 
 # LLM Configuration - Choose from "ollama", "vllm", "openai"
 # llm_provider = "ollama"
-# llm_provider = "vllm"
-llm_provider = "openai"
+llm_provider = "vllm"
+# llm_provider = "openai"
 
 # LLM 모델 이름 정의 (각 provider별로)
 if llm_provider == "ollama":
