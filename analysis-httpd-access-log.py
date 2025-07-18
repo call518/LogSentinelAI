@@ -35,7 +35,7 @@ class AttackType(str, Enum):
     PRIVILEGE_ESCALATION = "PRIVILEGE_ESCALATION"
     UNKNOWN = "UNKNOWN"
 
-class WebSecurityEvent(BaseModel):
+class SecurityEvent(BaseModel):
     event_type: str = Field(description="보안 이벤트 유형")
     severity: SeverityLevel
     description: str = Field(description="이벤트 상세 설명")
@@ -47,6 +47,7 @@ class WebSecurityEvent(BaseModel):
     attack_patterns: list[AttackType] = Field(default=[], description="탐지된 공격 패턴")
     recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
     requires_human_review: bool = Field(description="인간 검토 필요 여부")
+    related_log_ids: list[str] = Field(default=[], description="관련된 LOGID 목록 (예: ['LOGID-ABC123', 'LOGID-DEF456'])")
 
 class Statistics(BaseModel):
     total_requests: int = Field(default=0, description="총 요청 수")
@@ -57,7 +58,7 @@ class Statistics(BaseModel):
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="분석 요약")
-    events: list[WebSecurityEvent] = Field(
+    events: list[SecurityEvent] = Field(
         min_items=1,
         description="보안 이벤트 목록 - 반드시 1개 이상 포함"
     )
@@ -74,7 +75,7 @@ model = initialize_llm_model(llm_provider)
 # log_path = "sample-logs/access-100.log"
 log_path = "sample-logs/access-10k.log"
 
-chunk_size = 3
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):

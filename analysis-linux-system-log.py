@@ -38,7 +38,7 @@ class EventType(str, Enum):
     ANOMALY = "ANOMALY"
     UNKNOWN = "UNKNOWN"
 
-class LinuxSecurityEvent(BaseModel):
+class SecurityEvent(BaseModel):
     event_type: EventType = Field(description="이벤트 유형")
     severity: SeverityLevel
     description: str = Field(description="이벤트 상세 설명")
@@ -58,9 +58,9 @@ class Statistics(BaseModel):
     event_by_type: dict[str, int] = Field(default={}, description="유형별 이벤트 수")
     top_source_ips: dict[str, int] = Field(default={}, description="상위 소스 IP")
 
-class LinuxLogAnalysis(BaseModel):
+class LogAnalysis(BaseModel):
     summary: str = Field(description="분석 요약")
-    events: list[LinuxSecurityEvent] = Field(
+    events: list[SecurityEvent] = Field(
         min_items=1,
         description="보안 이벤트 목록 - 반드시 1개 이상 포함"
     )
@@ -77,24 +77,26 @@ model = initialize_llm_model(llm_provider)
 # log_path = "sample-logs/linux-100.log"
 log_path = "sample-logs/linux-2k.log"
 
-chunk_size = 3
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
+        # 분석 시작 시간 기록
         chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         logs = "".join(chunk)
-        model_schema = LinuxLogAnalysis.model_json_schema()
+        model_schema = LogAnalysis.model_json_schema()
         prompt = PROMPT_TEMPLATE_LINUX_SYSTEM_LOG.format(logs=logs, model_schema=model_schema)
-        print(f"\n--- Linux Chunk {i+1} ---")
+        print(f"\n--- Chunk {i+1} ---")
         print_chunk_contents(chunk)
         
+        # 분석 완료 시간 기록
         chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         
         # 공통 처리 함수 사용
         success, parsed_data = process_log_chunk(
             model=model,
             prompt=prompt,
-            model_class=LinuxLogAnalysis,
+            model_class=LogAnalysis,
             chunk_start_time=chunk_start_time,
             chunk_end_time=chunk_end_time,
             elasticsearch_index="linux_system",

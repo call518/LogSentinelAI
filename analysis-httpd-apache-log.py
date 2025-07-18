@@ -1,5 +1,17 @@
 from pydantic import BaseModel, Field
-from enum import Enum
+class ApacheSecurityEvent(BaseModel):
+    event_type: str = Field(description="보안 이벤트 유형")
+    severity: SeverityLevel
+    description: str = Field(description="이벤트 상세 설명")
+    confidence_score: float = Field(ge=0.0, le=1.0, description="신뢰도 (0.0-1.0)")
+    log_level: str = Field(description="Apache 로그 레벨")
+    error_message: str = Field(description="에러 메시지")
+    file_path: Optional[str] = Field(default=None, description="관련 파일 경로")
+    source_ips: list[str] = Field(default=[], description="소스 IP 목록")
+    attack_patterns: list[AttackType] = Field(default=[], description="탐지된 공격 패턴")
+    recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
+    requires_human_review: bool = Field(description="인간 검토 필요 여부")
+    related_log_ids: list[str] = Field(default=[], description="관련된 LOGID 목록 (예: ['LOGID-ABC123', 'LOGID-DEF456'])")port Enum
 from typing import Literal, Optional
 import json
 import os
@@ -36,7 +48,7 @@ class AttackType(str, Enum):
     MODULE_ERROR = "MODULE_ERROR"
     UNKNOWN = "UNKNOWN"
 
-class ApacheSecurityEvent(BaseModel):
+class SecurityEvent(BaseModel):
     event_type: str = Field(description="보안 이벤트 유형")
     severity: SeverityLevel
     description: str = Field(description="이벤트 상세 설명")
@@ -57,7 +69,7 @@ class Statistics(BaseModel):
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="분석 요약")
-    events: list[ApacheSecurityEvent] = Field(
+    events: list[SecurityEvent] = Field(
         min_items=1,
         description="보안 이벤트 목록 - 반드시 1개 이상 포함"
     )
@@ -75,7 +87,7 @@ model = initialize_llm_model(llm_provider)
 # log_path = "sample-logs/apache-100.log"
 log_path = "sample-logs/apache-10k.log"
 
-chunk_size = 3
+chunk_size = 5
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
