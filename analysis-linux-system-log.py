@@ -49,6 +49,7 @@ class SecurityEvent(BaseModel):
     service: Optional[str] = Field(default=None, description="관련 서비스")
     recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
     requires_human_review: bool = Field(description="인간 검토 필요 여부")
+    related_log_ids: list[str] = Field(default=[], description="관련 LOGID 목록 (예: ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
     total_events: int = Field(default=0, description="총 이벤트 수")

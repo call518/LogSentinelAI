@@ -101,11 +101,22 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # JSON 파싱
         parsed = json.loads(review)
         
-        # 분석 시간 정보 추가
+        # 원본 로그 데이터를 LOGID -> 원본 내용 매핑으로 생성
+        log_raw_data = {}
+        for line in chunk_data:
+            line = line.strip()
+            if line.startswith("LOGID-"):
+                parts = line.split(" ", 1)
+                logid = parts[0]
+                original_content = parts[1] if len(parts) > 1 else ""
+                log_raw_data[logid] = original_content
+        
+        # 분석 시간 정보와 원본 로그 데이터 추가
         parsed = {
             "chunk_analysis_start_utc": chunk_start_time,
             "chunk_analysis_end_utc": chunk_end_time,
             "analysis_result": "success",
+            "@log_raw_data": log_raw_data,
             **parsed
         }
         

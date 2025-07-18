@@ -47,7 +47,7 @@ class SecurityEvent(BaseModel):
     attack_patterns: list[AttackType] = Field(default=[], description="탐지된 공격 패턴")
     recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
     requires_human_review: bool = Field(description="인간 검토 필요 여부")
-    related_log_ids: list[str] = Field(default=[], description="관련된 LOGID 목록 (예: ['LOGID-ABC123', 'LOGID-DEF456'])")
+    related_log_ids: list[str] = Field(default=[], description="관련 LOGID 목록 (예: ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
     total_requests: int = Field(default=0, description="총 요청 수")

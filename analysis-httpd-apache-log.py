@@ -1,17 +1,5 @@
 from pydantic import BaseModel, Field
-class ApacheSecurityEvent(BaseModel):
-    event_type: str = Field(description="보안 이벤트 유형")
-    severity: SeverityLevel
-    description: str = Field(description="이벤트 상세 설명")
-    confidence_score: float = Field(ge=0.0, le=1.0, description="신뢰도 (0.0-1.0)")
-    log_level: str = Field(description="Apache 로그 레벨")
-    error_message: str = Field(description="에러 메시지")
-    file_path: Optional[str] = Field(default=None, description="관련 파일 경로")
-    source_ips: list[str] = Field(default=[], description="소스 IP 목록")
-    attack_patterns: list[AttackType] = Field(default=[], description="탐지된 공격 패턴")
-    recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
-    requires_human_review: bool = Field(description="인간 검토 필요 여부")
-    related_log_ids: list[str] = Field(default=[], description="관련된 LOGID 목록 (예: ['LOGID-ABC123', 'LOGID-DEF456'])")port Enum
+from enum import Enum
 from typing import Literal, Optional
 import json
 import os
@@ -60,6 +48,7 @@ class SecurityEvent(BaseModel):
     attack_patterns: list[AttackType] = Field(default=[], description="탐지된 공격 패턴")
     recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
     requires_human_review: bool = Field(description="인간 검토 필요 여부")
+    related_log_ids: list[str] = Field(default=[], description="관련 LOGID 목록 (예: ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
     total_errors: int = Field(default=0, description="총 에러 수")
