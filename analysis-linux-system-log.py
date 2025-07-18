@@ -19,83 +19,54 @@ from commons import process_log_chunk
 # uv add outlines ollama openai python-dotenv numpy
 
 #---------------------- Linux System Log용 Enums 및 Models ----------------------
-class LinuxSeverityLevel(str, Enum):
-    """
-    Severity levels for security events (BALANCED APPROACH):
-    - CRITICAL: Confirmed successful attacks or system compromise
-    - HIGH: Strong attack indicators with high confidence and potential system damage
-    - MEDIUM: Suspicious patterns warranting investigation (use for legitimate security concerns)
-    - LOW: Minor security events or isolated anomalies
-    - INFO: Normal system events and routine activities
-    """
+class SeverityLevel(str, Enum):
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
     INFO = "INFO"
 
-class LinuxEventType(str, Enum):
+class EventType(str, Enum):
     AUTH_FAILURE = "AUTH_FAILURE"
     AUTH_SUCCESS = "AUTH_SUCCESS"
-    SESSION_OPENED = "SESSION_OPENED"
-    SESSION_CLOSED = "SESSION_CLOSED"
-    FTP_CONNECTION = "FTP_CONNECTION"
-    SFTP_CONNECTION = "SFTP_CONNECTION"
-    SSH_CONNECTION = "SSH_CONNECTION"
+    SESSION_EVENT = "SESSION_EVENT"
+    NETWORK_CONNECTION = "NETWORK_CONNECTION"
     SUDO_USAGE = "SUDO_USAGE"
     CRON_JOB = "CRON_JOB"
-    SYSTEMD_EVENT = "SYSTEMD_EVENT"
-    KERNEL_EVENT = "KERNEL_EVENT"
+    SYSTEM_EVENT = "SYSTEM_EVENT"
     USER_MANAGEMENT = "USER_MANAGEMENT"
-    LOGROTATE_ALERT = "LOGROTATE_ALERT"
     ANOMALY = "ANOMALY"
     UNKNOWN = "UNKNOWN"
 
-class LogEntry(BaseModel):
-    log_id: str
-    log_message: str
-
 class LinuxSecurityEvent(BaseModel):
-    event_type: LinuxEventType
-    severity: LinuxSeverityLevel = Field(
-        description="Severity level - Use balanced judgment based on error patterns and potential security impact"
-    )
-    description: str
-    source_ip: Optional[str]
-    username: Optional[str]
-    process: Optional[str] = None
-    service: Optional[str] = None
-    escalation_reason: Optional[str] = None
-    relevant_log_entry: list[LogEntry] = Field(default=[], description="관련된 로그 엔트리 목록")
-    requires_human_review: bool
+    event_type: EventType = Field(description="이벤트 유형")
+    severity: SeverityLevel
+    description: str = Field(description="이벤트 상세 설명")
+    confidence_score: float = Field(ge=0.0, le=1.0, description="신뢰도 (0.0-1.0)")
+    source_ip: Optional[str] = Field(default=None, description="소스 IP")
+    username: Optional[str] = Field(default=None, description="사용자명")
+    process: Optional[str] = Field(default=None, description="관련 프로세스")
+    service: Optional[str] = Field(default=None, description="관련 서비스")
     recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
-    confidence_score: float = Field(ge=0.0, le=1.0)
+    requires_human_review: bool = Field(description="인간 검토 필요 여부")
 
-class LinuxStatistics(BaseModel):
-    auth_failures_by_ip: Optional[dict[str, int]]
-    ftp_connections_by_ip: Optional[dict[str, int]]
-    sftp_connections_by_ip: Optional[dict[str, int]]
-    ssh_connections_by_ip: Optional[dict[str, int]]
-    session_opened_count: Optional[int]
-    session_closed_count: Optional[int]
-    sudo_usage_by_user: Optional[dict[str, int]]
-    cron_jobs_by_user: Optional[dict[str, int]]
-    service_events: Optional[dict[str, int]]
-    user_management_events: Optional[dict[str, int]]
-    kernel_events: Optional[dict[str, int]]
-    anomaly_counts: Optional[dict[str, int]]
+class Statistics(BaseModel):
+    total_events: int = Field(default=0, description="총 이벤트 수")
+    auth_failures: int = Field(default=0, description="인증 실패 수")
+    unique_ips: int = Field(default=0, description="고유 IP 수")
+    unique_users: int = Field(default=0, description="고유 사용자 수")
+    event_by_type: dict[str, int] = Field(default={}, description="유형별 이벤트 수")
+    top_source_ips: dict[str, int] = Field(default={}, description="상위 소스 IP")
 
 class LinuxLogAnalysis(BaseModel):
-    summary: str
-    observations: list[str]
-    planning: list[str]
+    summary: str = Field(description="분석 요약")
     events: list[LinuxSecurityEvent] = Field(
         min_items=1,
-        description="Security events found - MUST contain at least one event per chunk, never empty"
+        description="보안 이벤트 목록 - 반드시 1개 이상 포함"
     )
-    statistics: Optional[LinuxStatistics]
-    highest_severity: Optional[LinuxSeverityLevel]
-    requires_immediate_attention: bool
+    statistics: Statistics = Field(description="통계 정보")
+    highest_severity: SeverityLevel = Field(description="최고 심각도")
+    requires_immediate_attention: bool = Field(description="즉시 주의 필요")
 #--------------------------------------------------------------------------------------
 
 # LLM 설정

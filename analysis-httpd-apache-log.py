@@ -20,99 +20,51 @@ from commons import process_log_chunk
 
 #---------------------------------- Enums and Models ----------------------------------
 class SeverityLevel(str, Enum):
-    """
-    Severity levels for security events (BALANCED APPROACH):
-    - CRITICAL: Confirmed successful attacks with system compromise
-    - HIGH: Strong attack indicators with high confidence and potential damage
-    - MEDIUM: Suspicious patterns warranting investigation (use for legitimate security concerns)
-    - LOW: Minor anomalies or isolated security events
-    - INFO: Normal error events and routine activities
-    """
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
     INFO = "INFO"
 
-class LogLevel(str, Enum):
-    """Apache log levels"""
-    ERROR = "error"
-    WARN = "warn"
-    NOTICE = "notice"
-    INFO = "info"
-    DEBUG = "debug"
-
 class AttackType(str, Enum):
     DIRECTORY_TRAVERSAL = "DIRECTORY_TRAVERSAL"
     COMMAND_INJECTION = "COMMAND_INJECTION"
-    PATH_TRAVERSAL = "PATH_TRAVERSAL"
     FILE_INCLUSION = "FILE_INCLUSION"
     INVALID_HTTP_METHOD = "INVALID_HTTP_METHOD"
     UNAUTHORIZED_ACCESS = "UNAUTHORIZED_ACCESS"
-    REPEATED_REQUESTS = "REPEATED_REQUESTS"
     CONFIGURATION_ERROR = "CONFIGURATION_ERROR"
     MODULE_ERROR = "MODULE_ERROR"
     UNKNOWN = "UNKNOWN"
 
-class ErrorPattern(BaseModel):
-    """Apache error log에서 발견되는 에러 패턴"""
-    error_type: str = Field(description="에러 유형 (예: Directory index forbidden, File does not exist)")
-    file_path: Optional[str] = Field(description="관련된 파일 경로")
-    occurrences: int = Field(description="발생 횟수")
-    client_ips: list[str] = Field(default=[], description="관련된 클라이언트 IP 목록")
-
-class ApacheModuleInfo(BaseModel):
-    """Apache 모듈 관련 정보"""
-    module_name: str = Field(description="모듈 이름")
-    operation: str = Field(description="모듈 작업 (예: init, configured)")
-    status: str = Field(description="상태 (예: ok, error)")
+class ApacheSecurityEvent(BaseModel):
+    event_type: str = Field(description="보안 이벤트 유형")
+    severity: SeverityLevel
+    description: str = Field(description="이벤트 상세 설명")
+    confidence_score: float = Field(ge=0.0, le=1.0, description="신뢰도 (0.0-1.0)")
+    log_level: str = Field(description="Apache 로그 레벨")
+    error_message: str = Field(description="에러 메시지")
+    file_path: Optional[str] = Field(default=None, description="관련 파일 경로")
+    source_ips: list[str] = Field(default=[], description="소스 IP 목록")
+    attack_patterns: list[AttackType] = Field(default=[], description="탐지된 공격 패턴")
+    recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
+    requires_human_review: bool = Field(description="인간 검토 필요 여부")
 
 class Statistics(BaseModel):
-    error_count_by_ip: Optional[dict[str, int]] = Field(description="IP별 에러 발생 수")
-    error_count_by_type: Optional[dict[str, int]] = Field(description="에러 유형별 발생 수")
-    log_level_distribution: Optional[dict[str, int]] = Field(description="로그 레벨별 분포")
+    total_errors: int = Field(default=0, description="총 에러 수")
+    error_by_level: dict[str, int] = Field(default={}, description="레벨별 에러 수")
+    error_by_type: dict[str, int] = Field(default={}, description="유형별 에러 수")
+    top_error_ips: dict[str, int] = Field(default={}, description="상위 에러 IP")
 
-class IPAddress(BaseModel):
-    ip_address: str
-
-class LogEntry(BaseModel):
-    log_id: str
-    log_message: str
-
-class ApacheSecurityEvent(BaseModel):
-    relevant_log_entry: list[LogEntry] = Field(default=[], description="관련된 로그 엔트리 목록")
-    reasoning: str
-    event_type: str
-    severity: SeverityLevel = Field(
-        description="Severity level - Use balanced judgment based on error patterns and potential security impact"
-    )
-    requires_human_review: bool
-    confidence_score: float = Field(
-        ge=0.0, 
-        le=1.0,
-        description="Confidence score between 0 and 1"
-    )
-    log_level: str = Field(description="Apache 로그 레벨 (error, notice, warn, info)")
-    error_message: str = Field(description="에러 메시지 내용")
-    file_path: Optional[str] = Field(description="관련된 파일 경로")
-    source_ips: list[str] = Field(default=[], description="관련된 클라이언트 IP 목록")
-    possible_attack_patterns: list[str] = Field(default=[], description="가능한 공격 패턴 목록")
-    recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
-
-### Top-level class for log analysis results
 class LogAnalysis(BaseModel):
-    summary: str
-    observations: list[str] = Field(default=[], description="관찰사항 목록")
-    planning: list[str] = Field(default=[], description="계획사항 목록")
+    summary: str = Field(description="분석 요약")
     events: list[ApacheSecurityEvent] = Field(
         min_items=1,
-        description="Security events found - MUST contain at least one event per chunk, never empty"
+        description="보안 이벤트 목록 - 반드시 1개 이상 포함"
     )
-    error_patterns: list[ErrorPattern] = Field(default=[], description="에러 패턴 목록")
-    module_info: list[ApacheModuleInfo] = Field(default=[], description="모듈 정보 목록")
-    statistics: Optional[Statistics]
-    highest_severity: Optional[str] = Field(description="가장 높은 심각도 (CRITICAL, HIGH, MEDIUM, LOW, INFO)")
-    requires_immediate_attention: bool
+    statistics: Statistics = Field(description="통계 정보")
+    highest_severity: SeverityLevel = Field(description="최고 심각도")
+    requires_immediate_attention: bool = Field(description="즉시 주의 필요")
+#--------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------
 
 # LLM 설정
