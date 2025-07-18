@@ -14,9 +14,153 @@ from typing import Dict, Any, Optional
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError, RequestError
 from dotenv import load_dotenv
+import outlines
+import ollama
+import openai
 
 # .env 파일 로드
 load_dotenv()
+
+
+def initialize_llm_model(llm_provider="vllm"):
+    """
+    LLM 모델을 초기화하는 공통 함수
+    
+    Args:
+        llm_provider: "ollama", "vllm", "openai" 중 선택
+    
+    Returns:
+        initialized model object
+    """
+    if llm_provider == "ollama":
+        ### Ollama API
+        # llm_model = "mistral:7b"
+        # llm_model = "qwen2.5-coder:0.5b"
+        # llm_model = "qwen2.5-coder:1.5b"
+        llm_model = "qwen2.5-coder:3b"
+        # llm_model = "qwen2.5-coder:7b"
+        # llm_model = "qwen3:0.6b"
+        # llm_model = "qwen3:1.7b"
+        # llm_model = "qwen3:4b"
+        # llm_model = "qwen3:8b"
+        # llm_model = "gemma3:1b"
+        # llm_model = "gemma3:4b"
+        # llm_model = "gemma3:12b"
+        # llm_model = "call518/gemma3-tools-8192ctx:4b"
+        client = ollama.Client()
+        model = outlines.from_ollama(client, llm_model)
+    elif llm_provider == "vllm":
+        ### Local vLLM API
+        openai_api_key = "dummy"
+        # llm_model = "Qwen/Qwen2.5-0.5B-Instruct"
+        llm_model = "Qwen/Qwen2.5-3B-Instruct"
+        # llm_model = "gpt-4o"
+        client = openai.OpenAI(
+            base_url="http://127.0.0.1:5000/v1",  # Local vLLM API endpoint
+            api_key=openai_api_key
+        )
+        model = outlines.from_openai(client, llm_model)
+    elif llm_provider == "openai":
+        ### OpenAI API
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        llm_model = "gpt-4o-mini"
+        # llm_model = "gpt-4o"
+        client = openai.OpenAI(
+            base_url="https://api.openai.com/v1",  # OpenAI API endpoint
+            # base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
+            api_key=openai_api_key
+        )
+        model = outlines.from_openai(client, llm_model)
+    else:
+        raise ValueError("Unsupported LLM provider. Use 'ollama', 'vllm', or 'openai'.")
+    
+    return model
+
+
+def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
+                     elasticsearch_index, chunk_number, chunk_data):
+    """
+    로그 청크를 처리하는 공통 함수
+    
+    Args:
+        model: LLM 모델 객체
+        prompt: 분석을 위한 프롬프트
+        model_class: Pydantic 모델 클래스
+        chunk_start_time: 청크 분석 시작 시간
+        chunk_end_time: 청크 분석 완료 시간
+        elasticsearch_index: Elasticsearch 인덱스 이름
+        chunk_number: 청크 번호
+        chunk_data: 원본 청크 데이터
+    
+    Returns:
+        (success: bool, parsed_data: dict or None)
+    """
+    try:
+        review = model(prompt, model_class)
+        
+        # JSON 파싱
+        parsed = json.loads(review)
+        
+        # 분석 시간 정보 추가
+        parsed = {
+            "chunk_analysis_start_utc": chunk_start_time,
+            "chunk_analysis_end_utc": chunk_end_time,
+            "analysis_result": "success",
+            **parsed
+        }
+        
+        print(json.dumps(parsed, ensure_ascii=False, indent=4))
+        
+        # Pydantic 모델 검증
+        character = model_class.model_validate(parsed)
+        
+        # Send to Elasticsearch
+        print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
+        success = send_to_elasticsearch(parsed, elasticsearch_index, chunk_number, chunk_data)
+        if success:
+            print(f"✅ Chunk {chunk_number} 데이터 Elasticsearch 전송 완료")
+        else:
+            print(f"❌ Chunk {chunk_number} 데이터 Elasticsearch 전송 실패")
+        
+        return True, parsed
+        
+    except json.JSONDecodeError as e:
+        print(f"JSON 파싱 오류: {e}")
+        # 실패 시 최소한의 정보만 기록
+        failure_data = {
+            "chunk_analysis_start_utc": chunk_start_time,
+            "chunk_analysis_end_utc": chunk_end_time,
+            "analysis_result": "failed",
+            "error_type": "json_parse_error",
+            "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
+            "chunk_id": chunk_number
+        }
+        print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
+        success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
+        if success:
+            print(f"✅ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 완료")
+        else:
+            print(f"❌ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 실패")
+        return False, None
+        
+    except Exception as e:
+        print(f"분석 처리 오류: {e}")
+        # 기타 실패 시 최소한의 정보만 기록
+        failure_data = {
+            "chunk_analysis_start_utc": chunk_start_time,
+            "chunk_analysis_end_utc": chunk_end_time,
+            "analysis_result": "failed",
+            "error_type": "processing_error",
+            "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
+            "chunk_id": chunk_number
+        }
+        print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
+        success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
+        if success:
+            print(f"✅ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 완료")
+        else:
+            print(f"❌ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 실패")
+        return False, None
 
 
 PROMPT_TEMPLATE_HTTPD_ACCESS_LOG = """

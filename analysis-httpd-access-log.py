@@ -1,6 +1,3 @@
-import outlines
-import ollama
-import openai
 from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Literal, Optional
@@ -15,6 +12,8 @@ from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
 from commons import send_to_elasticsearch
+from commons import initialize_llm_model
+from commons import process_log_chunk
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
@@ -110,51 +109,9 @@ class LogAnalysis(BaseModel):
     requires_immediate_attention: bool
 #--------------------------------------------------------------------------------------
 
-# llm_provider = "ollama"
-llm_provider = "vllm"
-# llm_provider = "openai"
-
-if llm_provider == "ollama":
-    ### Ollama API
-    # llm_model = "mistral:7b"
-    # llm_model = "qwen2.5-coder:0.5b"
-    # llm_model = "qwen2.5-coder:1.5b"
-    llm_model = "qwen2.5-coder:3b"
-    # llm_model = "qwen2.5-coder:7b"
-    # llm_model = "qwen3:0.6b"
-    # llm_model = "qwen3:1.7b"
-    # llm_model = "qwen3:4b"
-    # llm_model = "qwen3:8b"
-    # llm_model = "gemma3:1b"
-    # llm_model = "gemma3:4b"
-    # llm_model = "gemma3:12b"
-    # llm_model = "call518/gemma3-tools-8192ctx:4b"
-    client = ollama.Client()
-    model = outlines.from_ollama(client, llm_model)
-elif llm_provider == "vllm":
-    ### Local vLLM API
-    openai_api_key = "dummy"
-    # llm_model = "Qwen/Qwen2.5-0.5B-Instruct"
-    llm_model = "Qwen/Qwen2.5-3B-Instruct"
-    client = openai.OpenAI(
-        base_url="http://127.0.0.1:5000/v1",  # Local vLLM API endpoint
-        api_key=openai_api_key
-    )
-    model = outlines.from_openai(client, llm_model)
-elif llm_provider == "openai":
-    ### OpenAI API
-    load_dotenv()
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    llm_model = "gpt-4o-mini"
-    # llm_model = "gpt-4o"
-    client = openai.OpenAI(
-        base_url="https://api.openai.com/v1",  # OpenAI API endpoint
-        # base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
-        api_key=openai_api_key
-    )
-    model = outlines.from_openai(client, llm_model)
-else:
-    raise ValueError("Unsupported LLM provider. Use 'ollama' or 'openai'.")
+# LLM 설정
+llm_provider = "vllm"  # "ollama", "vllm", "openai" 중 선택
+model = initialize_llm_model(llm_provider)
 
 # log_path = "sample-logs/access-10.log" 
 # log_path = "sample-logs/access-100.log"
@@ -167,77 +124,22 @@ with open(log_path, "r", encoding="utf-8") as f:
         # 분석 시작 시간 기록
         chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         logs = "".join(chunk)
-        model_schema=LogAnalysis.model_json_schema()
+        model_schema = LogAnalysis.model_json_schema()
         prompt = PROMPT_TEMPLATE_HTTPD_ACCESS_LOG.format(logs=logs, model_schema=model_schema)
         print(f"\n--- Chunk {i+1} ---")
         print_chunk_contents(chunk)
-        review = model(
-            prompt,
-            LogAnalysis
-        )
+        
         # 분석 완료 시간 기록
         chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
-        ### [Validate] Parse the review and print the character
-        try:
-            # print(review)
-            ### Validate JSON
-            parsed = json.loads(review)
-            
-            # 분석 시간 정보 추가
-            parsed = {
-                "chunk_analysis_start_utc": chunk_start_time,
-                "chunk_analysis_end_utc": chunk_end_time,
-                "analysis_result": "success",
-                **parsed
-            }
-            
-            print(json.dumps(parsed, ensure_ascii=False, indent=4))
-            # json_str = json.dumps(parsed, ensure_ascii=False)
-            # subprocess.run(['jq', '--color-output', '.'], input=json_str, text=True, stdout=sys.stdout)
-            
-            ### Validate Type
-            character = LogAnalysis.model_validate(parsed)
-            # print(character)
-            
-            # Send to Elasticsearch
-            print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
-            success = send_to_elasticsearch(parsed, "httpd_access", i+1, chunk)
-            if success:
-                print(f"✅ Chunk {i+1} 데이터 Elasticsearch 전송 완료")
-            else:
-                print(f"❌ Chunk {i+1} 데이터 Elasticsearch 전송 실패")
-                
-        except json.JSONDecodeError as e:
-            print(f"JSON 파싱 오류: {e}")
-            # 실패 시 최소한의 정보만 기록
-            failure_data = {
-                "chunk_analysis_start_utc": chunk_start_time,
-                "chunk_analysis_end_utc": chunk_end_time,
-                "analysis_result": "failed",
-                "error_type": "json_parse_error",
-                "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
-                "chunk_id": i+1
-            }
-            print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
-            success = send_to_elasticsearch(failure_data, "httpd_access", i+1, chunk)
-            if success:
-                print(f"✅ Chunk {i+1} 실패 정보 Elasticsearch 전송 완료")
-            else:
-                print(f"❌ Chunk {i+1} 실패 정보 Elasticsearch 전송 실패")
-        except Exception as e:
-            print(f"분석 처리 오류: {e}")
-            # 기타 실패 시 최소한의 정보만 기록
-            failure_data = {
-                "chunk_analysis_start_utc": chunk_start_time,
-                "chunk_analysis_end_utc": chunk_end_time,
-                "analysis_result": "failed",
-                "error_type": "processing_error",
-                "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
-                "chunk_id": i+1
-            }
-            print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
-            success = send_to_elasticsearch(failure_data, "httpd_access", i+1, chunk)
-            if success:
-                print(f"✅ Chunk {i+1} 실패 정보 Elasticsearch 전송 완료")
-            else:
-                print(f"❌ Chunk {i+1} 실패 정보 Elasticsearch 전송 실패")
+        
+        # 공통 처리 함수 사용
+        success, parsed_data = process_log_chunk(
+            model=model,
+            prompt=prompt,
+            model_class=LogAnalysis,
+            chunk_start_time=chunk_start_time,
+            chunk_end_time=chunk_end_time,
+            elasticsearch_index="httpd_access",
+            chunk_number=i+1,
+            chunk_data=chunk
+        )
