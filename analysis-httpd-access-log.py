@@ -183,22 +183,6 @@ with open(log_path, "r", encoding="utf-8") as f:
             ### Validate JSON
             parsed = json.loads(review)
             
-            # Clean up null values in list fields to prevent Elasticsearch errors
-            def clean_null_lists(obj):
-                if isinstance(obj, dict):
-                    for key, value in obj.items():
-                        if isinstance(value, list):
-                            obj[key] = [item for item in value if item is not None]
-                        elif isinstance(value, dict):
-                            clean_null_lists(value)
-                        elif isinstance(value, list):
-                            for item in value:
-                                if isinstance(item, dict):
-                                    clean_null_lists(item)
-                return obj
-            
-            parsed = clean_null_lists(parsed)
-            
             # 분석 시간 정보 추가
             parsed = {
                 "chunk_analysis_start_utc": chunk_start_time,

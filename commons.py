@@ -103,6 +103,16 @@ Remember:
 - (NOTE) Summary, observations, and planning sections must be written in Korean.
 - CRITICAL: The events array must NEVER be empty. Always create at least one security event per chunk.
 
+JSON GENERATION RULES:
+- NEVER use empty strings ("") as object keys
+- NEVER use null values in list fields - use empty arrays [] instead
+- For dictionary fields like statistics, ensure all keys are non-empty strings
+- If a field has no data, omit it entirely or use appropriate default values
+- All list fields must be actual arrays, never null
+- Confidence scores must be decimal numbers (0.8, not 80)
+- All string fields must contain actual text, never empty strings
+- When creating statistics by IP or other dynamic keys, ensure keys are valid non-empty strings
+
 You should return valid JSON in the schema
 {model_schema}
 
@@ -188,6 +198,16 @@ Remember:
 - (NOTE) Summary, observations, and planning sections must be written in Korean.
 - CRITICAL: The events array must NEVER be empty. Always create at least one security event per chunk.
 
+JSON GENERATION RULES:
+- NEVER use empty strings ("") as object keys
+- NEVER use null values in list fields - use empty arrays [] instead
+- For dictionary fields like statistics, ensure all keys are non-empty strings
+- If a field has no data, omit it entirely or use appropriate default values
+- All list fields must be actual arrays, never null
+- Confidence scores must be decimal numbers (0.8, not 80)
+- All string fields must contain actual text, never empty strings
+- When creating statistics by IP or other dynamic keys, ensure keys are valid non-empty strings
+
 You should return valid JSON in the schema
 {model_schema}
 
@@ -264,6 +284,16 @@ Remember:
 - Confidence scores must be between 0.0 and 1.0 (use 0.8 for 80% confidence, NOT 80)
 - (NOTE) Summary, observations, and planning sections must be written in Korean.
 - CRITICAL: The events array must NEVER be empty. Always create at least one security event per chunk.
+
+JSON GENERATION RULES:
+- NEVER use empty strings ("") as object keys
+- NEVER use null values in list fields - use empty arrays [] instead
+- For dictionary fields like statistics, ensure all keys are non-empty strings
+- If a field has no data, omit it entirely or use appropriate default values
+- All list fields must be actual arrays, never null
+- Confidence scores must be decimal numbers (0.8, not 80)
+- All string fields must contain actual text, never empty strings
+- When creating statistics by IP or other dynamic keys, ensure keys are valid non-empty strings
 
 You should return valid JSON in the schema
 {model_schema}
