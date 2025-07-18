@@ -174,6 +174,17 @@ def assign_logid_to_packets(packets):
 # llm_provider = "ollama"
 # llm_provider = "vllm"
 llm_provider = "openai"
+
+# LLM 모델 이름 정의 (각 provider별로)
+if llm_provider == "ollama":
+    llm_model_name = "qwen2.5-coder:3b"
+elif llm_provider == "vllm":
+    llm_model_name = "Qwen/Qwen2.5-3B-Instruct"
+elif llm_provider == "openai":
+    llm_model_name = "gpt-4o"
+else:
+    llm_model_name = "unknown"
+
 model = initialize_llm_model(llm_provider)
 
 log_path = "sample-logs/tcpdump-packet-39.log"
@@ -215,7 +226,9 @@ with processed_file as f:
             chunk_end_time=chunk_end_time,
             elasticsearch_index="tcpdump_packet",
             chunk_number=i+1,
-            chunk_data=chunk
+            chunk_data=chunk,
+            llm_provider=llm_provider,
+            llm_model=llm_model_name
         )
         
         if success:

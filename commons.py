@@ -99,7 +99,7 @@ def wait_on_failure(delay_seconds=30):
 
 
 def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
-                     elasticsearch_index, chunk_number, chunk_data):
+                     elasticsearch_index, chunk_number, chunk_data, llm_provider=None, llm_model=None):
     """
     Common function to process log chunks
     
@@ -112,6 +112,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         elasticsearch_index: Elasticsearch index name
         chunk_number: Chunk number
         chunk_data: Original chunk data
+        llm_provider: LLM provider name (e.g., "ollama", "vllm", "openai")
+        llm_model: LLM model name (e.g., "Qwen/Qwen2.5-3B-Instruct")
     
     Returns:
         (success: bool, parsed_data: dict or None)
@@ -134,7 +136,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
                 original_content = parts[1] if len(parts) > 1 else ""
                 log_raw_data[logid] = original_content
         
-        # 분석 시간 정보와 원본 로그 데이터 추가
+        # 분석 시간 정보, LLM 정보, 원본 로그 데이터 추가
         parsed = {
             "chunk_analysis_start_utc": chunk_start_time,
             "chunk_analysis_end_utc": chunk_end_time,
@@ -142,6 +144,12 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@log_raw_data": log_raw_data,
             **parsed
         }
+        
+        # LLM 정보 추가 (선택사항)
+        if llm_provider:
+            parsed["@llm_provider"] = llm_provider
+        if llm_model:
+            parsed["@llm_model"] = llm_model
         
         print(json.dumps(parsed, ensure_ascii=False, indent=4))
         
@@ -169,6 +177,11 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "error_message": str(e)[:200],  # Limit error message to 200 characters
             "chunk_id": chunk_number
         }
+        # LLM 정보 추가 (선택사항)
+        if llm_provider:
+            failure_data["@llm_provider"] = llm_provider
+        if llm_model:
+            failure_data["@llm_model"] = llm_model
         print(f"\n🔄 Sending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
@@ -188,6 +201,11 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "error_message": str(e)[:200],  # Limit error message to 200 characters
             "chunk_id": chunk_number
         }
+        # LLM 정보 추가 (선택사항)
+        if llm_provider:
+            failure_data["@llm_provider"] = llm_provider
+        if llm_model:
+            failure_data["@llm_model"] = llm_model
         print(f"\n🔄 Sending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
