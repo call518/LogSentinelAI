@@ -8,12 +8,13 @@ import datetime
 import subprocess
 from dotenv import load_dotenv
 
-from commons import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
+from prompts import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
 from commons import send_to_elasticsearch
 from commons import initialize_llm_model
 from commons import process_log_chunk
+from commons import wait_on_failure
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
@@ -43,18 +44,18 @@ class SecurityEvent(BaseModel):
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
     log_level: str = Field(description="Apache log level")
     error_message: str = Field(description="Error message")
-    file_path: Optional[str] = Field(default=None, description="Related file path")
-    source_ips: list[str] = Field(default=[], description="Source IP list")
-    attack_patterns: list[AttackType] = Field(default=[], description="Detected attack patterns")
-    recommended_actions: list[str] = Field(default=[], description="Recommended actions")
+    file_path: Optional[str] = Field(description="Related file path")
+    source_ips: list[str] = Field(description="Source IP list")
+    attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
+    recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
-    related_log_ids: list[str] = Field(default=[], description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
+    related_log_ids: list[str] = Field(description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
-    total_errors: int = Field(default=0, description="Total number of errors")
-    error_by_level: dict[str, int] = Field(default={}, description="Errors by level")
-    error_by_type: dict[str, int] = Field(default={}, description="Errors by type")
-    top_error_ips: dict[str, int] = Field(default={}, description="Top error IPs")
+    total_errors: int = Field(description="Total number of errors")
+    error_by_level: dict[str, int] = Field(default_factory=dict, description="Errors by level")
+    error_by_type: dict[str, int] = Field(default_factory=dict, description="Errors by type")
+    top_error_ips: dict[str, int] = Field(default_factory=dict, description="Top error IPs")
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
@@ -62,14 +63,16 @@ class LogAnalysis(BaseModel):
         min_items=1,
         description="List of security events - must include at least one"
     )
-    statistics: Statistics = Field(description="Statistical information")
-    highest_severity: SeverityLevel = Field(description="Highest severity level")
+    statistics: Statistics
+    highest_severity: SeverityLevel
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------
 
-# LLM Configuration
-llm_provider = "vllm"  # Choose from "ollama", "vllm", "openai"
+# LLM Configuration - Choose from "ollama", "vllm", "openai"
+# llm_provider = "ollama"
+llm_provider = "vllm"
+# llm_provider = "openai"
 model = initialize_llm_model(llm_provider)
 
 # log_path = "sample-logs/apache-10.log"
@@ -102,3 +105,11 @@ with open(log_path, "r", encoding="utf-8") as f:
             chunk_number=i+1,
             chunk_data=chunk
         )
+        
+        if success:
+            print("✅ Analysis completed successfully")
+        else:
+            print("❌ Analysis failed")
+            wait_on_failure(30)  # 실패 시 30초 대기
+        
+        print("-" * 50)

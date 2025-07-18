@@ -8,12 +8,13 @@ import datetime
 import subprocess
 from dotenv import load_dotenv
 
-from commons import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
+from prompts import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
 from commons import send_to_elasticsearch
 from commons import initialize_llm_model
 from commons import process_log_chunk
+from commons import wait_on_failure
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
@@ -42,19 +43,19 @@ class SecurityEvent(BaseModel):
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
     url_pattern: str = Field(description="Related URL pattern")
     http_method: str = Field(description="HTTP method")
-    source_ips: list[str] = Field(default=[], description="Source IP list")
-    response_codes: list[str] = Field(default=[], description="Response code list")
-    attack_patterns: list[AttackType] = Field(default=[], description="Detected attack patterns")
-    recommended_actions: list[str] = Field(default=[], description="Recommended actions")
+    source_ips: list[str] = Field(description="Source IP list")
+    response_codes: list[str] = Field(description="Response code list")
+    attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
+    recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
-    related_log_ids: list[str] = Field(default=[], description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
+    related_log_ids: list[str] = Field(description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
-    total_requests: int = Field(default=0, description="Total number of requests")
-    unique_ips: int = Field(default=0, description="Number of unique IPs")
-    error_rate: float = Field(default=0.0, description="Error rate (0.0-1.0)")
-    top_ips: dict[str, int] = Field(default={}, description="Top requesting IPs")
-    response_code_dist: dict[str, int] = Field(default={}, description="Response code distribution")
+    total_requests: int = Field(description="Total number of requests")
+    unique_ips: int = Field(description="Number of unique IPs")
+    error_rate: float = Field(description="Error rate (0.0-1.0)")
+    top_ips: dict[str, int] = Field(default_factory=dict, description="Top requesting IPs")
+    response_code_dist: dict[str, int] = Field(default_factory=dict, description="Response code distribution")
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
@@ -62,13 +63,15 @@ class LogAnalysis(BaseModel):
         min_items=1,
         description="List of security events - must include at least one"
     )
-    statistics: Statistics = Field(description="Statistical information")
-    highest_severity: SeverityLevel = Field(description="Highest severity level")
+    statistics: Statistics
+    highest_severity: SeverityLevel
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 
-# LLM Configuration
-llm_provider = "vllm"  # Choose from "ollama", "vllm", "openai"
+# LLM Configuration - Choose from "ollama", "vllm", "openai"
+# llm_provider = "ollama"
+llm_provider = "vllm"
+# llm_provider = "openai"
 model = initialize_llm_model(llm_provider)
 
 # log_path = "sample-logs/access-10.log" 
@@ -101,3 +104,11 @@ with open(log_path, "r", encoding="utf-8") as f:
             chunk_number=i+1,
             chunk_data=chunk
         )
+        
+        if success:
+            print("✅ Analysis completed successfully")
+        else:
+            print("❌ Analysis failed")
+            wait_on_failure(30)  # 실패 시 30초 대기
+        
+        print("-" * 50)

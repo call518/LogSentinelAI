@@ -4,8 +4,9 @@ SonarLog is a system that leverages LLM (Large Language Model) to analyze variou
 
 ## 🌟 Key Features
 
-- **Multi-format Log Support**: HTTP Access Log, Apache Error Log, Linux System Log
+- **Multi-format Log Support**: HTTP Access Log, Apache Error Log, Linux System Log, Network Traffic Analysis
 - **AI-based Security Analysis**: Intelligent security event detection through LLM
+- **Comprehensive Network Analysis**: Deep packet inspection for all network protocols (HTTP, HTTPS, SSH, FTP, DNS, Database traffic, etc.)
 - **Structured Data Output**: JSON schema validation using Pydantic models
 - **Elasticsearch Integration**: Real-time log analysis result storage and search
 - **Kibana Dashboard**: Visualized security analysis result monitoring
@@ -28,7 +29,7 @@ SonarLog is a system that leverages LLM (Large Language Model) to analyze variou
 │ • HTTP Access   │    │                 │    │ • Security      │
 │ • Apache Error  │    │ • LLM Analysis  │    │   Events        │
 │ • System Logs   │    │ • Pydantic      │    │ • Raw Logs      │
-│                 │    │   Validation    │    │ • Metadata      │
+│ • Network Pcap  │    │   Validation    │    │ • Metadata      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                         │
                                                         ▼
@@ -137,6 +138,9 @@ python analysis-httpd-apache-log.py
 
 # Run Linux system log analysis
 python analysis-linux-system-log.py
+
+# Run comprehensive network packet analysis (tcpdump)
+python analysis-tcpdump-network.py
 ```
 
 #### Step 5: Import Kibana Dashboard
@@ -154,6 +158,7 @@ SonarLog/
 ├── analysis-httpd-access-log.py    # HTTP access log analyzer
 ├── analysis-httpd-apache-log.py    # Apache error log analyzer
 ├── analysis-linux-system-log.py    # Linux system log analyzer
+├── analysis-tcpdump-network.py     # Comprehensive network packet analyzer
 ├── commons.py                      # Common functions and utilities
 ├── requirements.txt                # Python dependencies
 ├── .env                           # Environment variables (created from template)
@@ -168,7 +173,8 @@ SonarLog/
 │   ├── apache-100.log             # 100 Apache error log entries
 │   ├── apache-10k.log             # 10,000 Apache error log entries
 │   ├── linux-100.log              # 100 Linux system log entries
-│   └── linux-2k.log               # 2,000 Linux system log entries
+│   ├── linux-2k.log               # 2,000 Linux system log entries
+│   └── tcpdump-pgsql-multi-lines-39.txt # Sample tcpdump packet capture (39 packets)
 ├── img/                           # Documentation images
 │   ├── ex-dashboard.png           # Kibana dashboard example
 │   └── ex-json.png                # JSON output example
@@ -347,7 +353,14 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🔄 Version History
 
-### v1.3.0 (Current)
+### v1.4.0 (Current)
+- ✅ **Major Network Analysis Upgrade**: Comprehensive network packet analysis for all protocols
+- ✅ **Universal tcpdump Support**: Analyze HTTP, HTTPS, SSH, FTP, DNS, Database traffic, and more
+- ✅ **Enhanced Security Detection**: Cross-protocol attack correlation and advanced threat patterns
+- ✅ **Code Consolidation**: Replaced PostgreSQL-specific analyzer with universal network analyzer
+- ✅ **Improved Data Models**: Extended protocol support and security event categorization
+
+### v1.3.0
 - ✅ Repository migrated to GitHub (https://github.com/call518/SonarLog)
 - ✅ Updated README.md with GitHub URLs and contact information
 - ✅ Added comprehensive ToDo & Roadmap section
@@ -412,10 +425,10 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 - **Async Processing**: Implement asynchronous log analysis pipeline
 
 #### Network Log Analysis
-- **Tcpdump Support**: Add analyzer for network packet capture logs
-- **Network Security Events**: Detect network-based attacks (DDoS, port scanning, etc.)
-- **Protocol Analysis**: Support for HTTP, DNS, TCP/UDP traffic analysis
-- **Traffic Pattern Recognition**: Identify suspicious network behavior patterns
+- ✅ **Comprehensive Network Packet Analysis**: Universal analyzer for all network protocols (HTTP, HTTPS, SSH, FTP, DNS, Database traffic, etc.)
+- **Enhanced Network Security Events**: Detect advanced network-based attacks (DDoS, port scanning, etc.)
+- **Cross-Protocol Attack Correlation**: Identify sophisticated multi-protocol attack patterns
+- **Advanced Traffic Pattern Recognition**: Identify sophisticated network behavior patterns
 
 ### 🚀 Future Enhancements
 - **Machine Learning Integration**: Anomaly detection using ML models

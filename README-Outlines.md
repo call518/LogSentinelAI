@@ -1,28 +1,68 @@
-# 😰 STRESSED - A Security Log Analysis System
+# � SonarLog - AI-Powered Security Log Analysis System v1.4.1
 
-**STRuctured Generation Security System Evaluating Data**
+**Structured Generation Security Analysis for Network Operations**
 
-*"Everything is fine! This is fine! We're all fine!"*
+*"Advanced threat detection meets intelligent log parsing"*
 
 ## About
 
-STRESSED is your friendly (if somewhat anxious) AI security intern, powered by Outlines for structured generation and fueled by virtual coffee.
+SonarLog is an advanced AI-powered security analysis system that leverages structured generation techniques to analyze diverse log types including web server logs, system logs, and network packet captures.
 
-STRESSED is a proof-of-concept that iterates through arbitrary logs in chunks, and for each chunk it will generate a summary of the logs and a list of potential security issues. 
+SonarLog uses [Outlines](https://github.com/dottxt-ai/outlines) for structured JSON generation and supports multiple LLM providers (vLLM, Ollama, OpenAI API).
 
-STRESSED heavily applies structured generation techniques to review logs, using [Outlines](https://github.com/dottxt-ai/outlines).
+The system is designed for security operations centers (SOCs) to automatically process and analyze security logs, providing real-time threat detection with Elasticsearch integration for storage and Kibana for visualization.
 
-Its intended use is to run on security logs from web servers, databases, etc. to help administrators understand what is happening in their systems at a high level.
-
-A sample dataset of nginx web server logs is included for testing purposes, sourced from this [Kaggle dataset](https://www.kaggle.com/datasets/eliasdabbas/web-server-access-logs). Apache and Linux logs are from [Loghub](https://github.com/logpai/loghub). Find samples in the `logs` directory.
+Sample datasets include HTTP access logs, Apache error logs, Linux system logs, and tcpdump packet captures for comprehensive testing.
 
 ## Features
 
-- Produces strongly-typed JSON output using [Outlines](https://github.com/dottxt-ai/outlines).
-- Analyzes web server logs with varying degrees of confidence
-- Identifies security threats (or things it *thinks* might be threats)
-- Generates detailed reports (with occasional stress-induced typos)
-- Never takes vacation days or sick leave
+- **Multi-Protocol Analysis**: HTTP/HTTPS, SSH, FTP, DNS, Database traffic, and more
+- **Universal Packet Analysis**: Comprehensive tcpdump packet capture analysis across all protocols
+- **Structured JSON Output**: Strongly-typed responses using Pydantic models and Outlines
+- **Multi-LLM Support**: Compatible with vLLM, Ollama, and OpenAI API
+- **Real-time Integration**: Elasticsearch + Kibana for storage and visualization
+- **LOGID Tracking**: MD5-based unique identifier system for log correlation
+- **Cross-Protocol Correlation**: Multi-stage attack pattern recognition
+- **Severity Assessment**: CRITICAL/HIGH/MEDIUM/LOW/INFO threat classification
+- **Modular Architecture**: Separated prompt templates and utility functions
+
+## Analysis Modules
+
+SonarLog includes specialized analysis modules for different log types:
+
+### 🌐 HTTP Access Log Analysis (`analysis-httpd-access-log.py`)
+- HTTP request/response analysis
+- SQL injection and XSS detection
+- Directory traversal attempts
+- Bot and scanner identification
+- Geographic anomaly detection
+
+### 🔥 Apache Error Log Analysis (`analysis-httpd-apache-log.py`)
+- Server error pattern analysis
+- Application crash detection
+- Configuration issue identification
+- Resource exhaustion monitoring
+
+### 🐧 Linux System Log Analysis (`analysis-linux-system-log.py`)
+- Authentication failure detection
+- Privilege escalation attempts
+- Service status monitoring
+- System resource analysis
+- User activity tracking
+
+### 📦 Universal Packet Analysis (`analysis-tcpdump-packet.py`)
+- **Multi-Protocol Support**: HTTP/HTTPS, SSH, FTP, DNS, SMTP, Database traffic
+- **Attack Pattern Detection**: SQL injection, brute force, data exfiltration
+- **Protocol-Specific Analysis**: Database authentication, DNS tunneling, email attacks
+- **Connection Analysis**: Port scanning, DoS patterns, geographic anomalies
+- **Cross-Protocol Correlation**: Multi-stage attack pattern recognition
+
+Each module provides:
+- Real-time Elasticsearch integration
+- LOGID-based log correlation
+- Configurable severity thresholds
+- Human-readable console output
+- Structured JSON responses
 
 ## Example printout
 

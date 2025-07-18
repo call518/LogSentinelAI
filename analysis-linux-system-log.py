@@ -8,12 +8,13 @@ import datetime
 import subprocess
 from dotenv import load_dotenv
 
-from commons import PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
+from prompts import PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
 from commons import send_to_elasticsearch
 from commons import initialize_llm_model
 from commons import process_log_chunk
+from commons import wait_on_failure
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
@@ -39,25 +40,25 @@ class EventType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 class SecurityEvent(BaseModel):
-    event_type: EventType = Field(description="Event type")
+    event_type: EventType
     severity: SeverityLevel
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    source_ip: Optional[str] = Field(default=None, description="Source IP")
-    username: Optional[str] = Field(default=None, description="Username")
-    process: Optional[str] = Field(default=None, description="Related process")
-    service: Optional[str] = Field(default=None, description="Related service")
-    recommended_actions: list[str] = Field(default=[], description="Recommended actions")
+    source_ip: Optional[str] = Field(description="Source IP")
+    username: Optional[str] = Field(description="Username")
+    process: Optional[str] = Field(description="Related process")
+    service: Optional[str] = Field(description="Related service")
+    recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
-    related_log_ids: list[str] = Field(default=[], description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
+    related_log_ids: list[str] = Field(description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
-    total_events: int = Field(default=0, description="Total number of events")
-    auth_failures: int = Field(default=0, description="Number of authentication failures")
-    unique_ips: int = Field(default=0, description="Number of unique IPs")
-    unique_users: int = Field(default=0, description="Number of unique users")
-    event_by_type: dict[str, int] = Field(default={}, description="Events by type")
-    top_source_ips: dict[str, int] = Field(default={}, description="Top source IPs")
+    total_events: int = Field(description="Total number of events")
+    auth_failures: int = Field(description="Number of authentication failures")
+    unique_ips: int = Field(description="Number of unique IPs")
+    unique_users: int = Field(description="Number of unique users")
+    event_by_type: dict[str, int] = Field(default_factory=dict, description="Events by type")
+    top_source_ips: dict[str, int] = Field(default_factory=dict, description="Top source IPs")
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
@@ -65,13 +66,15 @@ class LogAnalysis(BaseModel):
         min_items=1,
         description="List of security events - must include at least one"
     )
-    statistics: Statistics = Field(description="Statistical information")
-    highest_severity: SeverityLevel = Field(description="Highest severity level")
+    statistics: Statistics
+    highest_severity: SeverityLevel
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 
-# LLM Configuration
-llm_provider = "vllm"  # Choose from "ollama", "vllm", "openai"
+# LLM Configuration - Choose from "ollama", "vllm", "openai"
+# llm_provider = "ollama"
+llm_provider = "vllm"
+# llm_provider = "openai"
 model = initialize_llm_model(llm_provider)
 
 # log_path = "sample-logs/linux-10.log"
@@ -104,3 +107,11 @@ with open(log_path, "r", encoding="utf-8") as f:
             chunk_number=i+1,
             chunk_data=chunk
         )
+        
+        if success:
+            print("✅ Analysis completed successfully")
+        else:
+            print("❌ Analysis failed")
+            wait_on_failure(30)  # 실패 시 30초 대기
+        
+        print("-" * 50)
