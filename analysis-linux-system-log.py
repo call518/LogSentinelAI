@@ -39,39 +39,39 @@ class EventType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 class SecurityEvent(BaseModel):
-    event_type: EventType = Field(description="이벤트 유형")
+    event_type: EventType = Field(description="Event type")
     severity: SeverityLevel
-    description: str = Field(description="이벤트 상세 설명")
-    confidence_score: float = Field(ge=0.0, le=1.0, description="신뢰도 (0.0-1.0)")
-    source_ip: Optional[str] = Field(default=None, description="소스 IP")
-    username: Optional[str] = Field(default=None, description="사용자명")
-    process: Optional[str] = Field(default=None, description="관련 프로세스")
-    service: Optional[str] = Field(default=None, description="관련 서비스")
-    recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
-    requires_human_review: bool = Field(description="인간 검토 필요 여부")
-    related_log_ids: list[str] = Field(default=[], description="관련 LOGID 목록 (예: ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
+    description: str = Field(description="Detailed event description")
+    confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
+    source_ip: Optional[str] = Field(default=None, description="Source IP")
+    username: Optional[str] = Field(default=None, description="Username")
+    process: Optional[str] = Field(default=None, description="Related process")
+    service: Optional[str] = Field(default=None, description="Related service")
+    recommended_actions: list[str] = Field(default=[], description="Recommended actions")
+    requires_human_review: bool = Field(description="Whether human review is required")
+    related_log_ids: list[str] = Field(default=[], description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
-    total_events: int = Field(default=0, description="총 이벤트 수")
-    auth_failures: int = Field(default=0, description="인증 실패 수")
-    unique_ips: int = Field(default=0, description="고유 IP 수")
-    unique_users: int = Field(default=0, description="고유 사용자 수")
-    event_by_type: dict[str, int] = Field(default={}, description="유형별 이벤트 수")
-    top_source_ips: dict[str, int] = Field(default={}, description="상위 소스 IP")
+    total_events: int = Field(default=0, description="Total number of events")
+    auth_failures: int = Field(default=0, description="Number of authentication failures")
+    unique_ips: int = Field(default=0, description="Number of unique IPs")
+    unique_users: int = Field(default=0, description="Number of unique users")
+    event_by_type: dict[str, int] = Field(default={}, description="Events by type")
+    top_source_ips: dict[str, int] = Field(default={}, description="Top source IPs")
 
 class LogAnalysis(BaseModel):
-    summary: str = Field(description="분석 요약")
+    summary: str = Field(description="Analysis summary")
     events: list[SecurityEvent] = Field(
         min_items=1,
-        description="보안 이벤트 목록 - 반드시 1개 이상 포함"
+        description="List of security events - must include at least one"
     )
-    statistics: Statistics = Field(description="통계 정보")
-    highest_severity: SeverityLevel = Field(description="최고 심각도")
-    requires_immediate_attention: bool = Field(description="즉시 주의 필요")
+    statistics: Statistics = Field(description="Statistical information")
+    highest_severity: SeverityLevel = Field(description="Highest severity level")
+    requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 
-# LLM 설정
-llm_provider = "vllm"  # "ollama", "vllm", "openai" 중 선택
+# LLM Configuration
+llm_provider = "vllm"  # Choose from "ollama", "vllm", "openai"
 model = initialize_llm_model(llm_provider)
 
 # log_path = "sample-logs/linux-10.log"

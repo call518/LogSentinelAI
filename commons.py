@@ -24,10 +24,10 @@ load_dotenv()
 
 def initialize_llm_model(llm_provider="vllm"):
     """
-    LLM 모델을 초기화하는 공통 함수
+    Initialize LLM model
     
     Args:
-        llm_provider: "ollama", "vllm", "openai" 중 선택
+        llm_provider: Choose from "ollama", "vllm", "openai"
     
     Returns:
         initialized model object
@@ -80,17 +80,17 @@ def initialize_llm_model(llm_provider="vllm"):
 def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
                      elasticsearch_index, chunk_number, chunk_data):
     """
-    로그 청크를 처리하는 공통 함수
+    Common function to process log chunks
     
     Args:
-        model: LLM 모델 객체
-        prompt: 분석을 위한 프롬프트
-        model_class: Pydantic 모델 클래스
-        chunk_start_time: 청크 분석 시작 시간
-        chunk_end_time: 청크 분석 완료 시간
-        elasticsearch_index: Elasticsearch 인덱스 이름
-        chunk_number: 청크 번호
-        chunk_data: 원본 청크 데이터
+        model: LLM model object
+        prompt: Prompt for analysis
+        model_class: Pydantic model class
+        chunk_start_time: Chunk analysis start time
+        chunk_end_time: Chunk analysis completion time
+        elasticsearch_index: Elasticsearch index name
+        chunk_number: Chunk number
+        chunk_data: Original chunk data
     
     Returns:
         (success: bool, parsed_data: dict or None)
@@ -126,51 +126,51 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         character = model_class.model_validate(parsed)
         
         # Send to Elasticsearch
-        print(f"\n🔄 Elasticsearch로 데이터 전송 중...")
+        print(f"\n🔄 Sending data to Elasticsearch...")
         success = send_to_elasticsearch(parsed, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"✅ Chunk {chunk_number} 데이터 Elasticsearch 전송 완료")
+            print(f"✅ Chunk {chunk_number} data sent to Elasticsearch successfully")
         else:
-            print(f"❌ Chunk {chunk_number} 데이터 Elasticsearch 전송 실패")
+            print(f"❌ Chunk {chunk_number} data failed to send to Elasticsearch")
         
         return True, parsed
         
     except json.JSONDecodeError as e:
-        print(f"JSON 파싱 오류: {e}")
-        # 실패 시 최소한의 정보만 기록
+        print(f"JSON parsing error: {e}")
+        # Record minimal information on failure
         failure_data = {
             "chunk_analysis_start_utc": chunk_start_time,
             "chunk_analysis_end_utc": chunk_end_time,
             "analysis_result": "failed",
             "error_type": "json_parse_error",
-            "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
+            "error_message": str(e)[:200],  # Limit error message to 200 characters
             "chunk_id": chunk_number
         }
-        print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
+        print(f"\n🔄 Sending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"✅ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 완료")
+            print(f"✅ Chunk {chunk_number} failure information sent to Elasticsearch successfully")
         else:
-            print(f"❌ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 실패")
+            print(f"❌ Chunk {chunk_number} failure information failed to send to Elasticsearch")
         return False, None
         
     except Exception as e:
-        print(f"분석 처리 오류: {e}")
-        # 기타 실패 시 최소한의 정보만 기록
+        print(f"Analysis processing error: {e}")
+        # Record minimal information on other failures
         failure_data = {
             "chunk_analysis_start_utc": chunk_start_time,
             "chunk_analysis_end_utc": chunk_end_time,
             "analysis_result": "failed",
             "error_type": "processing_error",
-            "error_message": str(e)[:200],  # 에러 메시지 200자로 제한
+            "error_message": str(e)[:200],  # Limit error message to 200 characters
             "chunk_id": chunk_number
         }
-        print(f"\n🔄 실패 정보 Elasticsearch 전송 중...")
+        print(f"\n🔄 Sending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"✅ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 완료")
+            print(f"✅ Chunk {chunk_number} failure information sent to Elasticsearch successfully")
         else:
-            print(f"❌ Chunk {chunk_number} 실패 정보 Elasticsearch 전송 실패")
+            print(f"❌ Chunk {chunk_number} failure information failed to send to Elasticsearch")
         return False, None
 
 
@@ -514,58 +514,58 @@ ELASTICSEARCH_INDEX = "sonarlog-analysis"
 
 def _get_elasticsearch_client() -> Optional[Elasticsearch]:
     """
-    Elasticsearch 클라이언트를 생성하고 연결을 테스트합니다.
+    Create an Elasticsearch client and test the connection.
     
     Returns:
-        Elasticsearch: 연결된 클라이언트 객체 또는 None (연결 실패시)
+        Elasticsearch: Connected client object or None (on connection failure)
     """
     try:
         client = Elasticsearch(
             [ELASTICSEARCH_HOST],
             basic_auth=(ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD),
-            verify_certs=False,  # 개발 환경에서 SSL 인증서 무시
+            verify_certs=False,  # Ignore SSL certificates in development environment
             ssl_show_warn=False
         )
         
-        # 연결 테스트
+        # Connection test
         if client.ping():
-            print(f"✅ Elasticsearch 연결 성공: {ELASTICSEARCH_HOST}")
+            print(f"✅ Elasticsearch connection successful: {ELASTICSEARCH_HOST}")
             return client
         else:
-            print(f"❌ Elasticsearch ping 실패: {ELASTICSEARCH_HOST}")
+            print(f"❌ Elasticsearch ping failed: {ELASTICSEARCH_HOST}")
             return None
             
     except ConnectionError as e:
-        print(f"❌ Elasticsearch 연결 오류: {e}")
+        print(f"❌ Elasticsearch connection error: {e}")
         return None
     except Exception as e:
-        print(f"❌ Elasticsearch 클라이언트 생성 오류: {e}")
+        print(f"❌ Elasticsearch client creation error: {e}")
         return None
 
 def _send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None) -> bool:
     """
-    분석 결과를 Elasticsearch에 전송합니다.
+    Send analysis results to Elasticsearch.
     
     Args:
-        data: 전송할 분석 데이터 (JSON 형태)
-        log_type: 로그 타입 ("httpd_access", "httpd_apache_error", "linux_system")
-        chunk_id: 청크 번호 (선택적)
+        data: Analysis data to send (JSON format)
+        log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system")
+        chunk_id: Chunk number (optional)
     
     Returns:
-        bool: 전송 성공 여부
+        bool: Whether transmission was successful
     """
     client = _get_elasticsearch_client()
     if not client:
         return False
     
     try:
-        # 문서 식별 ID 생성 (타임스탬프 + 로그타입 + 청크ID)
+        # Generate document identification ID (timestamp + log type + chunk ID)
         timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
         doc_id = f"{log_type}_{timestamp}"
         if chunk_id is not None:
             doc_id += f"_chunk_{chunk_id}"
         
-        # 메타데이터 추가
+        # Add metadata
         enriched_data = {
             **data,
             "@timestamp": datetime.datetime.utcnow().isoformat(),
@@ -573,7 +573,7 @@ def _send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Option
             "@document_id": doc_id
         }
         
-        # Elasticsearch에 문서 인덱싱
+        # Index document in Elasticsearch
         response = client.index(
             index=ELASTICSEARCH_INDEX,
             id=doc_id,
@@ -581,25 +581,25 @@ def _send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Option
         )
         
         if response.get('result') in ['created', 'updated']:
-            print(f"✅ Elasticsearch 전송 성공: {doc_id}")
+            print(f"✅ Elasticsearch transmission successful: {doc_id}")
             return True
         else:
-            print(f"❌ Elasticsearch 전송 실패: {response}")
+            print(f"❌ Elasticsearch transmission failed: {response}")
             return False
             
     except RequestError as e:
-        print(f"❌ Elasticsearch 요청 오류: {e}")
+        print(f"❌ Elasticsearch request error: {e}")
         return False
     except Exception as e:
-        print(f"❌ Elasticsearch 전송 중 오류 발생: {e}")
+        print(f"❌ Error occurred during Elasticsearch transmission: {e}")
         return False
 
 def _extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
     """
-    LOGID가 포함된 라인에서 LOGID와 원본 로그 내용을 분리합니다.
+    Separate LOGID and original log content from a line containing LOGID.
     
     Args:
-        logid_line: "LOGID-{HASH} {original_log_content}" 형태의 문자열
+        logid_line: String in the format "LOGID-{HASH} {original_log_content}"
     
     Returns:
         tuple: (logid, original_log_content)
@@ -614,13 +614,13 @@ def _extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
 
 def _create_log_hash_mapping(chunk: list[str]) -> Dict[str, str]:
     """
-    청크의 모든 로그에 대해 LOGID -> 원본 로그 내용 매핑을 생성합니다.
+    Create LOGID -> original log content mapping for all logs in the chunk.
     
     Args:
-        chunk: LOGID가 포함된 로그 라인들의 리스트
+        chunk: List of log lines containing LOGID
     
     Returns:
-        Dict[str, str]: {logid: original_content} 매핑
+        Dict[str, str]: {logid: original_content} mapping
     """
     mapping = {}
     for line in chunk:
@@ -630,23 +630,23 @@ def _create_log_hash_mapping(chunk: list[str]) -> Dict[str, str]:
 
 def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None, chunk: Optional[list] = None) -> bool:
     """
-    분석 결과를 포맷팅하고 Elasticsearch에 전송하는 통합 함수입니다.
+    Integrated function to format analysis results and send them to Elasticsearch.
     
     Args:
-        analysis_data: 분석 결과 데이터
-        log_type: 로그 타입 ("httpd_access", "httpd_apache_error", "linux_system")
-        chunk_id: 청크 번호 (선택적)
-        chunk: 원본 로그 청크 (현재는 사용하지 않음, 호환성을 위해 유지)
+        analysis_data: Analysis result data
+        log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system")
+        chunk_id: Chunk number (optional)
+        chunk: Original log chunk (currently not used, maintained for compatibility)
     
     Returns:
-        bool: 전송 성공 여부
+        bool: Whether transmission was successful
     """
-    # log_hash_mapping은 토큰 낭비를 줄이기 위해 제거됨
-    # 필요시 별도로 관리할 수 있음
+    # log_hash_mapping removed to reduce token waste
+    # Can be managed separately if needed
     # if chunk:
     #     log_hash_mapping = _create_log_hash_mapping(chunk)
     #     analysis_data["log_hash_mapping"] = log_hash_mapping
-    #     print(f"📝 로그 해시 매핑 {len(log_hash_mapping)}개 항목 추가됨")
+    #     print(f"📝 Added {len(log_hash_mapping)} log hash mapping entries")
     
-    # Elasticsearch에 전송
+    # Send to Elasticsearch
     return _send_to_elasticsearch(analysis_data, log_type, chunk_id)

@@ -36,39 +36,39 @@ class AttackType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 class SecurityEvent(BaseModel):
-    event_type: str = Field(description="보안 이벤트 유형")
+    event_type: str = Field(description="Security event type")
     severity: SeverityLevel
-    description: str = Field(description="이벤트 상세 설명")
-    confidence_score: float = Field(ge=0.0, le=1.0, description="신뢰도 (0.0-1.0)")
-    url_pattern: str = Field(description="관련 URL 패턴")
-    http_method: str = Field(description="HTTP 메소드")
-    source_ips: list[str] = Field(default=[], description="소스 IP 목록")
-    response_codes: list[str] = Field(default=[], description="응답 코드 목록")
-    attack_patterns: list[AttackType] = Field(default=[], description="탐지된 공격 패턴")
-    recommended_actions: list[str] = Field(default=[], description="권장 조치사항")
-    requires_human_review: bool = Field(description="인간 검토 필요 여부")
-    related_log_ids: list[str] = Field(default=[], description="관련 LOGID 목록 (예: ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
+    description: str = Field(description="Detailed event description")
+    confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
+    url_pattern: str = Field(description="Related URL pattern")
+    http_method: str = Field(description="HTTP method")
+    source_ips: list[str] = Field(default=[], description="Source IP list")
+    response_codes: list[str] = Field(default=[], description="Response code list")
+    attack_patterns: list[AttackType] = Field(default=[], description="Detected attack patterns")
+    recommended_actions: list[str] = Field(default=[], description="Recommended actions")
+    requires_human_review: bool = Field(description="Whether human review is required")
+    related_log_ids: list[str] = Field(default=[], description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
-    total_requests: int = Field(default=0, description="총 요청 수")
-    unique_ips: int = Field(default=0, description="고유 IP 수")
-    error_rate: float = Field(default=0.0, description="에러율 (0.0-1.0)")
-    top_ips: dict[str, int] = Field(default={}, description="상위 요청 IP")
-    response_code_dist: dict[str, int] = Field(default={}, description="응답 코드 분포")
+    total_requests: int = Field(default=0, description="Total number of requests")
+    unique_ips: int = Field(default=0, description="Number of unique IPs")
+    error_rate: float = Field(default=0.0, description="Error rate (0.0-1.0)")
+    top_ips: dict[str, int] = Field(default={}, description="Top requesting IPs")
+    response_code_dist: dict[str, int] = Field(default={}, description="Response code distribution")
 
 class LogAnalysis(BaseModel):
-    summary: str = Field(description="분석 요약")
+    summary: str = Field(description="Analysis summary")
     events: list[SecurityEvent] = Field(
         min_items=1,
-        description="보안 이벤트 목록 - 반드시 1개 이상 포함"
+        description="List of security events - must include at least one"
     )
-    statistics: Statistics = Field(description="통계 정보")
-    highest_severity: SeverityLevel = Field(description="최고 심각도")
-    requires_immediate_attention: bool = Field(description="즉시 주의 필요")
+    statistics: Statistics = Field(description="Statistical information")
+    highest_severity: SeverityLevel = Field(description="Highest severity level")
+    requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 
-# LLM 설정
-llm_provider = "vllm"  # "ollama", "vllm", "openai" 중 선택
+# LLM Configuration
+llm_provider = "vllm"  # Choose from "ollama", "vllm", "openai"
 model = initialize_llm_model(llm_provider)
 
 # log_path = "sample-logs/access-10.log" 
