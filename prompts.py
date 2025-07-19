@@ -1,15 +1,3 @@
-"""
-SonarLog AI-Powered Security Analysis System
-Prompt Templates for Different Log Types
-
-This module contains all prompt templates used by the analysis modules.
-Each template is specifically designed for different types of logs:
-- HTTP Access Logs
-- Apache Error Logs  
-- Linux System Logs
-- Network Traffic (tcpdump) Logs
-"""
-
 PROMPT_TEMPLATE_HTTPD_ACCESS_LOG = """
 You are an expert security analyst reviewing security logs.
 
