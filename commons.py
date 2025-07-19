@@ -137,6 +137,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # 원본 로그 데이터를 LOGID -> 원본 내용 매핑으로 생성
         # chunked_iterable()에서 생성된 LOGID를 그대로 사용하여 일관성 유지
         log_raw_data = {}
+        log_count = 0
         for line in chunk_data:
             line = line.strip()
             if line.startswith("LOGID-"):
@@ -145,12 +146,14 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
                 # LOGID를 제거한 원본 로그 내용만 저장
                 original_content = parts[1] if len(parts) > 1 else ""
                 log_raw_data[logid] = original_content
+                log_count += 1
         
-        # 분석 시간 정보, LLM 정보, 원본 로그 데이터 추가
+        # 분석 시간 정보, LLM 정보, 원본 로그 데이터, 로그 건수 추가
         parsed = {
             "@chunk_analysis_start_utc": chunk_start_time,
             "@chunk_analysis_end_utc": chunk_end_time,
             "@processing_result": "success",
+            "@log_count": log_count,
             "@log_raw_data": log_raw_data,
             **parsed
         }
@@ -178,6 +181,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         
     except json.JSONDecodeError as e:
         print(f"JSON parsing error: {e}")
+        # 로그 건수 계산
+        log_count = sum(1 for line in chunk_data if line.strip().startswith("LOGID-"))
         # Record minimal information on failure
         failure_data = {
             "@chunk_analysis_start_utc": chunk_start_time,
@@ -185,7 +190,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@processing_result": "failed",
             "@error_type": "json_parse_error",
             "@error_message": str(e)[:200],  # Limit error message to 200 characters
-            "@chunk_id": chunk_number
+            "@chunk_id": chunk_number,
+            "@log_count": log_count
         }
         # LLM 정보 추가 (선택사항)
         if llm_provider:
@@ -202,6 +208,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         
     except Exception as e:
         print(f"Analysis processing error: {e}")
+        # 로그 건수 계산
+        log_count = sum(1 for line in chunk_data if line.strip().startswith("LOGID-"))
         # Record minimal information on other failures
         failure_data = {
             "@chunk_analysis_start_utc": chunk_start_time,
@@ -209,7 +217,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@processing_result": "failed",
             "@error_type": "processing_error",
             "@error_message": str(e)[:200],  # Limit error message to 200 characters
-            "@chunk_id": chunk_number
+            "@chunk_id": chunk_number,
+            "@log_count": log_count
         }
         # LLM 정보 추가 (선택사항)
         if llm_provider:
