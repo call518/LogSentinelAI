@@ -121,7 +121,7 @@ class PacketAnalysis(BaseModel):
 #--------------------------------------------------------------------------------------
 
 def parse_tcpdump_packets(content):
-    """Parse tcpdump content into individual packets"""
+    """Parse tcpdump content into individual packets - supports all tcpdump timestamp formats"""
     packets = []
     current_packet = []
     
@@ -131,14 +131,27 @@ def parse_tcpdump_packets(content):
         if not line:
             continue
             
-        # Check if this is a new packet (starts with timestamp)
-        if re.match(r'^\d{2}:\d{2}:\d{2}\.\d{6}', line):
+        # Check if this is a new packet header by looking for common patterns:
+        # 1. Starts with timestamp (various formats: HH:MM:SS, YYYY-MM-DD HH:MM:SS, epoch.microseconds, etc.)
+        # 2. Contains "IP" keyword which indicates packet header
+        # 3. Does not start with hex offset (0x0000:, 0x0010:, etc.)
+        is_packet_header = (
+            # Timestamp patterns (covers -t, -tt, -ttt, -tttt options)
+            re.match(r'^\d{2}:\d{2}:\d{2}\.\d{6}', line) or  # HH:MM:SS.microseconds
+            re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}', line) or  # YYYY-MM-DD HH:MM:SS.microseconds (-tttt)
+            re.match(r'^\d{10}\.\d{6}', line) or  # epoch.microseconds (-tt)
+            re.match(r'^ \d{2}:\d{2}:\d{2}\.\d{6}', line) or  # space + HH:MM:SS.microseconds (-ttt)
+            # No timestamp case (-t option)
+            (line.startswith('IP ') or ' IP ' in line)
+        ) and not re.match(r'^\s*0x[0-9a-fA-F]{4}:', line)  # Not a hex dump line
+        
+        if is_packet_header:
             # Save previous packet if exists
             if current_packet:
                 packets.append('\n'.join(current_packet))
             current_packet = [line]
         else:
-            # This is a continuation of the current packet (hex dump)
+            # This is a continuation of the current packet (hex dump or other data)
             current_packet.append(line)
     
     # Add the last packet
@@ -192,7 +205,7 @@ model = initialize_llm_model(llm_provider)
 # log_path = "sample-logs/tcpdump-packet-39.log"
 log_path = "sample-logs/tcpdump-packet-2k.log"
 
-chunk_size = 10  # Process 3 packets at a time
+chunk_size = 5  # Process 3 packets at a time
 
 # Read and preprocess tcpdump file (special handling for multi-line packets)
 with open(log_path, "r", encoding="utf-8") as f:
