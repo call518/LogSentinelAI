@@ -15,6 +15,7 @@ from commons import send_to_elasticsearch
 from commons import initialize_llm_model
 from commons import process_log_chunk
 from commons import wait_on_failure
+from commons import get_llm_config
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
@@ -72,20 +73,10 @@ class LogAnalysis(BaseModel):
 # response_language = "english"
 response_language = "korean"
 
-# LLM Configuration - Choose from "ollama", "vllm", "openai"
-# llm_provider = "ollama"
-llm_provider = "vllm"
-# llm_provider = "openai"
+# Get LLM configuration from commons
+llm_provider, llm_model_name = get_llm_config()
 
-LLM_MODELS = {
-    "ollama": "qwen2.5-coder:3b",
-    "vllm": "Qwen/Qwen2.5-3B-Instruct",
-    "openai": "gpt-4o"
-}
-
-llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
-
-model = initialize_llm_model(llm_provider)
+model = initialize_llm_model()
 
 # log_path = "sample-logs/access-10.log" 
 # log_path = "sample-logs/access-100.log"

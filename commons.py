@@ -30,56 +30,66 @@ from prompts import (
 # .env 파일 로드
 load_dotenv()
 
-def initialize_llm_model(llm_provider="vllm"):
+# LLM Configuration - Choose from "ollama", "vllm", "openai"
+# llm_provider = "ollama"
+LLM_PROVIDER = "vllm"
+# LLM_PROVIDER = "openai"
+
+LLM_MODELS = {
+    "ollama": "qwen2.5-coder:3b",
+    # "vllm": "Qwen/Qwen2.5-1.5B-Instruct",
+    "vllm": "Qwen/Qwen2.5-3B-Instruct",
+    "openai": "gpt-4o"
+}
+
+def get_llm_config():
+    """
+    Get current LLM configuration
+    
+    Returns:
+        tuple: (llm_provider, llm_model_name)
+    """
+    llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
+    return LLM_PROVIDER, llm_model_name
+
+def initialize_llm_model(llm_provider=None, llm_model_name=None):
     """
     Initialize LLM model
     
     Args:
-        llm_provider: Choose from "ollama", "vllm", "openai"
+        llm_provider: Choose from "ollama", "vllm", "openai" (default: use global LLM_PROVIDER)
+        llm_model_name: Specific model name (default: use model from LLM_MODELS)
     
     Returns:
         initialized model object
     """
+    # Use global configuration if not specified
+    if llm_provider is None:
+        llm_provider = LLM_PROVIDER
+    if llm_model_name is None:
+        llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
+    
     if llm_provider == "ollama":
         ### Ollama API
-        # llm_model = "mistral:7b"
-        # llm_model = "qwen2.5-coder:0.5b"
-        # llm_model = "qwen2.5-coder:1.5b"
-        llm_model = "qwen2.5-coder:3b"
-        # llm_model = "qwen2.5-coder:7b"
-        # llm_model = "qwen3:0.6b"
-        # llm_model = "qwen3:1.7b"
-        # llm_model = "qwen3:4b"
-        # llm_model = "qwen3:8b"
-        # llm_model = "gemma3:1b"
-        # llm_model = "gemma3:4b"
-        # llm_model = "gemma3:12b"
-        # llm_model = "call518/gemma3-tools-8192ctx:4b"
         client = ollama.Client()
-        model = outlines.from_ollama(client, llm_model)
+        model = outlines.from_ollama(client, llm_model_name)
     elif llm_provider == "vllm":
         ### Local vLLM API
         openai_api_key = "dummy"
-        # llm_model = "Qwen/Qwen2.5-0.5B-Instruct"
-        llm_model = "Qwen/Qwen2.5-3B-Instruct"
-        # llm_model = "gpt-4o"
         client = openai.OpenAI(
             base_url="http://127.0.0.1:5000/v1",  # Local vLLM API endpoint
             api_key=openai_api_key
         )
-        model = outlines.from_openai(client, llm_model)
+        model = outlines.from_openai(client, llm_model_name)
     elif llm_provider == "openai":
         ### OpenAI API
         openai_api_key = os.getenv("OPENAI_API_KEY")
-        # llm_model = "gpt-4o-mini"
-        llm_model = "gpt-4o"
-        # llm_model = "gpt-4.1"
         client = openai.OpenAI(
             base_url="https://api.openai.com/v1",  # OpenAI API endpoint
             # base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
             api_key=openai_api_key
         )
-        model = outlines.from_openai(client, llm_model)
+        model = outlines.from_openai(client, llm_model_name)
     else:
         raise ValueError("Unsupported LLM provider. Use 'ollama', 'vllm', or 'openai'.")
     

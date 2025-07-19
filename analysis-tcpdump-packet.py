@@ -13,6 +13,7 @@ from commons import send_to_elasticsearch
 from commons import initialize_llm_model
 from commons import process_log_chunk
 from commons import wait_on_failure
+from commons import get_llm_config
 from prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
 from commons import chunked_iterable
 from commons import print_chunk_contents
@@ -187,20 +188,10 @@ def assign_logid_to_packets(packets):
 # response_language = "english"
 response_language = "korean"
 
-# LLM Configuration - Choose from "ollama", "vllm", "openai"
-# llm_provider = "ollama"
-llm_provider = "vllm"
-# llm_provider = "openai"
+# Get LLM configuration from commons
+llm_provider, llm_model_name = get_llm_config()
 
-LLM_MODELS = {
-    "ollama": "qwen2.5-coder:3b",
-    "vllm": "Qwen/Qwen2.5-3B-Instruct",
-    "openai": "gpt-4o"
-}
-
-llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
-
-model = initialize_llm_model(llm_provider)
+model = initialize_llm_model()
 
 # log_path = "sample-logs/tcpdump-packet-39.log"
 log_path = "sample-logs/tcpdump-packet-2k.log"
