@@ -343,7 +343,7 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🏷️ Version Information
 
-- **Current Version**: Latest (HEAD)
+- **Current Version**: v1.3.2
 - **Python**: 3.11+
 - **Elasticsearch**: 8.16+
 - **Kibana**: 8.16+
@@ -352,62 +352,6 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
   - `pydantic` for data validation
   - `elasticsearch` for data storage
   - `ollama`, `openai` for LLM providers
-
-## 🔄 Version History
-
-### Current (Latest HEAD)
-- ✅ **LLM Metadata Tracking**: Added `@llm_provider` and `@llm_model` fields to Elasticsearch documents
-- ✅ **Enhanced Error Handling**: 30-second delay on analysis failures to prevent system overload
-- ✅ **Prompt Optimization**: Fixed string formatting issues with curly brace escaping
-- ✅ **Network Packet Analysis**: Support for tcpdump packet analysis
-- ✅ **Multi-Log Type Support**: HTTP access logs, Apache error logs, Linux system logs, and network packets
-- ✅ **Improved Documentation**: Updated project structure and setup instructions
-
-### v1.3.0
-- ✅ Repository migrated to GitHub (https://github.com/call518/SonarLog)
-- ✅ Updated README.md with GitHub URLs and contact information
-- ✅ Added comprehensive ToDo & Roadmap section
-- ✅ Updated project structure documentation
-- ✅ Enhanced QuickStart guide with real-world PoC environment details
-
-### v1.2.3
-- ✅ Complete Korean to English internationalization
-- ✅ Enhanced documentation with English as primary language
-- ✅ Improved technical descriptions and setup instructions
-
-### v1.2.2
-- ✅ Complete code internationalization (English)
-- ✅ Enhanced LOGID traceability system
-- ✅ Improved error handling and resilience
-- ✅ Simplified JSON schemas for efficiency
-
-### v1.2.1  
-- ✅ Added `@log_raw_data` feature for complete log preservation
-- ✅ Implemented `related_log_ids` in SecurityEvent classes
-
-### v1.2.0
-- ✅ Major code refactoring and deduplication
-- ✅ JSON class simplification (44% reduction in field count)
-- ✅ Centralized commons library
-
-### v1.1.0
-- ✅ Comprehensive codebase refactoring
-- ✅ Enhanced severity level calibration
-- ✅ Improved mandatory event generation
-
-### v1.0.2
-- ✅ Severity measurement level adjustment and optimization
-- ✅ Enhanced security event detection accuracy
-
-### v1.0.1
-- ✅ Added Linux system log analysis support
-- ✅ Expanded log format compatibility
-
-### v1.0.0
-- ✅ Initial stable release
-- ✅ HTTP access log and Apache error log analysis
-- ✅ Elasticsearch integration
-- ✅ Ollama and OpenAI API support
 
 ## 📋 ToDo & Roadmap
 
