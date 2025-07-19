@@ -4,13 +4,14 @@ SonarLog is a system that leverages LLM (Large Language Model) to analyze variou
 
 ## 🌟 Key Features
 
-- **Multi-format Log Support**: HTTP Access Log, Apache Error Log, Linux System Log, Network Traffic Analysis
+- **Multi-format Log Support**: HTTP Access Log, Apache Error Log, Linux System Log, Network Packet Analysis
 - **AI-based Security Analysis**: Intelligent security event detection through LLM
-- **Comprehensive Network Analysis**: Deep packet inspection for all network protocols (HTTP, HTTPS, SSH, FTP, DNS, Database traffic, etc.)
+- **Network Packet Analysis**: tcpdump packet inspection and security analysis
 - **Structured Data Output**: JSON schema validation using Pydantic models
 - **Elasticsearch Integration**: Real-time log analysis result storage and search
 - **Kibana Dashboard**: Visualized security analysis result monitoring
 - **LOGID Tracking**: Complete traceability between original logs and analysis results
+- **LLM Provider Support**: Compatible with OpenAI, vLLM, and Ollama
 
 ## 📊 Dashboard Example
 
@@ -139,8 +140,8 @@ python analysis-httpd-apache-log.py
 # Run Linux system log analysis
 python analysis-linux-system-log.py
 
-# Run comprehensive network packet analysis (tcpdump)
-python analysis-tcpdump-network.py
+# Run network packet analysis (tcpdump)
+python analysis-tcpdump-packet.py
 ```
 
 #### Step 5: Import Kibana Dashboard
@@ -158,8 +159,9 @@ SonarLog/
 ├── analysis-httpd-access-log.py    # HTTP access log analyzer
 ├── analysis-httpd-apache-log.py    # Apache error log analyzer
 ├── analysis-linux-system-log.py    # Linux system log analyzer
-├── analysis-tcpdump-network.py     # Comprehensive network packet analyzer
+├── analysis-tcpdump-packet.py      # Network packet analyzer (tcpdump)
 ├── commons.py                      # Common functions and utilities
+├── prompts.py                      # LLM prompt templates
 ├── requirements.txt                # Python dependencies
 ├── .env                           # Environment variables (created from template)
 ├── .env.template                  # Environment variables template
@@ -174,7 +176,7 @@ SonarLog/
 │   ├── apache-10k.log             # 10,000 Apache error log entries
 │   ├── linux-100.log              # 100 Linux system log entries
 │   ├── linux-2k.log               # 2,000 Linux system log entries
-│   └── tcpdump-pgsql-multi-lines-39.txt # Sample tcpdump packet capture (39 packets)
+│   └── tcpdump-packet-39.log      # Sample tcpdump packet capture (39 packets)
 ├── img/                           # Documentation images
 │   ├── ex-dashboard.png           # Kibana dashboard example
 │   └── ex-json.png                # JSON output example
@@ -341,7 +343,7 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🏷️ Version Information
 
-- **Current Version**: 1.3.0
+- **Current Version**: Latest (HEAD)
 - **Python**: 3.11+
 - **Elasticsearch**: 8.16+
 - **Kibana**: 8.16+
@@ -353,12 +355,13 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🔄 Version History
 
-### v1.4.0 (Current)
-- ✅ **Major Network Analysis Upgrade**: Comprehensive network packet analysis for all protocols
-- ✅ **Universal tcpdump Support**: Analyze HTTP, HTTPS, SSH, FTP, DNS, Database traffic, and more
-- ✅ **Enhanced Security Detection**: Cross-protocol attack correlation and advanced threat patterns
-- ✅ **Code Consolidation**: Replaced PostgreSQL-specific analyzer with universal network analyzer
-- ✅ **Improved Data Models**: Extended protocol support and security event categorization
+### Current (Latest HEAD)
+- ✅ **LLM Metadata Tracking**: Added `@llm_provider` and `@llm_model` fields to Elasticsearch documents
+- ✅ **Enhanced Error Handling**: 30-second delay on analysis failures to prevent system overload
+- ✅ **Prompt Optimization**: Fixed string formatting issues with curly brace escaping
+- ✅ **Network Packet Analysis**: Support for tcpdump packet analysis
+- ✅ **Multi-Log Type Support**: HTTP access logs, Apache error logs, Linux system logs, and network packets
+- ✅ **Improved Documentation**: Updated project structure and setup instructions
 
 ### v1.3.0
 - ✅ Repository migrated to GitHub (https://github.com/call518/SonarLog)
@@ -425,10 +428,10 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 - **Async Processing**: Implement asynchronous log analysis pipeline
 
 #### Network Log Analysis
-- ✅ **Comprehensive Network Packet Analysis**: Universal analyzer for all network protocols (HTTP, HTTPS, SSH, FTP, DNS, Database traffic, etc.)
-- **Enhanced Network Security Events**: Detect advanced network-based attacks (DDoS, port scanning, etc.)
-- **Cross-Protocol Attack Correlation**: Identify sophisticated multi-protocol attack patterns
-- **Advanced Traffic Pattern Recognition**: Identify sophisticated network behavior patterns
+- **tcpdump Packet Analysis**: Support for network packet capture analysis
+- **Enhanced Network Security Events**: Detect network-based attacks and anomalies
+- **Protocol Support**: Analysis of various network protocols and traffic patterns
+- **Traffic Pattern Recognition**: Identify suspicious network behavior patterns
 
 ### 🚀 Future Enhancements
 - **Machine Learning Integration**: Anomaly detection using ML models
