@@ -1,11 +1,12 @@
-# SonarLog - AI-Powered Log Security Analysis
+# LogSentinelAI - AI-Powered Log Security Analysis
 
-SonarLog is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
+LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
 
 ## 🌟 Key Features
 
 - **Multi-format Log Support**: HTTP Access Log, Apache Error Log, Linux System Log, Network Packet Analysis
 - **AI-based Security Analysis**: Intelligent security event detection through LLM
+- **Structured Generation**: Uses [Outlines](https://github.com/dottxt-ai/outlines) for reliable JSON output from LLM
 - **Network Packet Analysis**: tcpdump packet inspection and security analysis
 - **Structured Data Output**: JSON schema validation using Pydantic models
 - **Elasticsearch Integration**: Real-time log analysis result storage and search
@@ -25,12 +26,13 @@ SonarLog is a system that leverages LLM (Large Language Model) to analyze variou
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Log Files     │───▶│   SonarLog      │───▶│ Elasticsearch   │
+│   Log Files     │───▶│ LogSentinelAI   │───▶│ Elasticsearch   │
 │                 │    │   Analysis      │    │                 │
 │ • HTTP Access   │    │                 │    │ • Security      │
 │ • Apache Error  │    │ • LLM Analysis  │    │   Events        │
-│ • System Logs   │    │ • Pydantic      │    │ • Raw Logs      │
-│ • Network Pcap  │    │   Validation    │    │ • Metadata      │
+│ • System Logs   │    │ • Outlines      │    │ • Raw Logs      │
+│ • Network Pcap  │    │ • Pydantic      │    │ • Metadata      │
+│                 │    │   Validation    │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                         │
                                                         ▼
@@ -58,8 +60,8 @@ SonarLog is a system that leverages LLM (Large Language Model) to analyze variou
 
 ```bash
 # Clone repository
-git clone https://github.com/call518/SonarLog.git
-cd SonarLog
+git clone https://github.com/call518/LogSentinelAI.git
+cd LogSentinelAI
 
 # Create Python virtual environment
 python -m venv .venv
@@ -68,6 +70,12 @@ source .venv/bin/activate  # Linux/Mac
 
 # Install packages
 pip install -r requirements.txt
+
+# Key dependencies include:
+# - outlines: For structured LLM generation (https://github.com/dottxt-ai/outlines)
+# - pydantic: For data validation and parsing
+# - elasticsearch: For data storage and search
+# - ollama/openai: For LLM provider support
 
 # Configure environment variables
 cp .env.template .env
@@ -128,7 +136,7 @@ docker compose up -d
 # Default credentials: elastic / changeme
 ```
 
-#### Step 4: Run SonarLog Analysis
+#### Step 4: Run LogSentinelAI Analysis
 
 ```bash
 # Run HTTP access log analysis
@@ -149,13 +157,13 @@ python analysis-tcpdump-packet.py
 ```bash
 # Log into Kibana
 # Navigate to Stack Management > Saved Objects > Import
-# Import the Kibana-Dashboard-SonarLog.ndjson file
+# Import the Kibana-Dashboard-LogSentinelAI.ndjson file
 ```
 
 ## 📁 Project Structure
 
 ```
-SonarLog/
+LogSentinelAI/
 ├── analysis-httpd-access-log.py    # HTTP access log analyzer
 ├── analysis-httpd-apache-log.py    # Apache error log analyzer
 ├── analysis-linux-system-log.py    # Linux system log analyzer
@@ -168,7 +176,6 @@ SonarLog/
 ├── .gitignore                     # Git ignore file
 ├── LICENSE                        # MIT License
 ├── README.md                      # This file
-├── README-Outlines.md             # Documentation outlines
 ├── sample-logs/                   # Sample log files
 │   ├── access-100.log             # 100 HTTP access log entries
 │   ├── access-10k.log             # 10,000 HTTP access log entries
@@ -176,11 +183,12 @@ SonarLog/
 │   ├── apache-10k.log             # 10,000 Apache error log entries
 │   ├── linux-100.log              # 100 Linux system log entries
 │   ├── linux-2k.log               # 2,000 Linux system log entries
-│   └── tcpdump-packet-39.log      # Sample tcpdump packet capture (39 packets)
+│   ├── tcpdump-packet-39.log      # Sample tcpdump packet capture (39 packets)
+│   └── tcpdump-packet-2k.log      # Sample tcpdump packet capture (2,000 packets)
 ├── img/                           # Documentation images
 │   ├── ex-dashboard.png           # Kibana dashboard example
 │   └── ex-json.png                # JSON output example
-└── Kibana-Dashboard-SonarLog.ndjson # Kibana dashboard configuration
+└── Kibana-Dashboard-LogSentinelAI.ndjson # Kibana dashboard configuration
 ```
 
 ## 🔧 Configuration Options
@@ -274,26 +282,39 @@ log_path = "sample-logs/access-10k.log"     # 10,000 entries (default)
 
 ## 🎯 Advanced Features
 
-### 1. Intelligent Security Detection
+### 1. Structured Generation with Outlines
+- **Reliable JSON Output**: Uses [Outlines](https://github.com/dottxt-ai/outlines) library for guaranteed structured generation
+- **Schema-Guided Generation**: Pydantic models ensure LLM outputs follow exact JSON schemas
+- **Enhanced Parsing Reliability**: Eliminates JSON parsing errors through guided generation
+- **Multi-Provider Support**: Works consistently across OpenAI, vLLM, and Ollama providers
+- **Performance Optimization**: Faster and more reliable than post-processing approaches
+
+### 2. Intelligent Security Detection
 - **Various Attack Pattern Recognition**: SQL Injection, XSS, Brute Force, Command Injection, etc.
 - **Context-based Analysis**: Analysis considering log patterns and correlations
 - **Confidence Score**: Confidence level for each detection result
 - **Mandatory Event Generation**: Every log chunk generates at least one security event
 - **Balanced Severity Assessment**: Enhanced sensitivity for security pattern detection
 
-### 2. Complete Traceability  
+### 3. Complete Traceability  
 - **LOGID System**: Unique MD5-based identifier for each log line (e.g., `LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9`)
 - **Original Data Preservation**: Raw log data stored with `@log_raw_data` field in Elasticsearch
 - **Related Log Mapping**: LLM specifies which LOGIDs are related to each security event
 - **Full Audit Trail**: Complete traceability from original logs to analysis results
 
-### 3. Scalable Architecture
+### 4. Scalable Architecture
 - **Modular Design**: Independent analyzer for each log type
 - **Shared Commons Library**: Centralized functions in `commons.py` for code reusability
 - **Chunk-based Processing**: Memory-efficient processing of large log files
 - **Error Handling**: Robust error handling with failure tracking in Elasticsearch
 
 ## 📈 Performance Optimization
+
+### Structured Generation
+- **Outlines Library**: Eliminates JSON parsing errors through guided generation
+- **Schema Validation**: Pydantic models ensure consistent output structure
+- **Faster Processing**: Avoids retry loops from malformed JSON responses
+- **Memory Efficiency**: Direct structured output without post-processing overhead
 
 ### Chunk-based Processing
 - Process large log files by dividing into small chunks (default: 5 entries per chunk)
@@ -336,10 +357,10 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🆘 Support & Contact
 
-- **Issues**: [GitHub Issues](https://github.com/call518/SonarLog/issues)
-- **Documentation**: [GitHub Wiki](https://github.com/call518/SonarLog/wiki)
-- **Repository**: [GitHub Repository](https://github.com/call518/SonarLog)
-- **Email**: support@sonarlog.dev
+- **Issues**: [GitHub Issues](https://github.com/call518/LogSentinelAI/issues)
+- **Documentation**: [GitHub Wiki](https://github.com/call518/LogSentinelAI/wiki)
+- **Repository**: [GitHub Repository](https://github.com/call518/LogSentinelAI)
+- **Email**: support@logsentinelai.dev
 
 ## 🏷️ Version Information
 
@@ -348,10 +369,16 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 - **Elasticsearch**: 8.16+
 - **Kibana**: 8.16+
 - **Key Dependencies**: 
-  - `outlines` for structured LLM output
-  - `pydantic` for data validation
-  - `elasticsearch` for data storage
-  - `ollama`, `openai` for LLM providers
+  - `outlines` for structured LLM output generation
+  - `pydantic` for data validation and schema enforcement
+  - `elasticsearch` for data storage and search capabilities
+  - `ollama`, `openai` for LLM provider integrations
+
+### 🔗 Important Links
+- **Outlines Library**: [https://github.com/dottxt-ai/outlines](https://github.com/dottxt-ai/outlines)
+- **Outlines Documentation**: [https://dottxt-ai.github.io/outlines/](https://dottxt-ai.github.io/outlines/)
+- **Pydantic**: [https://docs.pydantic.dev/](https://docs.pydantic.dev/)
+- **Elasticsearch**: [https://www.elastic.co/elasticsearch/](https://www.elastic.co/elasticsearch/)
 
 ## 📋 ToDo & Roadmap
 
@@ -371,12 +398,6 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 - **Model Caching**: Cache LLM responses for similar log patterns
 - **Async Processing**: Implement asynchronous log analysis pipeline
 
-#### Network Log Analysis
-- **tcpdump Packet Analysis**: Support for network packet capture analysis
-- **Enhanced Network Security Events**: Detect network-based attacks and anomalies
-- **Protocol Support**: Analysis of various network protocols and traffic patterns
-- **Traffic Pattern Recognition**: Identify suspicious network behavior patterns
-
 ### 🚀 Future Enhancements
 - **Machine Learning Integration**: Anomaly detection using ML models
 - **Custom Rule Engine**: User-defined security rules and patterns
@@ -384,6 +405,37 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 - **Advanced Visualization**: Enhanced Kibana dashboards with geo-mapping
 - **API Integration**: RESTful API for external system integration
 
+## 🔧 Technical Implementation
+
+### Outlines Integration
+LogSentinelAI leverages the [Outlines](https://github.com/dottxt-ai/outlines) library for structured generation, ensuring reliable JSON output from Language Models:
+
+```python
+# Example of structured generation with Outlines
+from outlines import models, generate
+from pydantic import BaseModel
+
+class SecurityEvent(BaseModel):
+    event_type: str
+    severity: str
+    description: str
+    confidence_score: float
+
+# Initialize model with Outlines
+model = models.transformers("microsoft/DialoGPT-medium")
+generator = generate.json(model, SecurityEvent)
+
+# Generate structured output
+result = generator(prompt)  # Always returns valid SecurityEvent JSON
+```
+
+### Why Outlines?
+- **Guaranteed Structure**: Unlike traditional LLM outputs, Outlines ensures the response always follows the specified schema
+- **No Parsing Errors**: Eliminates JSON parsing failures and retry logic
+- **Better Performance**: Faster processing through guided generation
+- **Multi-Provider Support**: Works with various LLM backends (OpenAI, vLLM, Ollama)
+- **Type Safety**: Perfect integration with Pydantic models for type-safe data handling
+
 ---
 
-**SonarLog** - Intelligent Log Security Analysis with AI 🔍🛡️
+**LogSentinelAI** - Intelligent Log Security Analysis with AI 🔍🛡️

@@ -281,7 +281,7 @@ def print_chunk_contents(chunk):
 ELASTICSEARCH_HOST = "http://localhost:9200"  # 일반적인 Elasticsearch 포트
 ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER")
 ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD")
-ELASTICSEARCH_INDEX = "sonarlog-analysis"
+ELASTICSEARCH_INDEX = "logsentinelai-analysis"
 
 def _get_elasticsearch_client() -> Optional[Elasticsearch]:
     """
