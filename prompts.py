@@ -26,7 +26,7 @@ RULES:
 - Be aggressive with MEDIUM+ for suspicious patterns
 - Known bots = LOW, unknown IPs with errors = MEDIUM
 - Consider frequency, source, context for severity
-- Summary/observations in Korean
+- (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - Confidence: 0.0-1.0 (not percentages)
 
@@ -66,7 +66,7 @@ RULES:
 - NEVER empty events array - MANDATORY
 - Balanced assessment based on error patterns
 - Focus on patterns indicating security threats
-- Summary/observations in Korean
+- (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - Confidence: 0.0-1.0
 
@@ -106,7 +106,7 @@ RULES:
 - NEVER empty events array - MANDATORY
 - Balanced assessment based on patterns and security context
 - Consider frequency, source patterns, escalation potential
-- Summary/observations in Korean
+- (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - Confidence: 0.0-1.0
 
@@ -156,7 +156,7 @@ RULES:
 - Focus on actionable security intelligence
 - Correlate cross-protocol activities
 - EXTRACT actual LOGID values from logs and include in related_log_ids
-- Summary/observations in Korean
+- (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - Confidence: 0.0-1.0
 
 JSON RULES:

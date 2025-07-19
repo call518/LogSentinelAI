@@ -71,6 +71,10 @@ class LogAnalysis(BaseModel):
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 
+# LLM Response Language - Choose from "english", "korean"
+# response_language = "english"
+response_language = "korean"
+
 # LLM Configuration - Choose from "ollama", "vllm", "openai"
 # llm_provider = "ollama"
 llm_provider = "vllm"
@@ -98,7 +102,7 @@ with open(log_path, "r", encoding="utf-8") as f:
         chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         logs = "".join(chunk)
         model_schema = LogAnalysis.model_json_schema()
-        prompt = PROMPT_TEMPLATE_LINUX_SYSTEM_LOG.format(logs=logs, model_schema=model_schema)
+        prompt = PROMPT_TEMPLATE_LINUX_SYSTEM_LOG.format(logs=logs, model_schema=model_schema, response_language=response_language)
         print(f"\n--- Chunk {i+1} ---")
         print_chunk_contents(chunk)
         

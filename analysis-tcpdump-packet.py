@@ -170,6 +170,10 @@ def assign_logid_to_packets(packets):
 
 #--------------------------------------------------------------------------------------
 
+# LLM Response Language - Choose from "english", "korean"
+# response_language = "english"
+response_language = "korean"
+
 # LLM Configuration - Choose from "ollama", "vllm", "openai"
 # llm_provider = "ollama"
 llm_provider = "vllm"
@@ -187,7 +191,7 @@ model = initialize_llm_model(llm_provider)
 
 log_path = "sample-logs/tcpdump-packet-39.log"
 
-chunk_size = 10  # Process 3 packets at a time
+chunk_size = 50  # Process 3 packets at a time
 
 # Read and preprocess tcpdump file (special handling for multi-line packets)
 with open(log_path, "r", encoding="utf-8") as f:
@@ -208,7 +212,7 @@ with processed_file as f:
         chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         logs = "".join(chunk).replace('\\n', '\n')  # Convert escaped newlines back
         model_schema = PacketAnalysis.model_json_schema()
-        prompt = PROMPT_TEMPLATE_TCPDUMP_PACKET.format(logs=logs, model_schema=model_schema)
+        prompt = PROMPT_TEMPLATE_TCPDUMP_PACKET.format(logs=logs, model_schema=model_schema, response_language=response_language)
         print(f"\n--- Chunk {i+1} ---")
         print_chunk_contents(chunk)
         
