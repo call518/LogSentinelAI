@@ -73,15 +73,13 @@ class LogAnalysis(BaseModel):
 llm_provider = "vllm"
 # llm_provider = "openai"
 
-# LLM 모델 이름 정의 (각 provider별로)
-if llm_provider == "ollama":
-    llm_model_name = "qwen2.5-coder:3b"
-elif llm_provider == "vllm":
-    llm_model_name = "Qwen/Qwen2.5-3B-Instruct"
-elif llm_provider == "openai":
-    llm_model_name = "gpt-4o"
-else:
-    llm_model_name = "unknown"
+LLM_MODELS = {
+    "ollama": "qwen2.5-coder:3b",
+    "vllm": "Qwen/Qwen2.5-3B-Instruct",
+    "openai": "gpt-4o"
+}
+
+llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
 
 model = initialize_llm_model(llm_provider)
 
