@@ -364,7 +364,6 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 
 ## 🏷️ Version Information
 
-- **Current Version**: v1.3.2
 - **Python**: 3.11+
 - **Elasticsearch**: 8.16+
 - **Kibana**: 8.16+
