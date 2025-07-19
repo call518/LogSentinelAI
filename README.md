@@ -247,7 +247,7 @@ log_path = "sample-logs/access-10k.log"     # 10,000 entries (default)
 {
   "chunk_analysis_start_utc": "2025-07-18T10:00:00Z",
   "chunk_analysis_end_utc": "2025-07-18T10:00:05Z", 
-  "analysis_result": "success",
+  "@processing_result": "success",
   "@timestamp": "2025-07-18T10:00:05.123Z",
   "@log_type": "httpd_access",
   "@document_id": "httpd_access_20250718_100005_123456_chunk_1",

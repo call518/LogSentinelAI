@@ -187,7 +187,7 @@ model = initialize_llm_model(llm_provider)
 
 log_path = "sample-logs/tcpdump-packet-39.log"
 
-chunk_size = 5  # Process 3 packets at a time
+chunk_size = 10  # Process 3 packets at a time
 
 # Read and preprocess tcpdump file (special handling for multi-line packets)
 with open(log_path, "r", encoding="utf-8") as f:

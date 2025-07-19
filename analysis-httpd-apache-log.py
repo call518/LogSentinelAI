@@ -88,7 +88,7 @@ model = initialize_llm_model(llm_provider)
 # log_path = "sample-logs/apache-100.log"
 log_path = "sample-logs/apache-10k.log"
 
-chunk_size = 5
+chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):

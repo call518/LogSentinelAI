@@ -138,9 +138,9 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         
         # 분석 시간 정보, LLM 정보, 원본 로그 데이터 추가
         parsed = {
-            "chunk_analysis_start_utc": chunk_start_time,
-            "chunk_analysis_end_utc": chunk_end_time,
-            "analysis_result": "success",
+            "@chunk_analysis_start_utc": chunk_start_time,
+            "@chunk_analysis_end_utc": chunk_end_time,
+            "@processing_result": "success",
             "@log_raw_data": log_raw_data,
             **parsed
         }
@@ -170,12 +170,12 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         print(f"JSON parsing error: {e}")
         # Record minimal information on failure
         failure_data = {
-            "chunk_analysis_start_utc": chunk_start_time,
-            "chunk_analysis_end_utc": chunk_end_time,
-            "analysis_result": "failed",
-            "error_type": "json_parse_error",
-            "error_message": str(e)[:200],  # Limit error message to 200 characters
-            "chunk_id": chunk_number
+            "@chunk_analysis_start_utc": chunk_start_time,
+            "@chunk_analysis_end_utc": chunk_end_time,
+            "@processing_result": "failed",
+            "@error_type": "json_parse_error",
+            "@error_message": str(e)[:200],  # Limit error message to 200 characters
+            "@chunk_id": chunk_number
         }
         # LLM 정보 추가 (선택사항)
         if llm_provider:
@@ -194,12 +194,12 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         print(f"Analysis processing error: {e}")
         # Record minimal information on other failures
         failure_data = {
-            "chunk_analysis_start_utc": chunk_start_time,
-            "chunk_analysis_end_utc": chunk_end_time,
-            "analysis_result": "failed",
-            "error_type": "processing_error",
-            "error_message": str(e)[:200],  # Limit error message to 200 characters
-            "chunk_id": chunk_number
+            "@chunk_analysis_start_utc": chunk_start_time,
+            "@chunk_analysis_end_utc": chunk_end_time,
+            "@processing_result": "failed",
+            "@error_type": "processing_error",
+            "@error_message": str(e)[:200],  # Limit error message to 200 characters
+            "@chunk_id": chunk_number
         }
         # LLM 정보 추가 (선택사항)
         if llm_provider:
