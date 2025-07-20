@@ -1034,3 +1034,201 @@ def create_realtime_monitor(log_type: str,
         raise ValueError(f"No real-time log path configured for {log_type}")
     
     return RealtimeLogMonitor(log_type, config)
+
+
+def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_template, analysis_title: str):
+    """
+    Generic batch analysis function for all log types
+    
+    Args:
+        log_type: Type of log ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
+        analysis_schema_class: Pydantic schema class for structured output
+        prompt_template: Prompt template string
+        analysis_title: Title to display in output header
+    """
+    print("=" * 70)
+    print(f"LogSentinelAI - {analysis_title} (Batch Mode)")
+    print("=" * 70)
+    
+    # Get LLM configuration from commons
+    llm_provider, llm_model_name = get_llm_config()
+    
+    # Get analysis configuration
+    config = get_analysis_config(log_type)
+    
+    print(f"Log file:          {config['log_path']}")
+    print(f"Chunk size:        {config['chunk_size']}")
+    print(f"Response language: {config['response_language']}")
+    print(f"LLM Provider:      {llm_provider}")
+    print(f"LLM Model:         {llm_model_name}")
+    print("=" * 70)
+    
+    log_path = config["log_path"]
+    chunk_size = config["chunk_size"]
+    response_language = config["response_language"]
+    
+    model = initialize_llm_model()
+    
+    with open(log_path, "r", encoding="utf-8") as f:
+        for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
+            # 분석 시작 시간 기록
+            chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+            logs = "".join(chunk)
+            model_schema = analysis_schema_class.model_json_schema()
+            prompt = prompt_template.format(logs=logs, model_schema=model_schema, response_language=response_language)
+            print(f"\n--- Chunk {i+1} ---")
+            print_chunk_contents(chunk)
+            
+            # 공통 처리 함수 사용
+            success, parsed_data = process_log_chunk(
+                model=model,
+                prompt=prompt,
+                model_class=analysis_schema_class,
+                chunk_start_time=chunk_start_time,
+                chunk_end_time=None,  # 함수 내부에서 계산
+                elasticsearch_index=log_type,
+                chunk_number=i+1,
+                chunk_data=chunk,
+                llm_provider=llm_provider,
+                llm_model=llm_model_name,
+                processing_mode="batch"
+            )
+            
+            if success:
+                print("Analysis completed successfully")
+            else:
+                print("Analysis failed")
+                wait_on_failure(30)  # 실패 시 30초 대기
+            
+            print("-" * 50)
+
+
+def create_default_result_callback():
+    """Create a default callback function for processing analysis results"""
+    def process_result_callback(result, chunk, chunk_id):
+        """Default callback to handle analysis results"""
+        print(f"Analysis complete for chunk {chunk_id}")
+        
+        if result and 'events' in result:
+            event_count = len(result['events'])
+            print(f"Found {event_count} security events")
+            
+            # Show high severity events
+            high_severity_events = [
+                event for event in result['events'] 
+                if event.get('severity') in ['HIGH', 'CRITICAL']
+            ]
+            
+            if high_severity_events:
+                print(f"WARNING: HIGH/CRITICAL events: {len(high_severity_events)}")
+                for event in high_severity_events:
+                    print(f"   {event.get('event_type', 'UNKNOWN')}: {event.get('description', 'No description')}")
+        
+        print("-" * 40)
+    
+    return process_result_callback
+
+
+def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_template, analysis_title: str,
+                                 chunk_size=None, log_path=None, processing_mode=None, sampling_threshold=None):
+    """
+    Generic real-time analysis function for all log types
+    
+    Args:
+        log_type: Type of log ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
+        analysis_schema_class: Pydantic schema class for structured output
+        prompt_template: Prompt template string
+        analysis_title: Title to display in output header
+        chunk_size: Override default chunk size
+        log_path: Override default log file path
+        processing_mode: Processing mode (full/sampling)
+        sampling_threshold: Sampling threshold
+    """
+    print("=" * 70)
+    print(f"LogSentinelAI - {analysis_title} (Real-time Mode)")
+    print("=" * 70)
+    
+    # Override environment variables if specified
+    if processing_mode:
+        import os
+        os.environ["REALTIME_PROCESSING_MODE"] = processing_mode
+    if sampling_threshold:
+        import os
+        os.environ["REALTIME_SAMPLING_THRESHOLD"] = str(sampling_threshold)
+    
+    # Get configuration
+    config = get_analysis_config(log_type, chunk_size, analysis_mode="realtime")
+    
+    # Override log path if specified
+    if log_path:
+        config["log_path"] = log_path
+    
+    print(f"Log file:          {config['log_path']}")
+    print(f"Chunk size:        {config['chunk_size']}")
+    print(f"Response language: {config['response_language']}")
+    print(f"Analysis mode:     {config['analysis_mode']}")
+    
+    # Initialize LLM model
+    print("\nInitializing LLM model...")
+    model = initialize_llm_model()
+    
+    # Create real-time monitor
+    try:
+        monitor = create_realtime_monitor(log_type, chunk_size)
+    except ValueError as e:
+        print(f"ERROR: Configuration error: {e}")
+        print("Please check your config file for real-time log paths")
+        return
+    
+    # Function to create analysis prompt
+    def create_analysis_prompt(chunk, response_language):
+        logs = "".join(chunk)
+        model_schema = analysis_schema_class.model_json_schema()
+        return prompt_template.format(
+            logs=logs, 
+            model_schema=model_schema, 
+            response_language=response_language
+        )
+    
+    # Start real-time monitoring
+    try:
+        monitor.monitor_and_analyze(
+            model=model,
+            analysis_prompt_func=create_analysis_prompt,
+            analysis_schema_class=analysis_schema_class,
+            process_callback=create_default_result_callback()
+        )
+    except FileNotFoundError:
+        print(f"ERROR: Log file not found: {config['log_path']}")
+        print("NOTE: Make sure the log file exists and is readable")
+        print("NOTE: You may need to run with appropriate permissions")
+    except PermissionError:
+        print(f"ERROR: Permission denied: {config['log_path']}")
+        print("NOTE: You may need to run with sudo or adjust file permissions")
+    except Exception as e:
+        print(f"ERROR: Unexpected error: {e}")
+
+
+def create_argument_parser(description: str):
+    """
+    Create a standard argument parser for all analysis scripts
+    
+    Args:
+        description: Description for the argument parser
+    
+    Returns:
+        argparse.ArgumentParser: Configured argument parser
+    """
+    import argparse
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--mode', choices=['batch', 'realtime'], default='batch',
+                       help='Analysis mode: batch (default) or realtime')
+    parser.add_argument('--chunk-size', type=int, default=None,
+                       help='Override default chunk size')
+    parser.add_argument('--log-path', type=str, default=None,
+                       help='Override default log file path')
+    parser.add_argument('--processing-mode', choices=['full', 'sampling'], default=None,
+                       help='Real-time processing mode: full (process all) or sampling (latest only)')
+    parser.add_argument('--sampling-threshold', type=int, default=None,
+                       help='Auto-switch to sampling if accumulated lines exceed this (only for full mode)')
+    return parser
