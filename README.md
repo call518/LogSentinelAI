@@ -2,39 +2,6 @@
 
 LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
 
-## 🌟 Key Features
-
-### 1. Multi-format Log Support
-- **HTTP Access Log**: Apache/Nginx access log analysis
-- **Apache Error Log**: Apache error log security analysis  
-- **Linux System Log**: System log monitoring and analysis
-- **Network Packet Analysis**: tcpdump packet inspection and security analysis
-
-### 2. Structured Generation with Outlines
-- **Reliable JSON Output**: Uses [Outlines](https://github.com/dottxt-ai/outlines) library for guaranteed structured generation
-- **Schema-Guided Generation**: Pydantic models ensure LLM outputs follow exact JSON schemas
-- **Enhanced Parsing Reliability**: Eliminates JSON parsing errors through guided generation
-- **Multi-Provider Support**: Works consistently across OpenAI, vLLM, and Ollama providers
-
-### 3. Intelligent Security Detection
-- **Various Attack Pattern Recognition**: SQL Injection, XSS, Brute Force, Command Injection, etc.
-- **Context-based Analysis**: Analysis considering log patterns and correlations
-- **Confidence Score**: Confidence level for each detection result
-- **Mandatory Event Generation**: Every log chunk generates at least one security event
-
-### 4. Complete Traceability  
-- **LOGID System**: Unique MD5-based identifier for each log line (e.g., `LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9`)
-- **Original Data Preservation**: Raw log data stored with `@log_raw_data` field in Elasticsearch
-- **Related Log Mapping**: LLM specifies which LOGIDs are related to each security event
-- **Full Audit Trail**: Complete traceability from original logs to analysis results
-
-### 5. Scalable Architecture
-- **Modular Design**: Independent analyzer for each log type
-- **Shared Commons Library**: Centralized functions in `commons.py` for code reusability
-- **Chunk-based Processing**: Memory-efficient processing of large log files
-- **Real-time & Batch Modes**: Support for both complete file analysis and live monitoring
-- **Error Handling**: Robust error handling with failure tracking in Elasticsearch
-
 ## 📊 Dashboard Example
 
 ![Kibana Dashboard](img/ex-dashboard.png)
