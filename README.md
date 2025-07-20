@@ -465,6 +465,7 @@ chunk_size = 5  # Default value, adjust as needed (typically 5-10)
   "@processing_result": "success",
   "@processing_mode": "realtime",
   "@sampling_threshold": 100,
+  "@log_count": 15,
   "@timestamp": "2025-07-18T10:00:05.123Z",
   "@log_type": "httpd_access",
   "@document_id": "httpd_access_20250718_100005_123456_chunk_1",

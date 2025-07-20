@@ -213,13 +213,13 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         
         # 분석 시간 정보, LLM 정보, 원본 로그 데이터, 로그 건수 추가
         parsed = {
+            **parsed,
             "@chunk_analysis_start_utc": chunk_start_time,
             "@chunk_analysis_end_utc": chunk_end_time,
             "@processing_result": "success",
             "@log_count": log_count,
             "@log_raw_data": log_raw_data,
-            "@processing_mode": processing_mode if processing_mode else "batch",
-            **parsed
+            "@processing_mode": processing_mode if processing_mode else "batch"
         }
         
         # LLM 정보 추가 (선택사항)
@@ -928,6 +928,7 @@ def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_
             "@timestamp": chunk_end_time,
             "@log_type": log_type,
             "@document_id": f"{log_type}_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}_chunk_{chunk_id}",
+            "@log_count": len(chunk),
             "@log_raw_data": _create_log_hash_mapping_realtime(chunk),
             "@processing_mode": processing_mode if processing_mode else "unknown",
             "@sampling_threshold": sampling_threshold if sampling_threshold else None
