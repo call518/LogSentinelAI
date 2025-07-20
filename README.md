@@ -154,6 +154,18 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 
 ### 5. Run Log Analysis
 
+#### Universal Command-Line Interface
+All analysis scripts now support the same command-line arguments and modes:
+
+```bash
+# View available options for any script
+python analysis-linux-system-log.py --help
+python analysis-httpd-access-log.py --help
+python analysis-tcpdump-packet.py --help
+
+# All scripts support: --mode, --chunk-size, --log-path, --processing-mode, --sampling-threshold
+```
+
 #### Analysis Modes
 LogSentinelAI supports two analysis modes:
 
@@ -181,10 +193,10 @@ python analysis-linux-system-log.py
 # Override chunk size
 python analysis-linux-system-log.py --chunk-size 5
 
-# Analyze different log types
-python analysis-httpd-access-log.py
-python analysis-httpd-apache-log.py
-python analysis-tcpdump-packet.py
+# All analysis scripts support the same batch mode options
+python analysis-httpd-access-log.py --chunk-size 8
+python analysis-httpd-apache-log.py --log-path /path/to/custom/error.log
+python analysis-tcpdump-packet.py --chunk-size 3
 ```
 
 #### Real-time Mode (Live log monitoring)
@@ -199,13 +211,15 @@ python analysis-linux-system-log.py --mode realtime --processing-mode sampling
 python analysis-linux-system-log.py --mode realtime --processing-mode full --sampling-threshold 200
 
 # Monitor custom log file
-python analysis-linux-system-log.py --mode realtime --log-path /var/log/custom.log
+python analysis-linux-system-log.py --mode realtime --log-path /var/log/messages
 
 # Monitor with custom chunk size
-python analysis-linux-system-log.py --mode realtime --chunk-size 3
+python analysis-linux-system-log.py --mode realtime --chunk-size 15
 
-# Dedicated real-time script
-python analysis-linux-system-log-realtime.py
+# All analysis scripts support the same real-time options
+python analysis-httpd-access-log.py --mode realtime --processing-mode sampling
+python analysis-httpd-apache-log.py --mode realtime --log-path /var/log/apache2/error.log
+python analysis-tcpdump-packet.py --mode realtime --chunk-size 5
 
 # Monitor with root permissions (often required for system logs)
 sudo python analysis-linux-system-log.py --mode realtime
