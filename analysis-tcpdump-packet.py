@@ -238,7 +238,8 @@ def run_batch_analysis():
                 chunk_data=chunk,
                 llm_provider=llm_provider,
                 llm_model=llm_model_name,
-                processing_mode="batch"
+                processing_mode="batch",
+                log_path=log_path
             )
             
             if success:

@@ -167,7 +167,7 @@ def wait_on_failure(delay_seconds=30):
 
 def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
                      elasticsearch_index, chunk_number, chunk_data, llm_provider=None, llm_model=None,
-                     processing_mode=None):
+                     processing_mode=None, log_path=None):
     """
     Common function to process log chunks
     
@@ -183,6 +183,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         llm_provider: LLM provider name (e.g., "ollama", "vllm", "openai")
         llm_model: LLM model name (e.g., "Qwen/Qwen2.5-3B-Instruct")
         processing_mode: Processing mode information (default: "batch")
+        log_path: Log file path to include in metadata
     
     Returns:
         (success: bool, parsed_data: dict or None)
@@ -228,6 +229,10 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         if llm_model:
             parsed["@llm_model"] = llm_model
         
+        # 로그 파일 경로 추가 (선택사항)
+        if log_path:
+            parsed["@log_path"] = log_path
+        
         print(json.dumps(parsed, ensure_ascii=False, indent=4))
         
         # Pydantic 모델 검증
@@ -266,6 +271,9 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             failure_data["@llm_provider"] = llm_provider
         if llm_model:
             failure_data["@llm_model"] = llm_model
+        # 로그 파일 경로 추가 (선택사항)
+        if log_path:
+            failure_data["@log_path"] = log_path
         print(f"\nSending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
@@ -297,6 +305,9 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             failure_data["@llm_provider"] = llm_provider
         if llm_model:
             failure_data["@llm_model"] = llm_model
+        # 로그 파일 경로 추가 (선택사항)
+        if log_path:
+            failure_data["@log_path"] = log_path
         print(f"\nSending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
@@ -851,7 +862,8 @@ class RealtimeLogMonitor:
                             log_type=self.log_type,
                             response_language=self.response_language,
                             processing_mode=self.processing_mode,
-                            sampling_threshold=self.sampling_threshold
+                            sampling_threshold=self.sampling_threshold,
+                            log_path=self.log_path
                         )
                         
                         # Call custom callback if provided
@@ -896,7 +908,8 @@ class RealtimeLogMonitor:
                         log_type=self.log_type,
                         response_language=self.response_language,
                         processing_mode=self.processing_mode,
-                        sampling_threshold=self.sampling_threshold
+                        sampling_threshold=self.sampling_threshold,
+                        log_path=self.log_path
                     )
                     
                     # Call custom callback if provided
@@ -914,7 +927,7 @@ class RealtimeLogMonitor:
 
 
 def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_type, response_language, 
-                              processing_mode=None, sampling_threshold=None):
+                              processing_mode=None, sampling_threshold=None, log_path=None):
     """
     Simplified function to process log chunks for real-time monitoring
     
@@ -928,6 +941,7 @@ def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_
         response_language: Response language
         processing_mode: Processing mode (full/sampling/auto-sampling)
         sampling_threshold: Sampling threshold for auto-sampling mode
+        log_path: Log file path to include in metadata
     
     Returns:
         dict: Analysis result
@@ -1005,6 +1019,10 @@ def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_
             "@processing_mode": processing_mode if processing_mode else "unknown",
             "@sampling_threshold": sampling_threshold if sampling_threshold else None
         })
+        
+        # 로그 파일 경로 추가 (선택사항)
+        if log_path:
+            parsed_data["@log_path"] = log_path
         
         # Send to Elasticsearch
         send_to_elasticsearch(parsed_data, log_type, chunk_id, chunk)
@@ -1091,7 +1109,8 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
                 chunk_data=chunk,
                 llm_provider=llm_provider,
                 llm_model=llm_model_name,
-                processing_mode="batch"
+                processing_mode="batch",
+                log_path=log_path
             )
             
             if success:
