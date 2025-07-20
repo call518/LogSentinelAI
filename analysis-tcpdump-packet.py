@@ -7,15 +7,13 @@ import hashlib
 
 from commons import (
     initialize_llm_model, process_log_chunk, wait_on_failure, 
-    get_llm_config, get_analysis_config, run_generic_realtime_analysis,
-    create_argument_parser
+    get_analysis_config, run_generic_realtime_analysis,
+    create_argument_parser, chunked_iterable, print_chunk_contents
 )
 from prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
-from commons import chunked_iterable
-from commons import print_chunk_contents
 
 ### Install the required packages
-# uv pip install outlines ollama openai python-dotenv numpy elasticsearch
+# uv add outlines ollama openai python-dotenv numpy elasticsearch
 
 #---------------------------------- Enums and Models ----------------------------------
 class SeverityLevel(str, Enum):
@@ -185,9 +183,6 @@ def run_batch_analysis():
     print("LogSentinelAI - TCPDump Packet Analysis (Batch Mode)")
     print("=" * 70)
     
-    # Get LLM configuration from commons
-    llm_provider, llm_model_name = get_llm_config()
-    
     # Get analysis configuration (can override chunk_size if needed)
     # config = get_analysis_config("tcpdump_packet", chunk_size=3)  # Override chunk_size
     config = get_analysis_config("tcpdump_packet")  # Use default chunk_size
@@ -236,8 +231,6 @@ def run_batch_analysis():
                 elasticsearch_index="tcpdump_packet",
                 chunk_number=i+1,
                 chunk_data=chunk,
-                llm_provider=llm_provider,
-                llm_model=llm_model_name,
                 processing_mode="batch",
                 log_path=log_path
             )
@@ -256,10 +249,11 @@ def main():
     parser = create_argument_parser('TCPDump Packet Analysis')
     args = parser.parse_args()
     
+    log_type = "tcpdump_packet"
+    analysis_title = "TCPDump Packet Analysis"
+    
     if args.mode == 'realtime':
         # TCPDump real-time analysis uses generic function
-        log_type = "tcpdump_packet"
-        analysis_title = "TCPDump Packet Analysis"
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=PacketAnalysis,

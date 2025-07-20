@@ -71,16 +71,6 @@ LOG_CHUNK_SIZES = {
     "tcpdump_packet": int(os.getenv("CHUNK_SIZE_TCPDUMP_PACKET", "5"))
 }
 
-def get_llm_config():
-    """
-    Get current LLM configuration
-    
-    Returns:
-        tuple: (llm_provider, llm_model_name)
-    """
-    llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
-    return LLM_PROVIDER, llm_model_name
-
 def get_analysis_config(log_type, chunk_size=None, analysis_mode=None):
     """
     Get analysis configuration for specific log type
@@ -467,24 +457,6 @@ def _send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Option
         print(f"❌ Error occurred during Elasticsearch transmission: {e}")
         return False
 
-def _extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
-    """
-    Separate LOGID and original log content from a line containing LOGID.
-    
-    Args:
-        logid_line: String in the format "LOGID-{HASH} {original_log_content}"
-    
-    Returns:
-        tuple: (logid, original_log_content)
-    """
-    if logid_line.startswith("LOGID-"):
-        parts = logid_line.split(" ", 1)
-        logid = parts[0]
-        original_content = parts[1] if len(parts) > 1 else ""
-        return logid, original_content
-    else:
-        return "UNKNOWN-LOGID", logid_line
-
 def _create_log_hash_mapping_realtime(chunk: list[str]) -> Dict[str, str]:
     """
     Create LOGID -> original log content mapping for real-time chunks.
@@ -504,23 +476,6 @@ def _create_log_hash_mapping_realtime(chunk: list[str]) -> Dict[str, str]:
             mapping[logid] = line.strip()
     return mapping
 
-
-def _create_log_hash_mapping(chunk: list[str]) -> Dict[str, str]:
-    """
-    Create LOGID -> original log content mapping for all logs in the chunk.
-    
-    Args:
-        chunk: List of log lines containing LOGID
-    
-    Returns:
-        Dict[str, str]: {logid: original_content} mapping
-    """
-    mapping = {}
-    for line in chunk:
-        logid, original_content = _extract_log_content_from_logid_line(line.strip())
-        mapping[logid] = original_content
-    return mapping
-
 def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None, chunk: Optional[list] = None) -> bool:
     """
     Integrated function to format analysis results and send them to Elasticsearch.
@@ -534,14 +489,6 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
     Returns:
         bool: Whether transmission was successful
     """
-    # log_hash_mapping removed to reduce token waste
-    # Can be managed separately if needed
-    # if chunk:
-    #     log_hash_mapping = _create_log_hash_mapping(chunk)
-    #     analysis_data["log_hash_mapping"] = log_hash_mapping
-    #     print(f"📝 Added {len(log_hash_mapping)} log hash mapping entries")
-    
-    # Send to Elasticsearch
     return _send_to_elasticsearch(analysis_data, log_type, chunk_id)
 
 
@@ -1068,8 +1015,9 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
     print(f"LogSentinelAI - {analysis_title} (Batch Mode)")
     print("=" * 70)
     
-    # Get LLM configuration from commons
-    llm_provider, llm_model_name = get_llm_config()
+    # Get LLM configuration
+    llm_provider = LLM_PROVIDER
+    llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
     
     # Get analysis configuration
     config = get_analysis_config(log_type)
@@ -1122,32 +1070,6 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
             print("-" * 50)
 
 
-def create_default_result_callback():
-    """Create a default callback function for processing analysis results"""
-    def process_result_callback(result, chunk, chunk_id):
-        """Default callback to handle analysis results"""
-        print(f"✅ Analysis complete for chunk {chunk_id}")
-        
-        if result and 'events' in result:
-            event_count = len(result['events'])
-            print(f"Found {event_count} security events")
-            
-            # Show high severity events
-            high_severity_events = [
-                event for event in result['events'] 
-                if event.get('severity') in ['HIGH', 'CRITICAL']
-            ]
-            
-            if high_severity_events:
-                print(f"WARNING: HIGH/CRITICAL events: {len(high_severity_events)}")
-                for event in high_severity_events:
-                    print(f"   {event.get('event_type', 'UNKNOWN')}: {event.get('description', 'No description')}")
-        
-        print("-" * 40)
-    
-    return process_result_callback
-
-
 def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_template, analysis_title: str,
                                  chunk_size=None, log_path=None, processing_mode=None, sampling_threshold=None):
     """
@@ -1193,7 +1115,10 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
     
     # Create real-time monitor
     try:
-        monitor = create_realtime_monitor(log_type, chunk_size)
+        config = get_analysis_config(log_type, chunk_size, analysis_mode="realtime")
+        if not config["log_path"]:
+            raise ValueError(f"No real-time log path configured for {log_type}")
+        monitor = RealtimeLogMonitor(log_type, config)
     except ValueError as e:
         print(f"ERROR: Configuration error: {e}")
         print("Please check your config file for real-time log paths")
@@ -1209,13 +1134,35 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
             response_language=response_language
         )
     
+    # Default callback for processing results
+    def process_result_callback(result, chunk, chunk_id):
+        """Default callback to handle analysis results"""
+        print(f"✅ Analysis complete for chunk {chunk_id}")
+        
+        if result and 'events' in result:
+            event_count = len(result['events'])
+            print(f"Found {event_count} security events")
+            
+            # Show high severity events
+            high_severity_events = [
+                event for event in result['events'] 
+                if event.get('severity') in ['HIGH', 'CRITICAL']
+            ]
+            
+            if high_severity_events:
+                print(f"WARNING: HIGH/CRITICAL events: {len(high_severity_events)}")
+                for event in high_severity_events:
+                    print(f"   {event.get('event_type', 'UNKNOWN')}: {event.get('description', 'No description')}")
+        
+        print("-" * 40)
+    
     # Start real-time monitoring
     try:
         monitor.monitor_and_analyze(
             model=model,
             analysis_prompt_func=create_analysis_prompt,
             analysis_schema_class=analysis_schema_class,
-            process_callback=create_default_result_callback()
+            process_callback=process_result_callback
         )
     except FileNotFoundError:
         print(f"ERROR: Log file not found: {config['log_path']}")

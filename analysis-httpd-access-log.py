@@ -10,7 +10,7 @@ from commons import (
 )
 
 ### Install the required packages
-# uv add outlines ollama openai python-dotenv numpy
+# uv add outlines ollama openai python-dotenv numpy elasticsearch
 
 #---------------------------------- Enums and Models ----------------------------------
 class SeverityLevel(str, Enum):
