@@ -39,13 +39,13 @@ LLM_PROVIDER = "vllm"
 LLM_MODELS = {
     ### Ollama
     # "ollama": "qwen2.5-coder:0.5b",
-    "ollama": "qwen2.5-coder:1.5b",
-    # "ollama": "qwen2.5-coder:3b",
+    # "ollama": "qwen2.5-coder:1.5b",
+    "ollama": "qwen2.5-coder:3b",
     ### vLLM
-    # "vllm": "Qwen/Qwen2.5-0.5B-Instruct",
-    "vllm": "Qwen/Qwen2.5-1.5B-Instruct",
+    "vllm": "Qwen/Qwen2.5-0.5B-Instruct",
+    # "vllm": "Qwen/Qwen2.5-1.5B-Instruct",
     # "vllm": "Qwen/Qwen2.5-3B-Instruct",
-    ### OpenAI
+    ### OpenAI (Pricing: https://platform.openai.com/docs/pricing)
     # "openai": "gpt-4o"
     "openai": "gpt-4o-mini"
     # "openai": "gpt-4.1"
