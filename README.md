@@ -201,8 +201,9 @@ All analysis scripts now support the same command-line arguments and modes:
 
 ```bash
 # View available options for any script
-python analysis-linux-system-log.py --help
 python analysis-httpd-access-log.py --help
+python analysis-httpd-apache-log.py --help
+python analysis-linux-system-log.py --help
 python analysis-tcpdump-packet.py --help
 
 # All scripts support: --mode, --chunk-size, --log-path, --processing-mode, --sampling-threshold
