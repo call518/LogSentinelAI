@@ -242,9 +242,9 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         print(f"\nSending data to Elasticsearch...")
         success = send_to_elasticsearch(parsed, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"SUCCESS: Chunk {chunk_number} data sent to Elasticsearch successfully")
+            print(f"✅ Chunk {chunk_number} data sent to Elasticsearch successfully")
         else:
-            print(f"ERROR: Chunk {chunk_number} data failed to send to Elasticsearch")
+            print(f"❌ Chunk {chunk_number} data failed to send to Elasticsearch")
         
         return True, parsed
         
@@ -277,13 +277,13 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         print(f"\nSending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"SUCCESS: Chunk {chunk_number} failure information sent to Elasticsearch successfully")
+            print(f"✅ Chunk {chunk_number} failure information sent to Elasticsearch successfully")
         else:
-            print(f"ERROR: Chunk {chunk_number} failure information failed to send to Elasticsearch")
+            print(f"❌ Chunk {chunk_number} failure information failed to send to Elasticsearch")
         return False, None
         
     except Exception as e:
-        print(f"Analysis processing error: {e}")
+        print(f"❌ Analysis processing error: {e}")
         # LLM 분석 완료 후 종료 시간 기록 (chunk_end_time이 None인 경우)
         if chunk_end_time is None:
             chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
@@ -311,9 +311,9 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         print(f"\nSending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"SUCCESS: Chunk {chunk_number} failure information sent to Elasticsearch successfully")
+            print(f"✅ Chunk {chunk_number} failure information sent to Elasticsearch successfully")
         else:
-            print(f"ERROR: Chunk {chunk_number} failure information failed to send to Elasticsearch")
+            print(f"❌ Chunk {chunk_number} failure information failed to send to Elasticsearch")
         return False, None
 
 
@@ -1114,9 +1114,9 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
             )
             
             if success:
-                print("Analysis completed successfully")
+                print("✅ Analysis completed successfully")
             else:
-                print("Analysis failed")
+                print("❌ Analysis failed")
                 wait_on_failure(30)  # 실패 시 30초 대기
             
             print("-" * 50)
@@ -1126,7 +1126,7 @@ def create_default_result_callback():
     """Create a default callback function for processing analysis results"""
     def process_result_callback(result, chunk, chunk_id):
         """Default callback to handle analysis results"""
-        print(f"Analysis complete for chunk {chunk_id}")
+        print(f"✅ Analysis complete for chunk {chunk_id}")
         
         if result and 'events' in result:
             event_count = len(result['events'])
