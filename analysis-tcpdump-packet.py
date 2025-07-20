@@ -1,15 +1,9 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from typing import Literal, Optional
-import json
-import os
-import sys
 import datetime
-import subprocess
-from dotenv import load_dotenv
 import re
+import hashlib
 
-from commons import send_to_elasticsearch
 from commons import initialize_llm_model
 from commons import process_log_chunk
 from commons import wait_on_failure
@@ -18,7 +12,6 @@ from commons import get_analysis_config
 from prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
 from commons import chunked_iterable
 from commons import print_chunk_contents
-import hashlib
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy

@@ -70,13 +70,13 @@ source .venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 
 # 4. 환경 변수 파일 준비
-cp .env.template .env
-# .env 파일에서 OPENAI_API_KEY 값을 입력 (OpenAI 계정에서 발급)
+cp config.template config
+# config 파일에서 OPENAI_API_KEY 값을 입력 (OpenAI 계정에서 발급)
 
-# 5. LLM 설정 (commons.py 수정)
-# OpenAI API 사용시 commons.py에서 다음과 같이 설정:
-#   LLM_PROVIDER = "openai"  (기본값)
-#   LLM_MODELS의 "openai": "gpt-4o-mini" 사용 (기본값)
+# 5. LLM 설정 (config 파일에서 설정)
+# OpenAI API 사용시 config 파일에서 다음과 같이 설정:
+#   LLM_PROVIDER=openai  (기본값)
+#   LLM_MODEL_OPENAI=gpt-4o-mini  (기본값)
 ```
 
 ### 3. Elasticsearch & Kibana 설치 (Docker)
@@ -197,22 +197,18 @@ python analysis-tcpdump-packet.py
 
 OpenAI API 대신 Ollama(로컬), vLLM(로컬/GPU) 등으로 변경하려면 아래 가이드를 참고하세요.
 
-### LLM Provider & Model 설정 (`commons.py` 수정)
+### LLM Provider & Model 설정 (`config` 파일 수정)
 
-LogSentinelAI는 `commons.py` 파일에서 LLM Provider와 모델을 중앙 관리합니다.
+LogSentinelAI는 `config` 파일에서 LLM Provider와 모델을 중앙 관리합니다.
 
 #### OpenAI API 설정 (기본값)
-```python
-# commons.py에서 설정
-LLM_PROVIDER = "openai"
+```bash
+# config 파일에서 설정
+LLM_PROVIDER=openai
+LLM_MODEL_OPENAI=gpt-4o-mini
 
-LLM_MODELS = {
-    "openai": "gpt-4o-mini"  # 권장: 비용 효율적
-    # "openai": "gpt-4o"     # 고성능이 필요한 경우
-}
-
-# .env 파일에 API 키 설정 필요
-# OPENAI_API_KEY=your_openai_api_key_here
+# API 키 설정 필요
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 #### Ollama (로컬 LLM) 설정
@@ -222,15 +218,10 @@ ollama pull qwen2.5-coder:3b
 ollama serve
 ```
 
-```python
-# 2. commons.py에서 설정 변경
-LLM_PROVIDER = "ollama"
-
-LLM_MODELS = {
-    "ollama": "qwen2.5-coder:3b",     # 권장: 성능과 속도 균형
-    # "ollama": "qwen2.5-coder:1.5b", # 가벼운 모델
-    # "ollama": "qwen2.5-coder:0.5b", # 최소 사양
-}
+```bash
+# config 파일에서 설정 변경
+LLM_PROVIDER=ollama
+LLM_MODEL_OLLAMA=qwen2.5-coder:3b
 ```
 
 #### vLLM (로컬 GPU) 설정
@@ -278,43 +269,34 @@ pip install vllm
 python -m vllm.entrypoints.openai.api_server --model qwen2.5-coder:3b
 ```
 
-```python
-# commons.py에서 설정 변경
-LLM_PROVIDER = "vllm"
-
-LLM_MODELS = {
-    "vllm": "Qwen/Qwen2.5-1.5B-Instruct",  # 권장: GPU 메모리 효율적
-    # "vllm": "Qwen/Qwen2.5-3B-Instruct",   # 고성능 GPU용
-    # "vllm": "Qwen/Qwen2.5-0.5B-Instruct", # 최소 GPU 메모리
-}
+```bash
+# config 파일에서 설정 변경
+LLM_PROVIDER=vllm
+LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 ```
 
-### 추가 설정 옵션 (`commons.py`)
+### 추가 설정 옵션 (`config` 파일)
 
 #### 응답 언어 설정
-```python
+```bash
 # 분석 결과 언어 설정
-RESPONSE_LANGUAGE = "korean"    # 한국어 (기본값)
-# RESPONSE_LANGUAGE = "english" # 영어
+RESPONSE_LANGUAGE=korean    # 한국어 (기본값)
+# RESPONSE_LANGUAGE=english # 영어
 ```
 
 #### 로그 파일 경로 및 청크 크기 설정
-```python
+```bash
 # 로그 파일 경로 설정
-LOG_PATHS = {
-    "httpd_access": "sample-logs/access-10k.log",      # 10k 엔트리 (기본값)
-    "httpd_apache_error": "sample-logs/apache-10k.log", 
-    "linux_system": "sample-logs/linux-2k.log",
-    "tcpdump_packet": "sample-logs/tcpdump-packet-2k.log"
-}
+LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log      # 10k 엔트리 (기본값)
+LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
+LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
+LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 
 # 청크 크기 설정 (한 번에 처리할 로그 엔트리 수)
-LOG_CHUNK_SIZES = {
-    "httpd_access": 10,        # HTTP 액세스 로그
-    "httpd_apache_error": 10,  # Apache 에러 로그
-    "linux_system": 10,       # Linux 시스템 로그
-    "tcpdump_packet": 5        # 네트워크 패킷 (더 작은 청크 권장)
-}
+CHUNK_SIZE_HTTPD_ACCESS=10        # HTTP 액세스 로그
+CHUNK_SIZE_HTTPD_APACHE_ERROR=10  # Apache 에러 로그
+CHUNK_SIZE_LINUX_SYSTEM=10       # Linux 시스템 로그
+CHUNK_SIZE_TCPDUMP_PACKET=5       # 네트워크 패킷 (더 작은 청크 권장)
 ```
 
 ### 설정 변경 후 확인
@@ -335,8 +317,10 @@ LogSentinelAI/
 ├── commons.py                      # Common functions and utilities
 ├── prompts.py                      # LLM prompt templates
 ├── requirements.txt                # Python dependencies
-├── .env                           # Environment variables (created from template)
-├── .env.template                  # Environment variables template
+├── config                         # Configuration file (created from template)
+├── config.template                # Configuration template
+├── .env                           # Environment variables (deprecated - use config instead)
+├── .env.template                  # Environment variables template (deprecated)
 ├── .gitignore                     # Git ignore file
 ├── LICENSE                        # MIT License
 ├── README.md                      # This file

@@ -19,58 +19,36 @@ import outlines
 import ollama
 import openai
 
-# Import prompt templates from prompts.py
-from prompts import (
-    PROMPT_TEMPLATE_HTTPD_ACCESS_LOG,
-    PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG,
-    PROMPT_TEMPLATE_LINUX_SYSTEM_LOG,
-    PROMPT_TEMPLATE_TCPDUMP_PACKET
-)
-
 # .env 파일 로드
-load_dotenv()
+load_dotenv(dotenv_path="config")
 
-# LLM Configuration - Choose from "ollama", "vllm", "openai"
-# llm_provider = "ollama"
-LLM_PROVIDER = "vllm"
-# LLM_PROVIDER = "openai"
+# LLM Configuration - Read from config file
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
 
-# LLM Models Mapping
+# LLM Models Mapping - Read from config file
 LLM_MODELS = {
-    ### Ollama
-    # "ollama": "qwen2.5-coder:0.5b",
-    # "ollama": "qwen2.5-coder:1.5b",
-    "ollama": "qwen2.5-coder:3b",
-    ### vLLM
-    # "vllm": "Qwen/Qwen2.5-0.5B-Instruct",
-    "vllm": "Qwen/Qwen2.5-1.5B-Instruct",
-    # "vllm": "Qwen/Qwen2.5-3B-Instruct",
-    ### OpenAI (Pricing: https://platform.openai.com/docs/pricing)
-    # "openai": "gpt-4o"
-    "openai": "gpt-4o-mini"
-    # "openai": "gpt-4.1"
-    # "openai": "gpt-4.1-mini"
+    "ollama": os.getenv("LLM_MODEL_OLLAMA", "qwen2.5-coder:3b"),
+    "vllm": os.getenv("LLM_MODEL_VLLM", "Qwen/Qwen2.5-1.5B-Instruct"),
+    "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini")
 }
 
-# Common Analysis Configuration
-# Response Language - Choose from "english", "korean"
-# RESPONSE_LANGUAGE = "english"
-RESPONSE_LANGUAGE = "korean"
+# Common Analysis Configuration - Read from config file
+RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
 
-# Log Paths Configuration
+# Log Paths Configuration - Read from config file
 LOG_PATHS = {
-    "httpd_access": "sample-logs/access-10k.log",
-    "httpd_apache_error": "sample-logs/apache-10k.log", 
-    "linux_system": "sample-logs/linux-2k.log",
-    "tcpdump_packet": "sample-logs/tcpdump-packet-2k.log"
+    "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
+    "httpd_apache_error": os.getenv("LOG_PATH_HTTPD_APACHE_ERROR", "sample-logs/apache-10k.log"),
+    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log"),
+    "tcpdump_packet": os.getenv("LOG_PATH_TCPDUMP_PACKET", "sample-logs/tcpdump-packet-2k.log")
 }
 
-# Default Chunk Sizes (can be overridden by individual analysis scripts)
+# Default Chunk Sizes - Read from config file (can be overridden by individual analysis scripts)
 LOG_CHUNK_SIZES = {
-    "httpd_access": 10,
-    "httpd_apache_error": 10,
-    "linux_system": 10,
-    "tcpdump_packet": 5
+    "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
+    "httpd_apache_error": int(os.getenv("CHUNK_SIZE_HTTPD_APACHE_ERROR", "10")),
+    "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10")),
+    "tcpdump_packet": int(os.getenv("CHUNK_SIZE_TCPDUMP_PACKET", "5"))
 }
 
 def get_llm_config():
@@ -355,11 +333,11 @@ def print_chunk_contents(chunk):
             print(f"{logid} {rest}")
     print("")
 
-### Elasticsearch
-ELASTICSEARCH_HOST = "http://localhost:9200"  # 일반적인 Elasticsearch 포트
-ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER")
-ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD")
-ELASTICSEARCH_INDEX = "logsentinelai-analysis"
+### Elasticsearch - Read from config file
+ELASTICSEARCH_HOST = os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")
+ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER", "elastic")
+ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "changeme")
+ELASTICSEARCH_INDEX = os.getenv("ELASTICSEARCH_INDEX", "logsentinelai-analysis")
 
 def _get_elasticsearch_client() -> Optional[Elasticsearch]:
     """

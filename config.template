@@ -1,0 +1,48 @@
+# LogSentinelAI Configuration File
+
+# =============================================================================
+# API Keys
+# =============================================================================
+# OpenAI API Key (required if using OpenAI provider)
+OPENAI_API_KEY=YOUR_API_KEY
+
+# =============================================================================
+# LLM Configuration
+# =============================================================================
+# LLM Provider - Choose from "ollama", "vllm", "openai"
+LLM_PROVIDER=openai
+
+# LLM Model Names by Provider
+LLM_MODEL_OLLAMA=qwen2.5-coder:1.5b
+LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
+LLM_MODEL_OPENAI=gpt-4o-mini
+
+# =============================================================================
+# Analysis Configuration
+# =============================================================================
+# Response Language - Choose from "english", "korean"
+RESPONSE_LANGUAGE=korean
+
+# =============================================================================
+# Log File Paths
+# =============================================================================
+LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
+LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
+LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
+LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
+
+# =============================================================================
+# Chunk Size Configuration (entries per chunk)
+# =============================================================================
+CHUNK_SIZE_HTTPD_ACCESS=10
+CHUNK_SIZE_HTTPD_APACHE_ERROR=10
+CHUNK_SIZE_LINUX_SYSTEM=10
+CHUNK_SIZE_TCPDUMP_PACKET=5
+
+# =============================================================================
+# Elasticsearch Configuration
+# =============================================================================
+ELASTICSEARCH_HOST=http://localhost:9200
+ELASTICSEARCH_USER=elastic
+ELASTICSEARCH_PASSWORD=changeme
+ELASTICSEARCH_INDEX=logsentinelai-analysis

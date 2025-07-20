@@ -1,17 +1,10 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from typing import Literal, Optional
-import json
-import os
-import sys
 import datetime
-import subprocess
-from dotenv import load_dotenv
 
 from prompts import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 from commons import chunked_iterable
 from commons import print_chunk_contents
-from commons import send_to_elasticsearch
 from commons import initialize_llm_model
 from commons import process_log_chunk
 from commons import wait_on_failure
