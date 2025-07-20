@@ -34,12 +34,16 @@ ANALYSIS_MODE=batch
 # Log File Paths
 # =============================================================================
 # Batch Mode: Static log files for complete analysis
+# CLI Override: Use --log-path argument to override these paths
+# Example: python analysis-linux-system-log.py --log-path /custom/path/messages.log
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 
 # Real-time Mode: Live log files to monitor
+# CLI Override: Use --log-path argument to override these paths
+# Example: python analysis-linux-system-log.py --mode realtime --log-path /var/log/custom.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
 LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
@@ -54,6 +58,8 @@ LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 # - Smaller values: Faster processing, may miss complex patterns
 # - Recommended: 10-50 depending on log complexity and LLM capacity
 # - These values are used for both batch and real-time modes
+# CLI Override: Use --chunk-size argument to override these values
+# Example: python analysis-linux-system-log.py --chunk-size 20
 CHUNK_SIZE_HTTPD_ACCESS=30
 CHUNK_SIZE_HTTPD_APACHE_ERROR=30
 CHUNK_SIZE_LINUX_SYSTEM=30
@@ -100,6 +106,8 @@ REALTIME_BUFFER_TIME=2
 # Real-time processing mode - Choose from "full", "sampling"
 # full: Process all accumulated logs sequentially (default)
 # sampling: Only process the most recent chunk_size logs, discard older ones
+# CLI Override: Use --processing-mode argument to override this setting
+# Example: python analysis-linux-system-log.py --mode realtime --processing-mode sampling
 REALTIME_PROCESSING_MODE=full
 
 # Auto-sampling threshold (applies to full mode)
@@ -107,6 +115,8 @@ REALTIME_PROCESSING_MODE=full
 # - When pending lines exceed this threshold, automatically switch to sampling mode
 # - Prevents memory buildup in high-volume log environments
 # - Works with CHUNK_SIZE: if CHUNK_SIZE=30 and threshold=100, keeps latest 30 lines
+# CLI Override: Use --sampling-threshold argument to override this setting
+# Example: python analysis-linux-system-log.py --mode realtime --sampling-threshold 200
 REALTIME_SAMPLING_THRESHOLD=100
 
 # FLOW EXPLANATION:
