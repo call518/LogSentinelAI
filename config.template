@@ -19,6 +19,15 @@ LLM_MODEL_OLLAMA=qwen2.5-coder:1.5b
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 LLM_MODEL_OPENAI=gpt-4o-mini
 
+# LLM Generation Parameters
+# Temperature: Controls randomness (0.0 = deterministic, 1.0 = very random)
+# Recommended: 0.0-0.1 for log analysis (consistency), 0.7-0.9 for creative tasks
+LLM_TEMPERATURE=0.1
+
+# Top-p: Controls diversity via nucleus sampling (0.1-1.0)
+# Lower values = more focused, Higher values = more diverse
+LLM_TOP_P=0.5
+
 # =============================================================================
 # Analysis Configuration
 # =============================================================================

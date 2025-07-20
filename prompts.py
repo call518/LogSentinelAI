@@ -47,13 +47,14 @@ RULES:
 - Always create at least one INFO event for normal traffic
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
-- Confidence: 0.0-1.0 (not percentages)
+- confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
 
 JSON RULES:
 - No empty string keys, use [] not null for lists
 - Required fields: source_ips[], response_codes[], attack_patterns[], recommended_actions[], related_log_ids[]
 - Empty objects: {{}} for top_ips, response_code_dist
 - Decimal confidence scores, non-empty strings
+- confidence_score: MUST be decimal 0.0-1.0 (NOT percentage like 95, use 0.95)
 
 Return JSON schema: {model_schema}
 
@@ -96,13 +97,13 @@ RULES:
 - Focus on patterns indicating actual security threats, not routine errors
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
-- Confidence: 0.0-1.0
+- confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
 
 JSON RULES:
 - No empty string keys, use [] not null for lists
 - Required fields: file_path (null ok), source_ips[], attack_patterns[], recommended_actions[], related_log_ids[]
 - Empty objects: {{}} for error_by_level, error_by_type, top_error_ips
-- Decimal confidence scores
+- confidence_score: MUST be decimal 0.0-1.0 (NOT percentage like 95, use 0.95)
 
 Return JSON schema: {model_schema}
 
@@ -145,13 +146,13 @@ RULES:
 - Multiple events from same source are more significant than isolated incidents
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
-- Confidence: 0.0-1.0
+- confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
 
 JSON RULES:
 - No empty string keys, use [] not null for lists
 - Required fields: source_ip/username/process/service (null ok), recommended_actions[], related_log_ids[]
 - Empty objects: {{}} for event_by_type, top_source_ips
-- Decimal confidence scores
+- confidence_score: MUST be decimal 0.0-1.0 (NOT percentage like 95, use 0.95)
 
 Return JSON schema: {model_schema}
 
@@ -205,12 +206,12 @@ RULES:
 - Focus on actionable security intelligence, not routine network activity
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
-- Confidence: 0.0-1.0
+- confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
 
 JSON RULES:
 - No empty string keys, use [] not null for lists
 - Required fields: payload_content ("" ok), attack_patterns[], recommended_actions[], related_log_ids[], protocols_detected[]
-- Decimal confidence scores
+- confidence_score: MUST be decimal 0.0-1.0 (NOT percentage like 95, use 0.95)
 
 Return JSON schema: {model_schema}
 

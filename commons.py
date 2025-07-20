@@ -33,6 +33,10 @@ LLM_MODELS = {
     "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini")
 }
 
+# LLM Generation Parameters - Read from config file
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
+LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
+
 # Common Analysis Configuration - Read from config file
 RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
 ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
@@ -119,7 +123,10 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
     if llm_provider == "ollama":
         ### Ollama API
         client = ollama.Client()
-        model = outlines.from_ollama(client, llm_model_name)
+        model = outlines.from_ollama(
+            client,
+            llm_model_name,
+        )
     elif llm_provider == "vllm":
         ### Local vLLM API
         openai_api_key = "dummy"
@@ -127,7 +134,10 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
             base_url="http://127.0.0.1:5000/v1",  # Local vLLM API endpoint
             api_key=openai_api_key
         )
-        model = outlines.from_openai(client, llm_model_name)
+        model = outlines.from_openai(
+            client,
+            llm_model_name,
+        )
     elif llm_provider == "openai":
         ### OpenAI API
         openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -136,7 +146,10 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
             # base_url="http://127.0.0.1:11434/v1",  # Local Ollama API endpoint
             api_key=openai_api_key
         )
-        model = outlines.from_openai(client, llm_model_name)
+        model = outlines.from_openai(
+            client,
+            llm_model_name,
+        )
     else:
         raise ValueError("Unsupported LLM provider. Use 'ollama', 'vllm', or 'openai'.")
     
@@ -179,7 +192,18 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         (success: bool, parsed_data: dict or None)
     """
     try:
-        review = model(prompt, model_class)
+        # LLM 제공자에 따라 다른 매개변수 사용
+        if LLM_PROVIDER == "ollama":
+            # Outlines의 Ollama는 temperature와 top_p를 지원하지 않음
+            review = model(prompt, model_class)
+        else:
+            # Outlines의 OpenAI와 vLLM은 temperature와 top_p 지원
+            review = model(
+                prompt, 
+                model_class,
+                temperature=LLM_TEMPERATURE,
+                top_p=LLM_TOP_P
+            )
         
         # LLM 분석 완료 후 종료 시간 기록 (chunk_end_time이 None인 경우)
         if chunk_end_time is None:
@@ -897,8 +921,18 @@ def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_
         # Record start time
         chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         
-        # Run LLM analysis
-        review = model(prompt, model_class)
+        # Run LLM analysis - provider-specific parameters
+        if LLM_PROVIDER == "ollama":
+            # Ollama는 temperature와 top_p를 지원하지 않음
+            review = model(prompt, model_class)
+        else:
+            # OpenAI와 vLLM은 temperature와 top_p 지원
+            review = model(
+                prompt, 
+                model_class,
+                temperature=LLM_TEMPERATURE,
+                top_p=LLM_TOP_P
+            )
         
         # Record end time
         chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
