@@ -46,46 +46,196 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
                                               └─────────────────┘
 ```
 
-## 🚀 Installation & Setup
+## 🚀 QuickStart: OpenAI API 기반 설치 및 실행
 
-### 1. Basic Requirements
+### 1. 기본 환경 준비
 
-- **Tested Environment**: Windows 11 + WSL2 (v2.5.9) + Docker Desktop (v4.39.0)
-- **Hardware**: NVIDIA GeForce GTX 1660 SUPER GPU
-- **Software**: Python 3.11.13
+- **운영체제**: Linux, Windows, Mac 모두 지원
+- **Python**: 3.11 이상
+- **Elasticsearch/Kibana**: 9.0.3 이상 (Docker 기반 설치 권장)
 
-### 2. QuickStart Guide
-
-#### Step 1: Project Setup
+### 2. 프로젝트 설치
 
 ```bash
-# Clone repository
+# 1. 저장소 클론 및 진입
 git clone https://github.com/call518/LogSentinelAI.git
 cd LogSentinelAI
 
-# Create Python virtual environment
+# 2. Python 가상환경 생성 및 활성화
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # .venv\Scripts\activate   # Windows
 
-# Install packages
+# 3. 패키지 설치
 pip install -r requirements.txt
 
-# Key dependencies include:
-# - outlines: For structured LLM generation (https://github.com/dottxt-ai/outlines)
-# - pydantic: For data validation and parsing
-# - elasticsearch: For data storage and search
-# - ollama/openai: For LLM provider support
-
-# Configure environment variables
+# 4. 환경 변수 파일 준비
 cp .env.template .env
-# Edit .env file to add required settings (e.g., OPENAI_API_KEY if using OpenAI)
+# .env 파일에서 OPENAI_API_KEY 값을 입력 (OpenAI 계정에서 발급)
+
+# 5. LLM 설정 (commons.py 수정)
+# OpenAI API 사용시 commons.py에서 다음과 같이 설정:
+#   LLM_PROVIDER = "openai"  (기본값)
+#   LLM_MODELS의 "openai": "gpt-4o-mini" 사용 (기본값)
 ```
 
-#### Step 2: Set up vLLM Server (GPU Acceleration)
+### 3. Elasticsearch & Kibana 설치 (Docker)
 
 ```bash
-# Option A: Clone and use vLLM-Tutorial
+# 1. ELK 스택 저장소 클론 및 진입
+git clone https://github.com/call518/Docker-ELK.git
+cd Docker-ELK
+
+# 2. ELK 스택 초기화 및 실행
+# 최초 1회 초기화
+docker compose up setup
+# Kibana 암호화키 생성(권장)
+docker compose up kibana-genkeys
+# 생성된 키를 kibana/config/kibana.yml에 복사
+# ELK 스택 실행
+docker compose up -d
+
+# 3. Kibana 접속: http://localhost:5601
+# 기본 계정: elastic / changeme
+```
+
+### 4. Elasticsearch 인덱스/정책/템플릿 설정
+
+```bash
+# 1. ILM 정책 생성 (7일 보존, 10GB/1일 롤오버)
+curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
+-H "Content-Type: application/json" \
+-u elastic:changeme \
+-d '{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": {
+            "max_size": "10gb",
+            "max_age": "1d"
+          }
+        }
+      },
+      "delete": {
+        "min_age": "7d",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}'
+
+# 2. 인덱스 템플릿 생성
+curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
+-H "Content-Type: application/json" \
+-u elastic:changeme \
+-d '{
+  "index_patterns": ["logsentinelai-analysis-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.lifecycle.name": "logsentinelai-analysis-policy",
+      "index.lifecycle.rollover_alias": "logsentinelai-analysis"
+    },
+    "mappings": {
+      "properties": {
+        "@log_raw_data": {
+          "type": "object",
+          "dynamic": false
+        }
+      }
+    }
+  }
+}'
+
+# 3. 초기 인덱스 및 write alias 생성
+curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
+-H "Content-Type: application/json" \
+-u elastic:changeme \
+-d '{
+  "aliases": {
+    "logsentinelai-analysis": {
+      "is_write_index": true
+    }
+  }
+}'
+```
+
+### 5. 로그 분석 실행 (OpenAI API 기준)
+
+```bash
+# HTTP access log 분석
+python analysis-httpd-access-log.py
+
+# Apache error log 분석
+python analysis-httpd-apache-log.py
+
+# Linux system log 분석
+python analysis-linux-system-log.py
+
+# 네트워크 패킷 분석 (tcpdump)
+python analysis-tcpdump-packet.py
+```
+
+### 6. Kibana 대시보드/설정 임포트
+
+```bash
+# 1. Kibana 접속: http://localhost:5601
+# 2. 로그인: elastic / changeme
+# 3. Stack Management > Saved Objects > Import
+#    - Kibana-9.0.3-Advanced-Settings.ndjson (먼저)
+#    - Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson (다음)
+# 4. Analytics > Dashboard > LogSentinelAI Dashboard에서 결과 확인
+```
+
+---
+
+## 🔄 LLM Provider 변경/고급 옵션 (선택)
+
+OpenAI API 대신 Ollama(로컬), vLLM(로컬/GPU) 등으로 변경하려면 아래 가이드를 참고하세요.
+
+### LLM Provider & Model 설정 (`commons.py` 수정)
+
+LogSentinelAI는 `commons.py` 파일에서 LLM Provider와 모델을 중앙 관리합니다.
+
+#### OpenAI API 설정 (기본값)
+```python
+# commons.py에서 설정
+LLM_PROVIDER = "openai"
+
+LLM_MODELS = {
+    "openai": "gpt-4o-mini"  # 권장: 비용 효율적
+    # "openai": "gpt-4o"     # 고성능이 필요한 경우
+}
+
+# .env 파일에 API 키 설정 필요
+# OPENAI_API_KEY=your_openai_api_key_here
+```
+
+#### Ollama (로컬 LLM) 설정
+```bash
+# 1. Ollama 설치 및 모델 다운로드
+ollama pull qwen2.5-coder:3b
+ollama serve
+```
+
+```python
+# 2. commons.py에서 설정 변경
+LLM_PROVIDER = "ollama"
+
+LLM_MODELS = {
+    "ollama": "qwen2.5-coder:3b",     # 권장: 성능과 속도 균형
+    # "ollama": "qwen2.5-coder:1.5b", # 가벼운 모델
+    # "ollama": "qwen2.5-coder:0.5b", # 최소 사양
+}
+```
+
+#### vLLM (로컬 GPU) 설정
+```bash
+# Option A: Clone and use vLLM-Tutorial (권장)
 git clone https://github.com/call518/vLLM-Tutorial.git
 cd vLLM-Tutorial
 
@@ -123,145 +273,57 @@ cat config/Qwen2.5-3B-Instruct/generation_config.json
 # Verify API is working
 curl -s -X GET http://localhost:5000/v1/models | jq
 
-# Option B: Alternative LLM setups
-# Ollama (Local Execution)
-ollama pull qwen2.5-coder:3b
-ollama serve
-
-# OR simple vLLM setup (without Docker)
+# Option B: Simple vLLM setup (without Docker)
 pip install vllm
 python -m vllm.entrypoints.openai.api_server --model qwen2.5-coder:3b
-
-# OR use OpenAI API (cloud)
-# Set OPENAI_API_KEY in .env file
 ```
 
-#### Step 3: Set up Elasticsearch and Kibana
+```python
+# commons.py에서 설정 변경
+LLM_PROVIDER = "vllm"
 
-```bash
-# Clone Docker-ELK repository
-git clone https://github.com/call518/Docker-ELK.git
-cd Docker-ELK
-
-# Initialize ELK stack
-docker compose up setup
-
-# Generate Kibana encryption keys (recommended)
-docker compose up kibana-genkeys
-# Copy the output keys to kibana/config/kibana.yml
-
-# Start ELK stack
-docker compose up -d
-
-# Access Kibana at http://localhost:5601
-# Default credentials: elastic / changeme
+LLM_MODELS = {
+    "vllm": "Qwen/Qwen2.5-1.5B-Instruct",  # 권장: GPU 메모리 효율적
+    # "vllm": "Qwen/Qwen2.5-3B-Instruct",   # 고성능 GPU용
+    # "vllm": "Qwen/Qwen2.5-0.5B-Instruct", # 최소 GPU 메모리
+}
 ```
 
-##### Configure LogSentinelAI Elasticsearch Settings
+### 추가 설정 옵션 (`commons.py`)
 
-After Elasticsearch is running, configure the required ILM policy, index template, and initial index:
-
-```bash
-# 1. Create ILM policy for log retention (7 days) and rollover (10GB/1day)
-curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
--H "Content-Type: application/json" \
--u elastic:changeme \
--d '{
-  "policy": {
-    "phases": {
-      "hot": {
-        "actions": {
-          "rollover": {
-            "max_size": "10gb",
-            "max_age": "1d"
-          }
-        }
-      },
-      "delete": {
-        "min_age": "7d",
-        "actions": {
-          "delete": {}
-        }
-      }
-    }
-  }
-}'
-
-# 2. Create index template with optimized mappings
-curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
--H "Content-Type: application/json" \
--u elastic:changeme \
--d '{
-  "index_patterns": ["logsentinelai-analysis-*"],
-  "template": {
-    "settings": {
-      "number_of_shards": 1,
-      "number_of_replicas": 1,
-      "index.lifecycle.name": "logsentinelai-analysis-policy",
-      "index.lifecycle.rollover_alias": "logsentinelai-analysis"
-    },
-    "mappings": {
-      "properties": {
-        "@log_raw_data": {
-          "type": "object",
-          "dynamic": false
-        }
-      }
-    }
-  }
-}'
-
-# 3. Create initial index with write alias
-curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
--H "Content-Type: application/json" \
--u elastic:changeme \
--d '{
-  "aliases": {
-    "logsentinelai-analysis": {
-      "is_write_index": true
-    }
-  }
-}'
+#### 응답 언어 설정
+```python
+# 분석 결과 언어 설정
+RESPONSE_LANGUAGE = "korean"    # 한국어 (기본값)
+# RESPONSE_LANGUAGE = "english" # 영어
 ```
 
-#### Step 4: Run LogSentinelAI Analysis
+#### 로그 파일 경로 및 청크 크기 설정
+```python
+# 로그 파일 경로 설정
+LOG_PATHS = {
+    "httpd_access": "sample-logs/access-10k.log",      # 10k 엔트리 (기본값)
+    "httpd_apache_error": "sample-logs/apache-10k.log", 
+    "linux_system": "sample-logs/linux-2k.log",
+    "tcpdump_packet": "sample-logs/tcpdump-packet-2k.log"
+}
 
+# 청크 크기 설정 (한 번에 처리할 로그 엔트리 수)
+LOG_CHUNK_SIZES = {
+    "httpd_access": 10,        # HTTP 액세스 로그
+    "httpd_apache_error": 10,  # Apache 에러 로그
+    "linux_system": 10,       # Linux 시스템 로그
+    "tcpdump_packet": 5        # 네트워크 패킷 (더 작은 청크 권장)
+}
+```
+
+### 설정 변경 후 확인
 ```bash
-# Run HTTP access log analysis
+# 설정 변경 후 분석 실행하여 동작 확인
 python analysis-httpd-access-log.py
-
-# Run Apache error log analysis
-python analysis-httpd-apache-log.py
-
-# Run Linux system log analysis
-python analysis-linux-system-log.py
-
-# Run network packet analysis (tcpdump)
-python analysis-tcpdump-packet.py
 ```
 
-#### Step 5: Import Kibana Settings and Dashboard
-
-After Kibana is running and accessible, import the LogSentinelAI configurations:
-
-```bash
-# 1. Access Kibana at http://localhost:5601
-# 2. Login with credentials: elastic / changeme
-
-# 3. Import Advanced Settings (index patterns, field formatting, etc.)
-# Navigate to: Stack Management > Saved Objects > Import
-# Select and import: Kibana-9.0.3-Advanced-Settings.ndjson
-
-# 4. Import Dashboard and Visualizations
-# Navigate to: Stack Management > Saved Objects > Import  
-# Select and import: Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson
-
-# 5. Access the dashboard
-# Navigate to: Analytics > Dashboard > LogSentinelAI Dashboard
-```
-
-**Import Order**: Import Advanced Settings first, then Dashboard to ensure proper dependencies.
-
+---
 ## 📁 Project Structure
 
 ```
