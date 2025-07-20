@@ -45,7 +45,8 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 ### 🔧 Flexible Configuration
 - **Multi-provider LLM support**: Switch between OpenAI API, local Ollama, or GPU-accelerated vLLM
 - **Configurable chunking**: Optimized processing sizes for different log types and volumes
-- **Environment-based settings**: Centralized configuration management with .config support
+- **Environment-based settings**: Centralized configuration management with config file support
+- **CLI override capabilities**: Command-line options can override any config file setting for flexibility
 
 ## 🏗️ System Architecture
 
@@ -203,6 +204,12 @@ python analysis-tcpdump-packet.py --help
 # All scripts support: --mode, --chunk-size, --log-path, --processing-mode, --sampling-threshold
 ```
 
+**CLI Options Override Config Settings:**
+- `--chunk-size`: Overrides `CHUNK_SIZE_*` settings in config file
+- `--log-path`: Overrides `LOG_PATH_*` settings in config file  
+- `--processing-mode`: Overrides `REALTIME_PROCESSING_MODE` setting in config file
+- `--sampling-threshold`: Overrides `REALTIME_SAMPLING_THRESHOLD` setting in config file
+
 #### Analysis Modes
 LogSentinelAI supports two analysis modes:
 
@@ -224,11 +231,14 @@ LogSentinelAI supports two analysis modes:
 
 #### Batch Mode (Complete log files)
 ```bash
-# Use default configuration
+# Use default configuration from config file
 python analysis-linux-system-log.py
 
-# Override chunk size
+# Override chunk size (overrides CHUNK_SIZE_LINUX_SYSTEM in config)
 python analysis-linux-system-log.py --chunk-size 5
+
+# Override log file path (overrides LOG_PATH_LINUX_SYSTEM in config)
+python analysis-linux-system-log.py --log-path /custom/path/messages.log
 
 # All analysis scripts support the same batch mode options
 python analysis-httpd-access-log.py --chunk-size 8
@@ -238,19 +248,19 @@ python analysis-tcpdump-packet.py --chunk-size 3
 
 #### Real-time Mode (Live log monitoring)
 ```bash
-# Monitor /var/log/messages in real-time (full processing mode)
+# Monitor /var/log/messages in real-time (uses LOG_PATH_REALTIME_LINUX_SYSTEM from config)
 python analysis-linux-system-log.py --mode realtime
 
-# Monitor with sampling mode (for high-volume logs)
+# Override processing mode (overrides REALTIME_PROCESSING_MODE in config)
 python analysis-linux-system-log.py --mode realtime --processing-mode sampling
 
-# Monitor with custom sampling threshold
+# Override sampling threshold (overrides REALTIME_SAMPLING_THRESHOLD in config)
 python analysis-linux-system-log.py --mode realtime --processing-mode full --sampling-threshold 200
 
-# Monitor custom log file
-python analysis-linux-system-log.py --mode realtime --log-path /var/log/messages
+# Override log file path (overrides LOG_PATH_REALTIME_LINUX_SYSTEM in config)
+python analysis-linux-system-log.py --mode realtime --log-path /var/log/custom.log
 
-# Monitor with custom chunk size
+# Override chunk size (overrides CHUNK_SIZE_LINUX_SYSTEM in config)
 python analysis-linux-system-log.py --mode realtime --chunk-size 15
 
 # All analysis scripts support the same real-time options
@@ -467,10 +477,18 @@ Real-time monitoring handles log rotation gracefully:
 
 You can adjust chunk size for log processing performance:
 
-```python
-# In each analysis script
-chunk_size = 5  # Default value, adjust as needed (typically 5-10)
+```bash
+# Method 1: Edit config file (persistent setting)
+# Edit CHUNK_SIZE_* values in config file
+CHUNK_SIZE_HTTPD_ACCESS=20
+CHUNK_SIZE_LINUX_SYSTEM=15
+
+# Method 2: Use CLI override (temporary setting)
+python analysis-linux-system-log.py --chunk-size 5
+python analysis-httpd-access-log.py --chunk-size 25
 ```
+
+**Recommended values**: 5-50 depending on log complexity and LLM capacity
 
 ## 📊 Output Data Schema
 
