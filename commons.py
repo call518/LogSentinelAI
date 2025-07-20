@@ -571,7 +571,14 @@ class RealtimeLogMonitor:
         self.line_buffer = []
         # Buffer for accumulating lines until chunk_size is reached
         self.pending_lines = []
-        self.last_position = self._load_position()
+        
+        # File tracking for rotation detection
+        self.last_position = 0
+        self.last_inode = None
+        self.last_size = 0
+        
+        # Load position and file info
+        self._load_position_and_file_info()
         
         # Display initialization info in a clean format
         print("=" * 80)
@@ -588,35 +595,68 @@ class RealtimeLogMonitor:
         print(f"Chunk Size:       {self.chunk_size} lines")
         print("=" * 80)
     
-    def _load_position(self) -> int:
-        """Load last read position from position file"""
+    def _load_position_and_file_info(self):
+        """Load last read position and file info from position file"""
         try:
             if os.path.exists(self.position_file):
                 with open(self.position_file, 'r') as f:
-                    position = int(f.read().strip())
-                    print(f"Loaded position: {position}")
-                    return position
+                    content = f.read().strip()
+                    # Support both old format (position only) and new format (position:inode:size)
+                    parts = content.split(':')
+                    if len(parts) >= 1:
+                        self.last_position = int(parts[0])
+                    if len(parts) >= 2:
+                        self.last_inode = int(parts[1]) if parts[1] != 'None' else None
+                    if len(parts) >= 3:
+                        self.last_size = int(parts[2])
+                    
+                    print(f"Loaded state: position={self.last_position}, inode={self.last_inode}, size={self.last_size}")
+                    
+                    # Verify current file matches saved state
+                    if os.path.exists(self.log_path):
+                        current_stat = os.stat(self.log_path)
+                        current_inode = current_stat.st_ino
+                        current_size = current_stat.st_size
+                        
+                        if self.last_inode and current_inode != self.last_inode:
+                            print(f"WARNING: File inode changed ({self.last_inode} -> {current_inode})")
+                            print(f"         Possible log rotation detected, starting from beginning")
+                            self.last_position = 0
+                            self.last_size = 0
+                        elif current_size < self.last_position:
+                            print(f"WARNING: File size decreased ({self.last_size} -> {current_size})")
+                            print(f"         File truncated or rotated, starting from beginning")
+                            self.last_position = 0
+                        
+                        # Update current file info
+                        self.last_inode = current_inode
+                        self.last_size = current_size
+                        self._save_position_and_file_info()
+                    
+                    return
         except (ValueError, IOError) as e:
             print(f"WARNING: Error loading position file: {e}")
         
         # If file doesn't exist or error, start from end of file
         try:
             if os.path.exists(self.log_path):
-                with open(self.log_path, 'rb') as f:
-                    f.seek(0, 2)  # Seek to end
-                    position = f.tell()
-                    print(f"📍 Starting from end of file: {position}")
-                    return position
+                file_stat = os.stat(self.log_path)
+                self.last_position = file_stat.st_size
+                self.last_inode = file_stat.st_ino
+                self.last_size = file_stat.st_size
+                print(f"📍 Starting from end of file: position={self.last_position}, inode={self.last_inode}")
+                self._save_position_and_file_info()
         except IOError as e:
             print(f"WARNING: Error accessing log file: {e}")
-        
-        return 0
+            self.last_position = 0
+            self.last_inode = None
+            self.last_size = 0
     
-    def _save_position(self, position: int):
-        """Save current read position to position file"""
+    def _save_position_and_file_info(self):
+        """Save current read position and file info to position file"""
         try:
             with open(self.position_file, 'w') as f:
-                f.write(str(position))
+                f.write(f"{self.last_position}:{self.last_inode}:{self.last_size}")
         except IOError as e:
             print(f"WARNING: Error saving position: {e}")
     
@@ -624,7 +664,37 @@ class RealtimeLogMonitor:
         """Read new lines from log file since last position"""
         try:
             if not os.path.exists(self.log_path):
+                print(f"WARNING: Log file does not exist: {self.log_path}")
                 return []
+            
+            # Get current file stats
+            file_stat = os.stat(self.log_path)
+            current_size = file_stat.st_size
+            current_inode = file_stat.st_ino
+            
+            # Check for file rotation (inode change)
+            if self.last_inode and current_inode != self.last_inode:
+                print(f"NOTICE: Log rotation detected (inode {self.last_inode} -> {current_inode})")
+                print(f"       New file detected, starting from beginning")
+                self.last_position = 0
+                self.line_buffer = []
+                self.last_inode = current_inode
+                self.last_size = current_size
+                self._save_position_and_file_info()
+            
+            # Check for file truncation
+            elif current_size < self.last_position:
+                if current_size == 0:
+                    print(f"NOTICE: File truncated (size=0), resetting position to 0")
+                else:
+                    print(f"NOTICE: File truncated (size={current_size} < position={self.last_position})")
+                    print(f"       Starting from beginning of current file")
+                
+                # Reset position to start of file and clear buffer
+                self.last_position = 0
+                self.line_buffer = []
+                self.last_size = current_size
+                self._save_position_and_file_info()
             
             with open(self.log_path, 'r', encoding='utf-8', errors='ignore') as f:
                 # Seek to last position
@@ -654,11 +724,13 @@ class RealtimeLogMonitor:
                     complete_lines[0] = ''.join(self.line_buffer) + complete_lines[0]
                     self.line_buffer = []
                 
-                # Update position
+                # Update position and file info
                 if complete_lines:
                     # Only update position if we have complete lines
                     self.last_position = new_position - len(lines[-1]) if not new_content.endswith('\n') else new_position
-                    self._save_position(self.last_position)
+                    self.last_size = current_size
+                    self.last_inode = current_inode
+                    self._save_position_and_file_info()
                 
                 # Filter out empty lines
                 complete_lines = [line.strip() for line in complete_lines if line.strip()]
