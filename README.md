@@ -26,7 +26,7 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Log Files     │───▶│ LogSentinelAI   │───▶│ Elasticsearch   │
+│   Log Files     │───>│ LogSentinelAI   │───>│ Elasticsearch   │
 │                 │    │   Analysis      │    │                 │
 │ • HTTP Access   │    │                 │    │ • Security      │
 │ • Apache Error  │    │ • LLM Analysis  │    │   Events        │
