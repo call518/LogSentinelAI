@@ -16,6 +16,7 @@ from commons import initialize_llm_model
 from commons import process_log_chunk
 from commons import wait_on_failure
 from commons import get_llm_config
+from commons import get_analysis_config
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy
@@ -72,20 +73,18 @@ class LogAnalysis(BaseModel):
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 
-# LLM Response Language - Choose from "english", "korean"
-# response_language = "english"
-response_language = "korean"
-
 # Get LLM configuration from commons
 llm_provider, llm_model_name = get_llm_config()
 
+# Get analysis configuration (can override chunk_size if needed)
+# config = get_analysis_config("linux_system", chunk_size=5)  # Override chunk_size
+config = get_analysis_config("linux_system")  # Use default chunk_size
+
+log_path = config["log_path"]
+chunk_size = config["chunk_size"]
+response_language = config["response_language"]
+
 model = initialize_llm_model()
-
-# log_path = "sample-logs/linux-10.log"
-# log_path = "sample-logs/linux-100.log"
-log_path = "sample-logs/linux-2k.log"
-
-chunk_size = 10
 
 with open(log_path, "r", encoding="utf-8") as f:
     for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):

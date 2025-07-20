@@ -52,6 +52,27 @@ LLM_MODELS = {
     # "openai": "gpt-4.1-mini"
 }
 
+# Common Analysis Configuration
+# Response Language - Choose from "english", "korean"
+# RESPONSE_LANGUAGE = "english"
+RESPONSE_LANGUAGE = "korean"
+
+# Log Paths Configuration
+LOG_PATHS = {
+    "httpd_access": "sample-logs/access-10k.log",
+    "httpd_apache_error": "sample-logs/apache-10k.log", 
+    "linux_system": "sample-logs/linux-2k.log",
+    "tcpdump_packet": "sample-logs/tcpdump-packet-2k.log"
+}
+
+# Default Chunk Sizes (can be overridden by individual analysis scripts)
+LOG_CHUNK_SIZES = {
+    "httpd_access": 10,
+    "httpd_apache_error": 10,
+    "linux_system": 10,
+    "tcpdump_packet": 5
+}
+
 def get_llm_config():
     """
     Get current LLM configuration
@@ -61,6 +82,24 @@ def get_llm_config():
     """
     llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
     return LLM_PROVIDER, llm_model_name
+
+def get_analysis_config(log_type, chunk_size=None):
+    """
+    Get analysis configuration for specific log type
+    
+    Args:
+        log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
+        chunk_size: Override chunk size (optional)
+    
+    Returns:
+        dict: Configuration containing log_path, chunk_size, response_language
+    """
+    config = {
+        "log_path": LOG_PATHS.get(log_type, ""),
+        "chunk_size": chunk_size if chunk_size is not None else LOG_CHUNK_SIZES.get(log_type, 3),
+        "response_language": RESPONSE_LANGUAGE
+    }
+    return config
 
 def initialize_llm_model(llm_provider=None, llm_model_name=None):
     """

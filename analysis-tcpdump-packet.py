@@ -14,6 +14,7 @@ from commons import initialize_llm_model
 from commons import process_log_chunk
 from commons import wait_on_failure
 from commons import get_llm_config
+from commons import get_analysis_config
 from prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
 from commons import chunked_iterable
 from commons import print_chunk_contents
@@ -184,19 +185,18 @@ def assign_logid_to_packets(packets):
 
 #--------------------------------------------------------------------------------------
 
-# LLM Response Language - Choose from "english", "korean"
-# response_language = "english"
-response_language = "korean"
-
 # Get LLM configuration from commons
 llm_provider, llm_model_name = get_llm_config()
 
+# Get analysis configuration (can override chunk_size if needed)
+# config = get_analysis_config("tcpdump_packet", chunk_size=3)  # Override chunk_size
+config = get_analysis_config("tcpdump_packet")  # Use default chunk_size
+
+log_path = config["log_path"]
+chunk_size = config["chunk_size"]
+response_language = config["response_language"]
+
 model = initialize_llm_model()
-
-# log_path = "sample-logs/tcpdump-packet-39.log"
-log_path = "sample-logs/tcpdump-packet-2k.log"
-
-chunk_size = 10
 
 # Read and preprocess tcpdump file (special handling for multi-line packets)
 with open(log_path, "r", encoding="utf-8") as f:
