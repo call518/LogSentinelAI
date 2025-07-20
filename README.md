@@ -74,6 +74,43 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 
 ## 🚀 QuickStart: OpenAI API Installation & Setup
 
+### Demo Environment Verification
+
+LogSentinelAI has been successfully tested and validated on the following configuration:
+
+```bash
+# Test Environment Specifications
+- Host OS: Windows 11
+- WSL2: v2.5.9 running RockyLinux 8
+- Docker Desktop: v4.39.0
+- GPU Support: NVIDIA GeForce GTX 1660 with CUDA 12.9
+
+# GPU Verification (on WSL2 RockyLinux8)
+$ docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
+Sun Jul 20 20:53:55 2025
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 575.64.01              Driver Version: 576.88         CUDA Version: 12.9     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce GTX 1660 ...    On  |   00000000:01:00.0  On |                  N/A |
+| 25%   42C    P8             17W /  125W |    5911MiB /   6144MiB |      5%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              45      C   /python3.12                           N/A      |
++-----------------------------------------------------------------------------------------+
+```
+
+✅ **Validation Status**: All core features including OpenAI API, local Ollama, and GPU-accelerated vLLM deployments have been thoroughly tested and verified working on this configuration.
+
 ### 1. Prerequisites
 
 - **Operating Systems**: Linux, Windows, Mac all supported

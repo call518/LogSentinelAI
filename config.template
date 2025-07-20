@@ -15,8 +15,8 @@ LLM_PROVIDER=vllm
 # LLM_PROVIDER=openai
 
 # LLM Model Names by Provider
-LLM_MODEL_OLLAMA=qwen2.5-coder:3b
-LLM_MODEL_VLLM=Qwen/Qwen2.5-3B-Instruct
+LLM_MODEL_OLLAMA=qwen2.5-coder:1.5b
+LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 LLM_MODEL_OPENAI=gpt-4o-mini
 
 # =============================================================================
