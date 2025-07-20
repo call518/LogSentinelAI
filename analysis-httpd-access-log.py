@@ -102,9 +102,9 @@ with open(log_path, "r", encoding="utf-8") as f:
         )
         
         if success:
-            print("✅ Analysis completed successfully")
+            print("Analysis completed successfully")
         else:
-            print("❌ Analysis failed")
+            print("Analysis failed")
             wait_on_failure(30)  # 실패 시 30초 대기
         
         print("-" * 50)

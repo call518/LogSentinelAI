@@ -162,7 +162,7 @@ def wait_on_failure(delay_seconds=30):
     """
     print(f"⏳ Waiting {delay_seconds} seconds before processing next chunk...")
     time.sleep(delay_seconds)
-    print("✅ Wait completed, continuing with next chunk.")
+    print("Wait completed, continuing with next chunk.")
 
 
 def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
@@ -234,12 +234,12 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         character = model_class.model_validate(parsed)
         
         # Send to Elasticsearch
-        print(f"\n🔄 Sending data to Elasticsearch...")
+        print(f"\nSending data to Elasticsearch...")
         success = send_to_elasticsearch(parsed, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"✅ Chunk {chunk_number} data sent to Elasticsearch successfully")
+            print(f"SUCCESS: Chunk {chunk_number} data sent to Elasticsearch successfully")
         else:
-            print(f"❌ Chunk {chunk_number} data failed to send to Elasticsearch")
+            print(f"ERROR: Chunk {chunk_number} data failed to send to Elasticsearch")
         
         return True, parsed
         
@@ -266,12 +266,12 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             failure_data["@llm_provider"] = llm_provider
         if llm_model:
             failure_data["@llm_model"] = llm_model
-        print(f"\n🔄 Sending failure information to Elasticsearch...")
+        print(f"\nSending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"✅ Chunk {chunk_number} failure information sent to Elasticsearch successfully")
+            print(f"SUCCESS: Chunk {chunk_number} failure information sent to Elasticsearch successfully")
         else:
-            print(f"❌ Chunk {chunk_number} failure information failed to send to Elasticsearch")
+            print(f"ERROR: Chunk {chunk_number} failure information failed to send to Elasticsearch")
         return False, None
         
     except Exception as e:
@@ -297,12 +297,12 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             failure_data["@llm_provider"] = llm_provider
         if llm_model:
             failure_data["@llm_model"] = llm_model
-        print(f"\n🔄 Sending failure information to Elasticsearch...")
+        print(f"\nSending failure information to Elasticsearch...")
         success = send_to_elasticsearch(failure_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
-            print(f"✅ Chunk {chunk_number} failure information sent to Elasticsearch successfully")
+            print(f"SUCCESS: Chunk {chunk_number} failure information sent to Elasticsearch successfully")
         else:
-            print(f"❌ Chunk {chunk_number} failure information failed to send to Elasticsearch")
+            print(f"ERROR: Chunk {chunk_number} failure information failed to send to Elasticsearch")
         return False, None
 
 
@@ -448,7 +448,7 @@ def _send_to_elasticsearch(data: Dict[str, Any], log_type: str, chunk_id: Option
         else:
             print(f"❌ Elasticsearch transmission failed: {response}")
             return False
-            
+    
     except RequestError as e:
         print(f"❌ Elasticsearch request error: {e}")
         return False
@@ -575,17 +575,17 @@ class RealtimeLogMonitor:
         
         # Display initialization info in a clean format
         print("=" * 80)
-        print(f"🚀 REALTIME LOG MONITOR INITIALIZED")
+        print(f"REALTIME LOG MONITOR INITIALIZED")
         print("=" * 80)
-        print(f"📋 Log Type: {log_type}")
-        print(f"📁 Monitoring: {self.log_path}")
-        print(f"� Mode: {self.processing_mode.upper()}")
+        print(f"Log Type:         {log_type}")
+        print(f"Monitoring:       {self.log_path}")
+        print(f"Mode:             {self.processing_mode.upper()}")
         if self.processing_mode == "full":
-            print(f"� Auto-sampling: {self.sampling_threshold} lines threshold")
+            print(f"Auto-sampling:    {self.sampling_threshold} lines threshold")
         elif self.processing_mode == "sampling":
-            print(f"📊 Sampling: Always keep latest {self.chunk_size} lines")
-        print(f"⏱️  Poll Interval: {self.realtime_config['polling_interval']}s")
-        print(f"📦 Chunk Size: {self.chunk_size} lines")
+            print(f"Sampling:         Always keep latest {self.chunk_size} lines")
+        print(f"Poll Interval:    {self.realtime_config['polling_interval']}s")
+        print(f"Chunk Size:       {self.chunk_size} lines")
         print("=" * 80)
     
     def _load_position(self) -> int:
@@ -594,10 +594,10 @@ class RealtimeLogMonitor:
             if os.path.exists(self.position_file):
                 with open(self.position_file, 'r') as f:
                     position = int(f.read().strip())
-                    print(f"📍 Loaded position: {position}")
+                    print(f"Loaded position: {position}")
                     return position
         except (ValueError, IOError) as e:
-            print(f"⚠️ Error loading position file: {e}")
+            print(f"WARNING: Error loading position file: {e}")
         
         # If file doesn't exist or error, start from end of file
         try:
@@ -608,7 +608,7 @@ class RealtimeLogMonitor:
                     print(f"📍 Starting from end of file: {position}")
                     return position
         except IOError as e:
-            print(f"⚠️ Error accessing log file: {e}")
+            print(f"WARNING: Error accessing log file: {e}")
         
         return 0
     
@@ -618,7 +618,7 @@ class RealtimeLogMonitor:
             with open(self.position_file, 'w') as f:
                 f.write(str(position))
         except IOError as e:
-            print(f"⚠️ Error saving position: {e}")
+            print(f"WARNING: Error saving position: {e}")
     
     def _read_new_lines(self) -> List[str]:
         """Read new lines from log file since last position"""
@@ -670,7 +670,7 @@ class RealtimeLogMonitor:
                 return complete_lines
                 
         except IOError as e:
-            print(f"⚠️ Error reading log file: {e}")
+            print(f"WARNING: Error reading log file: {e}")
             return []
     
     def get_new_log_chunks(self) -> Generator[List[str], None, None]:
@@ -690,7 +690,7 @@ class RealtimeLogMonitor:
         # Limit the number of lines per batch
         max_lines = self.realtime_config["max_lines_per_batch"]
         if len(new_lines) > max_lines:
-            print(f"⚠️ Too many new lines ({len(new_lines)}), limiting to {max_lines}")
+            print(f"WARNING: Too many new lines ({len(new_lines)}), limiting to {max_lines}")
             new_lines = new_lines[:max_lines]
         
         # Add new lines to pending buffer
@@ -699,7 +699,7 @@ class RealtimeLogMonitor:
         # Show status update only when significant changes occur
         status_msg = f"[{self.processing_mode.upper()}] Pending: {len(self.pending_lines)} lines"
         if len(new_lines) > 0:
-            print(f"📋 {status_msg} (+{len(new_lines)} new)")
+            print(f"STATUS: {status_msg} (+{len(new_lines)} new)")
         
         # Check if we need to apply sampling
         should_sample = (
@@ -712,13 +712,13 @@ class RealtimeLogMonitor:
             discarded_count = len(self.pending_lines) - self.chunk_size
             self.pending_lines = self.pending_lines[-self.chunk_size:]
             if discarded_count > 0:
-                print(f"⚠️  SAMPLING: Discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
+                print(f"WARNING: SAMPLING: Discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
         
         # Yield complete chunks only when we have enough lines
         while len(self.pending_lines) >= self.chunk_size:
             chunk = self.pending_lines[:self.chunk_size]
             self.pending_lines = self.pending_lines[self.chunk_size:]
-            print(f"📦 CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
+            print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
             yield chunk
     
     def flush_pending_lines(self) -> Generator[List[str], None, None]:
@@ -730,7 +730,7 @@ class RealtimeLogMonitor:
             List[str]: Remaining pending lines if any
         """
         if self.pending_lines:
-            print(f"🔄 FINAL FLUSH: {len(self.pending_lines)} remaining lines")
+            print(f"FINAL FLUSH: {len(self.pending_lines)} remaining lines")
             yield self.pending_lines.copy()
             self.pending_lines.clear()
     
@@ -746,7 +746,7 @@ class RealtimeLogMonitor:
             analysis_schema_class: Pydantic schema class for structured output
             process_callback: Optional callback function for processing results
         """
-        print("🚀 MONITORING STARTED - Press Ctrl+C to stop")
+        print("MONITORING STARTED - Press Ctrl+C to stop")
         print("-" * 50)
         
         chunk_counter = 0

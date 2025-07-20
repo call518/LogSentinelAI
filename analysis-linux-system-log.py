@@ -71,8 +71,9 @@ class LogAnalysis(BaseModel):
 
 def run_batch_analysis():
     """Run batch analysis on complete log file"""
-    print("🔍 LogSentinelAI - Linux System Log Analysis (Batch Mode)")
-    print("=" * 60)
+    print("=" * 70)
+    print("LogSentinelAI - Linux System Log Analysis (Batch Mode)")
+    print("=" * 70)
     
     # Get LLM configuration from commons
     llm_provider, llm_model_name = get_llm_config()
@@ -81,12 +82,12 @@ def run_batch_analysis():
     # config = get_analysis_config("linux_system", chunk_size=5)  # Override chunk_size
     config = get_analysis_config("linux_system")  # Use default chunk_size
     
-    print(f"📁 Log file: {config['log_path']}")
-    print(f"📊 Chunk size: {config['chunk_size']}")
-    print(f"🌐 Response language: {config['response_language']}")
-    print(f"🤖 LLM Provider: {llm_provider}")
-    print(f"🧠 LLM Model: {llm_model_name}")
-    print()
+    print(f"Log file:          {config['log_path']}")
+    print(f"Chunk size:        {config['chunk_size']}")
+    print(f"Response language: {config['response_language']}")
+    print(f"LLM Provider:      {llm_provider}")
+    print(f"LLM Model:         {llm_model_name}")
+    print("=" * 70)
     
     log_path = config["log_path"]
     chunk_size = config["chunk_size"]
@@ -120,9 +121,9 @@ def run_batch_analysis():
             )
             
             if success:
-                print("✅ Analysis completed successfully")
+                print("Analysis completed successfully")
             else:
-                print("❌ Analysis failed")
+                print("Analysis failed")
                 wait_on_failure(30)  # 실패 시 30초 대기
             
             print("-" * 50)
@@ -130,8 +131,9 @@ def run_batch_analysis():
 
 def run_realtime_analysis(chunk_size=None, log_path=None, processing_mode=None, sampling_threshold=None):
     """Run real-time analysis on live log file with sampling support"""
-    print("🔍 LogSentinelAI - Linux System Log Analysis (Real-time Mode)")
-    print("=" * 60)
+    print("=" * 70)
+    print("LogSentinelAI - Linux System Log Analysis (Real-time Mode)")
+    print("=" * 70)
     
     # Log type for this analysis
     log_type = "linux_system"
@@ -151,21 +153,21 @@ def run_realtime_analysis(chunk_size=None, log_path=None, processing_mode=None, 
     if log_path:
         config["log_path"] = log_path
     
-    print(f"📁 Log file: {config['log_path']}")
-    print(f"📊 Chunk size: {config['chunk_size']}")
-    print(f"🌐 Response language: {config['response_language']}")
-    print(f"⚙️  Analysis mode: {config['analysis_mode']}")
+    print(f"Log file:          {config['log_path']}")
+    print(f"Chunk size:        {config['chunk_size']}")
+    print(f"Response language: {config['response_language']}")
+    print(f"Analysis mode:     {config['analysis_mode']}")
     
     # Initialize LLM model
-    print("\n🤖 Initializing LLM model...")
+    print("\nInitializing LLM model...")
     model = initialize_llm_model()
     
     # Create real-time monitor
     try:
         monitor = create_realtime_monitor(log_type, chunk_size)
     except ValueError as e:
-        print(f"❌ Configuration error: {e}")
-        print("💡 Please check your config file for real-time log paths")
+        print(f"ERROR: Configuration error: {e}")
+        print("Please check your config file for real-time log paths")
         return
     
     # Custom callback for processing results
@@ -184,7 +186,7 @@ def run_realtime_analysis(chunk_size=None, log_path=None, processing_mode=None, 
             ]
             
             if high_severity_events:
-                print(f"⚠️  HIGH/CRITICAL events: {len(high_severity_events)}")
+                print(f"WARNING: HIGH/CRITICAL events: {len(high_severity_events)}")
                 for event in high_severity_events:
                     print(f"   🔥 {event.get('event_type', 'UNKNOWN')}: {event.get('description', 'No description')}")
         
@@ -209,14 +211,14 @@ def run_realtime_analysis(chunk_size=None, log_path=None, processing_mode=None, 
             process_callback=process_result_callback
         )
     except FileNotFoundError:
-        print(f"❌ Log file not found: {config['log_path']}")
-        print("💡 Make sure the log file exists and is readable")
-        print("💡 You may need to run with appropriate permissions")
+        print(f"ERROR: Log file not found: {config['log_path']}")
+        print("NOTE: Make sure the log file exists and is readable")
+        print("NOTE: You may need to run with appropriate permissions")
     except PermissionError:
-        print(f"❌ Permission denied: {config['log_path']}")
-        print("💡 You may need to run with sudo or adjust file permissions")
+        print(f"ERROR: Permission denied: {config['log_path']}")
+        print("NOTE: You may need to run with sudo or adjust file permissions")
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"ERROR: Unexpected error: {e}")
 
 
 def main():
