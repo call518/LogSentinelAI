@@ -157,6 +157,73 @@ docker compose up -d
 # Default credentials: elastic / changeme
 ```
 
+##### Configure LogSentinelAI Elasticsearch Settings
+
+After Elasticsearch is running, configure the required ILM policy, index template, and initial index:
+
+```bash
+# 1. Create ILM policy for log retention (7 days) and rollover (10GB/1day)
+curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
+-H "Content-Type: application/json" \
+-u elastic:changeme \
+-d '{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": {
+            "max_size": "10gb",
+            "max_age": "1d"
+          }
+        }
+      },
+      "delete": {
+        "min_age": "7d",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}'
+
+# 2. Create index template with optimized mappings
+curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
+-H "Content-Type: application/json" \
+-u elastic:changeme \
+-d '{
+  "index_patterns": ["logsentinelai-analysis-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.lifecycle.name": "logsentinelai-analysis-policy",
+      "index.lifecycle.rollover_alias": "logsentinelai-analysis"
+    },
+    "mappings": {
+      "properties": {
+        "@log_raw_data": {
+          "type": "object",
+          "dynamic": false
+        }
+      }
+    }
+  }
+}'
+
+# 3. Create initial index with write alias
+curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
+-H "Content-Type: application/json" \
+-u elastic:changeme \
+-d '{
+  "aliases": {
+    "logsentinelai-analysis": {
+      "is_write_index": true
+    }
+  }
+}'
+```
+
 #### Step 4: Run LogSentinelAI Analysis
 
 ```bash
@@ -173,13 +240,27 @@ python analysis-linux-system-log.py
 python analysis-tcpdump-packet.py
 ```
 
-#### Step 5: Import Kibana Dashboard
+#### Step 5: Import Kibana Settings and Dashboard
+
+After Kibana is running and accessible, import the LogSentinelAI configurations:
 
 ```bash
-# Log into Kibana
-# Navigate to Stack Management > Saved Objects > Import
-# Import the Kibana-Dashboard-LogSentinelAI.ndjson file
+# 1. Access Kibana at http://localhost:5601
+# 2. Login with credentials: elastic / changeme
+
+# 3. Import Advanced Settings (index patterns, field formatting, etc.)
+# Navigate to: Stack Management > Saved Objects > Import
+# Select and import: Kibana-9.0.3-Advanced-Settings.ndjson
+
+# 4. Import Dashboard and Visualizations
+# Navigate to: Stack Management > Saved Objects > Import  
+# Select and import: Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson
+
+# 5. Access the dashboard
+# Navigate to: Analytics > Dashboard > LogSentinelAI Dashboard
 ```
+
+**Import Order**: Import Advanced Settings first, then Dashboard to ensure proper dependencies.
 
 ## 📁 Project Structure
 
@@ -209,7 +290,8 @@ LogSentinelAI/
 ├── img/                           # Documentation images
 │   ├── ex-dashboard.png           # Kibana dashboard example
 │   └── ex-json.png                # JSON output example
-└── Kibana-Dashboard-LogSentinelAI.ndjson # Kibana dashboard configuration
+├── Kibana-9.0.3-Advanced-Settings.ndjson    # Kibana advanced settings (index patterns, etc.)
+└── Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson # Kibana dashboard configuration
 ```
 
 ## 🔧 Configuration Options
