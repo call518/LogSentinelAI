@@ -107,8 +107,12 @@ cp config.template config
 
 ### 3. Elasticsearch & Kibana Installation (Docker)
 
+> [!IMPORTANT]
+> [Platinum features](https://www.elastic.co/subscriptions) are enabled by default for a [trial](https://www.elastic.co/docs/deploy-manage/license/manage-your-license-in-self-managed-cluster) duration of 30 days. After this evaluation period, you will retain access to all the free features included in the Open Basic license seamlessly, without manual intervention required, and without losing any data. Refer to the [How to disable paid features](https://github.com/deviantony/docker-elk#how-to-disable-paid-features) section to opt out of this behaviour.
+
 ```bash
 # 1. Clone ELK stack repository and navigate to directory
+# (Origin Repo) https://github.com/deviantony/docker-elk
 git clone https://github.com/call518/Docker-ELK.git
 cd Docker-ELK
 
