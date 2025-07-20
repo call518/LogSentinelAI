@@ -10,6 +10,43 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 
 ![JSON Output](img/ex-json.png)
 
+## 🚀 Key Features
+
+### 🧠 AI-Powered Security Analysis
+- **LLM-based log analysis** using OpenAI, Ollama, or vLLM for intelligent threat detection
+- **Structured output validation** with Pydantic schemas ensuring consistent, reliable results
+- **Multi-language support** for analysis results (English/Korean)
+
+### 📊 Comprehensive Log Coverage  
+- **HTTP Access Logs**: Web attack detection (SQL injection, XSS, path traversal, brute force)
+- **Apache Error Logs**: Server-side security events and application errors
+- **Linux System Logs**: System-level security monitoring and authentication events
+- **Network Packet Analysis**: TCPDump packet inspection for network-based threats
+
+### ⚡ Dual Analysis Modes
+- **Batch Mode**: Complete historical log file analysis for forensics and compliance
+- **Real-time Mode**: Live log monitoring with intelligent sampling for high-volume environments
+
+### 🔄 Advanced Real-time Processing
+- **Position tracking** with automatic log rotation detection and handling
+- **Intelligent sampling**: Auto-switch between full processing and sampling based on log volume
+- **Graceful error handling** with automatic retry mechanisms and failure recovery
+
+### 🏗️ Enterprise-Ready Architecture
+- **Elasticsearch integration** with automatic indexing, ILM policies, and data lifecycle management
+- **Kibana dashboards** for visualization, alerting, and security analytics
+- **Docker-based deployment** for consistent, scalable infrastructure
+
+### 🛠️ Developer-Friendly Design
+- **Unified CLI interface** across all analysis scripts with consistent command-line options
+- **Modular codebase** with generic functions and minimal code duplication (60%+ reduction)
+- **Comprehensive logging** with detailed metadata, timestamps, and processing status tracking
+
+### 🔧 Flexible Configuration
+- **Multi-provider LLM support**: Switch between OpenAI API, local Ollama, or GPU-accelerated vLLM
+- **Configurable chunking**: Optimized processing sizes for different log types and volumes
+- **Environment-based settings**: Centralized configuration management with .config support
+
 ## 🏗️ System Architecture
 
 ```
