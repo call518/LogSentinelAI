@@ -46,63 +46,63 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
                                               └─────────────────┘
 ```
 
-## 🚀 QuickStart: OpenAI API 기반 설치 및 실행
+## 🚀 QuickStart: OpenAI API Installation & Setup
 
-### 1. 기본 환경 준비
+### 1. Prerequisites
 
-- **운영체제**: Linux, Windows, Mac 모두 지원
-- **Python**: 3.11 이상
-- **Elasticsearch/Kibana**: 9.0.3 이상 (Docker 기반 설치 권장)
+- **Operating Systems**: Linux, Windows, Mac all supported
+- **Python**: 3.11 or higher
+- **Elasticsearch/Kibana**: 9.0.3 or higher (Docker-based installation recommended)
 
-### 2. 프로젝트 설치
+### 2. Project Installation
 
 ```bash
-# 1. 저장소 클론 및 진입
+# 1. Clone repository and navigate to directory
 git clone https://github.com/call518/LogSentinelAI.git
 cd LogSentinelAI
 
-# 2. Python 가상환경 생성 및 활성화
+# 2. Create and activate Python virtual environment
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # .venv\Scripts\activate   # Windows
 
-# 3. 패키지 설치
+# 3. Install packages
 pip install -r requirements.txt
 
-# 4. 환경 변수 파일 준비
+# 4. Setup configuration file
 cp config.template config
-# config 파일에서 OPENAI_API_KEY 값을 입력 (OpenAI 계정에서 발급)
+# Edit config file and set OPENAI_API_KEY value (obtained from OpenAI account)
 
-# 5. LLM 설정 (config 파일에서 설정)
-# OpenAI API 사용시 config 파일에서 다음과 같이 설정:
-#   LLM_PROVIDER=openai  (기본값)
-#   LLM_MODEL_OPENAI=gpt-4o-mini  (기본값)
+# 5. LLM Configuration (set in config file)
+# For OpenAI API usage, configure in config file as follows:
+#   LLM_PROVIDER=openai  (default)
+#   LLM_MODEL_OPENAI=gpt-4o-mini  (default)
 ```
 
-### 3. Elasticsearch & Kibana 설치 (Docker)
+### 3. Elasticsearch & Kibana Installation (Docker)
 
 ```bash
-# 1. ELK 스택 저장소 클론 및 진입
+# 1. Clone ELK stack repository and navigate to directory
 git clone https://github.com/call518/Docker-ELK.git
 cd Docker-ELK
 
-# 2. ELK 스택 초기화 및 실행
-# 최초 1회 초기화
+# 2. Initialize and run ELK stack
+# One-time initialization
 docker compose up setup
-# Kibana 암호화키 생성(권장)
+# Generate Kibana encryption keys (recommended)
 docker compose up kibana-genkeys
-# 생성된 키를 kibana/config/kibana.yml에 복사
-# ELK 스택 실행
+# Copy generated keys to kibana/config/kibana.yml
+# Start ELK stack
 docker compose up -d
 
-# 3. Kibana 접속: http://localhost:5601
-# 기본 계정: elastic / changeme
+# 3. Access Kibana: http://localhost:5601
+# Default credentials: elastic / changeme
 ```
 
-### 4. Elasticsearch 인덱스/정책/템플릿 설정
+### 4. Elasticsearch Index/Policy/Template Setup
 
 ```bash
-# 1. ILM 정책 생성 (7일 보존, 10GB/1일 롤오버)
+# 1. Create ILM policy (7-day retention, 10GB/1-day rollover)
 curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
 -H "Content-Type: application/json" \
 -u elastic:changeme \
@@ -127,7 +127,7 @@ curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
   }
 }'
 
-# 2. 인덱스 템플릿 생성
+# 2. Create index template
 curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
 -H "Content-Type: application/json" \
 -u elastic:changeme \
@@ -151,7 +151,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
   }
 }'
 
-# 3. 초기 인덱스 및 write alias 생성
+# 3. Create initial index and write alias
 curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 -H "Content-Type: application/json" \
 -u elastic:changeme \
@@ -164,69 +164,69 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 }'
 ```
 
-### 5. 로그 분석 실행 (OpenAI API 기준)
+### 5. Run Log Analysis (OpenAI API based)
 
 ```bash
-# HTTP access log 분석
+# HTTP access log analysis
 python analysis-httpd-access-log.py
 
-# Apache error log 분석
+# Apache error log analysis
 python analysis-httpd-apache-log.py
 
-# Linux system log 분석
+# Linux system log analysis
 python analysis-linux-system-log.py
 
-# 네트워크 패킷 분석 (tcpdump)
+# Network packet analysis (tcpdump)
 python analysis-tcpdump-packet.py
 ```
 
-### 6. Kibana 대시보드/설정 임포트
+### 6. Import Kibana Dashboard/Settings
 
 ```bash
-# 1. Kibana 접속: http://localhost:5601
-# 2. 로그인: elastic / changeme
+# 1. Access Kibana: http://localhost:5601
+# 2. Login: elastic / changeme
 # 3. Stack Management > Saved Objects > Import
-#    - Kibana-9.0.3-Advanced-Settings.ndjson (먼저)
-#    - Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson (다음)
-# 4. Analytics > Dashboard > LogSentinelAI Dashboard에서 결과 확인
+#    - Kibana-9.0.3-Advanced-Settings.ndjson (first)
+#    - Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson (second)
+# 4. Check results at Analytics > Dashboard > LogSentinelAI Dashboard
 ```
 
 ---
 
-## 🔄 LLM Provider 변경/고급 옵션 (선택)
+## 🔄 Change LLM Provider/Advanced Options (Optional)
 
-OpenAI API 대신 Ollama(로컬), vLLM(로컬/GPU) 등으로 변경하려면 아래 가이드를 참고하세요.
+To change from OpenAI API to Ollama (local), vLLM (local/GPU), etc., please refer to the guide below.
 
-### LLM Provider & Model 설정 (`config` 파일 수정)
+### LLM Provider & Model Configuration (`config` file modification)
 
-LogSentinelAI는 `config` 파일에서 LLM Provider와 모델을 중앙 관리합니다.
+LogSentinelAI centrally manages LLM Provider and model in the `config` file.
 
-#### OpenAI API 설정 (기본값)
+#### OpenAI API Configuration (Default)
 ```bash
-# config 파일에서 설정
+# Configure in config file
 LLM_PROVIDER=openai
 LLM_MODEL_OPENAI=gpt-4o-mini
 
-# API 키 설정 필요
+# API key configuration required
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-#### Ollama (로컬 LLM) 설정
+#### Ollama (Local LLM) Configuration
 ```bash
-# 1. Ollama 설치 및 모델 다운로드
+# 1. Install Ollama and download model
 ollama pull qwen2.5-coder:3b
 ollama serve
 ```
 
 ```bash
-# config 파일에서 설정 변경
+# Change configuration in config file
 LLM_PROVIDER=ollama
 LLM_MODEL_OLLAMA=qwen2.5-coder:3b
 ```
 
-#### vLLM (로컬 GPU) 설정
+#### vLLM (Local GPU) Configuration
 ```bash
-# Option A: Clone and use vLLM-Tutorial (권장)
+# Option A: Clone and use vLLM-Tutorial (recommended)
 git clone https://github.com/call518/vLLM-Tutorial.git
 cd vLLM-Tutorial
 
@@ -270,38 +270,38 @@ python -m vllm.entrypoints.openai.api_server --model qwen2.5-coder:3b
 ```
 
 ```bash
-# config 파일에서 설정 변경
+# Change configuration in config file
 LLM_PROVIDER=vllm
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 ```
 
-### 추가 설정 옵션 (`config` 파일)
+### Additional Configuration Options (`config` file)
 
-#### 응답 언어 설정
+#### Response Language Configuration
 ```bash
-# 분석 결과 언어 설정
-RESPONSE_LANGUAGE=korean    # 한국어 (기본값)
-# RESPONSE_LANGUAGE=english # 영어
+# Configure analysis result language
+RESPONSE_LANGUAGE=korean    # Korean (default)
+# RESPONSE_LANGUAGE=english # English
 ```
 
-#### 로그 파일 경로 및 청크 크기 설정
+#### Log File Path and Chunk Size Configuration
 ```bash
-# 로그 파일 경로 설정
-LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log      # 10k 엔트리 (기본값)
+# Configure log file paths
+LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log      # 10k entries (default)
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 
-# 청크 크기 설정 (한 번에 처리할 로그 엔트리 수)
-CHUNK_SIZE_HTTPD_ACCESS=10        # HTTP 액세스 로그
-CHUNK_SIZE_HTTPD_APACHE_ERROR=10  # Apache 에러 로그
-CHUNK_SIZE_LINUX_SYSTEM=10       # Linux 시스템 로그
-CHUNK_SIZE_TCPDUMP_PACKET=5       # 네트워크 패킷 (더 작은 청크 권장)
+# Configure chunk sizes (number of log entries to process at once)
+CHUNK_SIZE_HTTPD_ACCESS=10        # HTTP access logs
+CHUNK_SIZE_HTTPD_APACHE_ERROR=10  # Apache error logs
+CHUNK_SIZE_LINUX_SYSTEM=10       # Linux system logs
+CHUNK_SIZE_TCPDUMP_PACKET=5       # Network packets (smaller chunks recommended)
 ```
 
-### 설정 변경 후 확인
+### Verify Configuration Changes
 ```bash
-# 설정 변경 후 분석 실행하여 동작 확인
+# Run analysis after configuration changes to verify operation
 python analysis-httpd-access-log.py
 ```
 
@@ -412,7 +412,7 @@ log_path = "sample-logs/access-10k.log"     # 10,000 entries (default)
     "LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9": "192.168.1.100 - - [18/Jul/2025:10:00:01] GET /api/users",
     "LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51": "192.168.1.100 - - [18/Jul/2025:10:00:02] POST /api/login"
   },
-  "summary": "Analysis summary in Korean",
+  "summary": "Analysis summary in English",
   "events": [
     {
       "event_type": "SQL_INJECTION",
