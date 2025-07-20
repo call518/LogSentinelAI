@@ -118,7 +118,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         prompt: Prompt for analysis
         model_class: Pydantic model class
         chunk_start_time: Chunk analysis start time
-        chunk_end_time: Chunk analysis completion time
+        chunk_end_time: Chunk analysis completion time (if None, will be calculated after LLM processing)
         elasticsearch_index: Elasticsearch index name
         chunk_number: Chunk number
         chunk_data: Original chunk data
@@ -130,6 +130,10 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
     """
     try:
         review = model(prompt, model_class)
+        
+        # LLM 분석 완료 후 종료 시간 기록 (chunk_end_time이 None인 경우)
+        if chunk_end_time is None:
+            chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         
         # JSON 파싱
         parsed = json.loads(review)
@@ -181,6 +185,9 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         
     except json.JSONDecodeError as e:
         print(f"JSON parsing error: {e}")
+        # LLM 분석 완료 후 종료 시간 기록 (chunk_end_time이 None인 경우)
+        if chunk_end_time is None:
+            chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         # 로그 건수 계산
         log_count = sum(1 for line in chunk_data if line.strip().startswith("LOGID-"))
         # Record minimal information on failure
@@ -208,6 +215,9 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         
     except Exception as e:
         print(f"Analysis processing error: {e}")
+        # LLM 분석 완료 후 종료 시간 기록 (chunk_end_time이 None인 경우)
+        if chunk_end_time is None:
+            chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
         # 로그 건수 계산
         log_count = sum(1 for line in chunk_data if line.strip().startswith("LOGID-"))
         # Record minimal information on other failures

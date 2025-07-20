@@ -221,16 +221,13 @@ with processed_file as f:
         print(f"\n--- Chunk {i+1} ---")
         print_chunk_contents(chunk)
         
-        # 분석 완료 시간 기록
-        chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
-        
-        # 공통 처리 함수 사용
+        # 공통 처리 함수 사용 (분석 완료 시간은 함수 내부에서 기록)
         success, parsed_data = process_log_chunk(
             model=model,
             prompt=prompt,
             model_class=PacketAnalysis,
             chunk_start_time=chunk_start_time,
-            chunk_end_time=chunk_end_time,
+            chunk_end_time=None,  # 함수 내부에서 계산
             elasticsearch_index="tcpdump_packet",
             chunk_number=i+1,
             chunk_data=chunk,
