@@ -11,7 +11,8 @@ import json
 import datetime
 import os
 import time
-from typing import Dict, Any, Optional
+import hashlib
+from typing import Dict, Any, Optional, List, Generator
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError, RequestError
 from dotenv import load_dotenv
@@ -34,6 +35,7 @@ LLM_MODELS = {
 
 # Common Analysis Configuration - Read from config file
 RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
+ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
 
 # Log Paths Configuration - Read from config file
 LOG_PATHS = {
@@ -41,6 +43,24 @@ LOG_PATHS = {
     "httpd_apache_error": os.getenv("LOG_PATH_HTTPD_APACHE_ERROR", "sample-logs/apache-10k.log"),
     "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log"),
     "tcpdump_packet": os.getenv("LOG_PATH_TCPDUMP_PACKET", "sample-logs/tcpdump-packet-2k.log")
+}
+
+# Real-time Log Paths Configuration
+REALTIME_LOG_PATHS = {
+    "httpd_access": os.getenv("LOG_PATH_REALTIME_HTTPD_ACCESS", "/var/log/apache2/access.log"),
+    "httpd_apache_error": os.getenv("LOG_PATH_REALTIME_HTTPD_APACHE_ERROR", "/var/log/apache2/error.log"),
+    "linux_system": os.getenv("LOG_PATH_REALTIME_LINUX_SYSTEM", "/var/log/messages"),
+    "tcpdump_packet": os.getenv("LOG_PATH_REALTIME_TCPDUMP_PACKET", "/var/log/tcpdump.log")
+}
+
+# Real-time Monitoring Configuration
+REALTIME_CONFIG = {
+    "polling_interval": int(os.getenv("REALTIME_POLLING_INTERVAL", "5")),
+    "max_lines_per_batch": int(os.getenv("REALTIME_MAX_LINES_PER_BATCH", "50")),
+    "position_file_dir": os.getenv("REALTIME_POSITION_FILE_DIR", ".positions"),
+    "buffer_time": int(os.getenv("REALTIME_BUFFER_TIME", "2")),
+    "processing_mode": os.getenv("REALTIME_PROCESSING_MODE", "full"),
+    "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
 }
 
 # Default Chunk Sizes - Read from config file (can be overridden by individual analysis scripts)
@@ -61,21 +81,31 @@ def get_llm_config():
     llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
     return LLM_PROVIDER, llm_model_name
 
-def get_analysis_config(log_type, chunk_size=None):
+def get_analysis_config(log_type, chunk_size=None, analysis_mode=None):
     """
     Get analysis configuration for specific log type
     
     Args:
         log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
         chunk_size: Override chunk size (optional)
+        analysis_mode: Override analysis mode (optional) - "batch" or "realtime"
     
     Returns:
-        dict: Configuration containing log_path, chunk_size, response_language
+        dict: Configuration containing log_path, chunk_size, response_language, analysis_mode
     """
+    mode = analysis_mode if analysis_mode is not None else ANALYSIS_MODE
+    
+    if mode == "realtime":
+        log_path = REALTIME_LOG_PATHS.get(log_type, "")
+    else:
+        log_path = LOG_PATHS.get(log_type, "")
+    
     config = {
-        "log_path": LOG_PATHS.get(log_type, ""),
+        "log_path": log_path,
         "chunk_size": chunk_size if chunk_size is not None else LOG_CHUNK_SIZES.get(log_type, 3),
-        "response_language": RESPONSE_LANGUAGE
+        "response_language": RESPONSE_LANGUAGE,
+        "analysis_mode": mode,
+        "realtime_config": REALTIME_CONFIG if mode == "realtime" else None
     }
     return config
 
@@ -136,7 +166,8 @@ def wait_on_failure(delay_seconds=30):
 
 
 def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
-                     elasticsearch_index, chunk_number, chunk_data, llm_provider=None, llm_model=None):
+                     elasticsearch_index, chunk_number, chunk_data, llm_provider=None, llm_model=None,
+                     processing_mode=None):
     """
     Common function to process log chunks
     
@@ -151,6 +182,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         chunk_data: Original chunk data
         llm_provider: LLM provider name (e.g., "ollama", "vllm", "openai")
         llm_model: LLM model name (e.g., "Qwen/Qwen2.5-3B-Instruct")
+        processing_mode: Processing mode information (default: "batch")
     
     Returns:
         (success: bool, parsed_data: dict or None)
@@ -186,6 +218,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@processing_result": "success",
             "@log_count": log_count,
             "@log_raw_data": log_raw_data,
+            "@processing_mode": processing_mode if processing_mode else "batch",
             **parsed
         }
         
@@ -225,7 +258,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@error_type": "json_parse_error",
             "@error_message": str(e)[:200],  # Limit error message to 200 characters
             "@chunk_id": chunk_number,
-            "@log_count": log_count
+            "@log_count": log_count,
+            "@processing_mode": processing_mode if processing_mode else "batch"
         }
         # LLM 정보 추가 (선택사항)
         if llm_provider:
@@ -255,7 +289,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@error_type": "processing_error",
             "@error_message": str(e)[:200],  # Limit error message to 200 characters
             "@chunk_id": chunk_number,
-            "@log_count": log_count
+            "@log_count": log_count,
+            "@processing_mode": processing_mode if processing_mode else "batch"
         }
         # LLM 정보 추가 (선택사항)
         if llm_provider:
@@ -439,6 +474,26 @@ def _extract_log_content_from_logid_line(logid_line: str) -> tuple[str, str]:
     else:
         return "UNKNOWN-LOGID", logid_line
 
+def _create_log_hash_mapping_realtime(chunk: list[str]) -> Dict[str, str]:
+    """
+    Create LOGID -> original log content mapping for real-time chunks.
+    Real-time chunks contain raw log lines without LOGID prefixes.
+    
+    Args:
+        chunk: List of raw log lines
+    
+    Returns:
+        Dict[str, str]: {logid: original_content} mapping
+    """
+    mapping = {}
+    for line in chunk:
+        if line.strip():  # Skip empty lines
+            # Generate LOGID for raw log line
+            logid = f"LOGID-{hashlib.md5(line.strip().encode()).hexdigest().upper()}"
+            mapping[logid] = line.strip()
+    return mapping
+
+
 def _create_log_hash_mapping(chunk: list[str]) -> Dict[str, str]:
     """
     Create LOGID -> original log content mapping for all logs in the chunk.
@@ -477,3 +532,432 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
     
     # Send to Elasticsearch
     return _send_to_elasticsearch(analysis_data, log_type, chunk_id)
+
+
+class RealtimeLogMonitor:
+    """
+    Real-time log file monitoring and analysis
+    """
+    
+    def __init__(self, log_type: str, config: Dict[str, Any]):
+        """
+        Initialize real-time log monitor
+        
+        Args:
+            log_type: Type of log to monitor
+            config: Configuration dictionary from get_analysis_config()
+        """
+        self.log_type = log_type
+        self.log_path = config["log_path"]
+        self.chunk_size = config["chunk_size"]
+        self.response_language = config["response_language"]
+        self.realtime_config = config["realtime_config"]
+        
+        # Sampling configuration
+        self.processing_mode = self.realtime_config["processing_mode"]
+        self.sampling_threshold = self.realtime_config["sampling_threshold"]
+        
+        # Position tracking
+        self.position_file_dir = self.realtime_config["position_file_dir"]
+        self.position_file = os.path.join(
+            self.position_file_dir, 
+            f"{log_type}_position.txt"
+        )
+        
+        # Create position file directory if it doesn't exist
+        os.makedirs(self.position_file_dir, exist_ok=True)
+        
+        # Buffer for incomplete lines
+        self.line_buffer = []
+        # Buffer for accumulating lines until chunk_size is reached
+        self.pending_lines = []
+        self.last_position = self._load_position()
+        
+        # Display initialization info in a clean format
+        print("=" * 80)
+        print(f"🚀 REALTIME LOG MONITOR INITIALIZED")
+        print("=" * 80)
+        print(f"📋 Log Type: {log_type}")
+        print(f"📁 Monitoring: {self.log_path}")
+        print(f"� Mode: {self.processing_mode.upper()}")
+        if self.processing_mode == "full":
+            print(f"� Auto-sampling: {self.sampling_threshold} lines threshold")
+        elif self.processing_mode == "sampling":
+            print(f"📊 Sampling: Always keep latest {self.chunk_size} lines")
+        print(f"⏱️  Poll Interval: {self.realtime_config['polling_interval']}s")
+        print(f"📦 Chunk Size: {self.chunk_size} lines")
+        print("=" * 80)
+    
+    def _load_position(self) -> int:
+        """Load last read position from position file"""
+        try:
+            if os.path.exists(self.position_file):
+                with open(self.position_file, 'r') as f:
+                    position = int(f.read().strip())
+                    print(f"📍 Loaded position: {position}")
+                    return position
+        except (ValueError, IOError) as e:
+            print(f"⚠️ Error loading position file: {e}")
+        
+        # If file doesn't exist or error, start from end of file
+        try:
+            if os.path.exists(self.log_path):
+                with open(self.log_path, 'rb') as f:
+                    f.seek(0, 2)  # Seek to end
+                    position = f.tell()
+                    print(f"📍 Starting from end of file: {position}")
+                    return position
+        except IOError as e:
+            print(f"⚠️ Error accessing log file: {e}")
+        
+        return 0
+    
+    def _save_position(self, position: int):
+        """Save current read position to position file"""
+        try:
+            with open(self.position_file, 'w') as f:
+                f.write(str(position))
+        except IOError as e:
+            print(f"⚠️ Error saving position: {e}")
+    
+    def _read_new_lines(self) -> List[str]:
+        """Read new lines from log file since last position"""
+        try:
+            if not os.path.exists(self.log_path):
+                return []
+            
+            with open(self.log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                # Seek to last position
+                f.seek(self.last_position)
+                
+                # Read new content
+                new_content = f.read()
+                new_position = f.tell()
+                
+                if not new_content:
+                    return []
+                
+                # Split into lines
+                lines = new_content.split('\n')
+                
+                # Handle incomplete last line
+                if new_content.endswith('\n'):
+                    # Complete lines only
+                    complete_lines = lines[:-1]  # Remove empty last element
+                else:
+                    # Last line is incomplete, save for next read
+                    complete_lines = lines[:-1]
+                    self.line_buffer.append(lines[-1])
+                
+                # Prepend any buffered content to first line
+                if self.line_buffer and complete_lines:
+                    complete_lines[0] = ''.join(self.line_buffer) + complete_lines[0]
+                    self.line_buffer = []
+                
+                # Update position
+                if complete_lines:
+                    # Only update position if we have complete lines
+                    self.last_position = new_position - len(lines[-1]) if not new_content.endswith('\n') else new_position
+                    self._save_position(self.last_position)
+                
+                # Filter out empty lines
+                complete_lines = [line.strip() for line in complete_lines if line.strip()]
+                
+                if complete_lines:
+                    # More concise output
+                    pass  # Remove verbose output here
+                
+                return complete_lines
+                
+        except IOError as e:
+            print(f"⚠️ Error reading log file: {e}")
+            return []
+    
+    def get_new_log_chunks(self) -> Generator[List[str], None, None]:
+        """
+        Generator that yields chunks of new log lines
+        Only yields when chunk_size lines are accumulated
+        Supports both full processing and sampling modes
+        
+        Yields:
+            List[str]: Chunk of new log lines (exactly chunk_size or remaining at end)
+        """
+        new_lines = self._read_new_lines()
+        
+        if not new_lines:
+            return
+        
+        # Limit the number of lines per batch
+        max_lines = self.realtime_config["max_lines_per_batch"]
+        if len(new_lines) > max_lines:
+            print(f"⚠️ Too many new lines ({len(new_lines)}), limiting to {max_lines}")
+            new_lines = new_lines[:max_lines]
+        
+        # Add new lines to pending buffer
+        self.pending_lines.extend(new_lines)
+        
+        # Show status update only when significant changes occur
+        status_msg = f"[{self.processing_mode.upper()}] Pending: {len(self.pending_lines)} lines"
+        if len(new_lines) > 0:
+            print(f"📋 {status_msg} (+{len(new_lines)} new)")
+        
+        # Check if we need to apply sampling
+        should_sample = (
+            self.processing_mode == "sampling" or 
+            (self.processing_mode == "full" and len(self.pending_lines) > self.sampling_threshold)
+        )
+        
+        if should_sample and len(self.pending_lines) > self.chunk_size:
+            # Sampling mode: only keep the most recent chunk_size lines
+            discarded_count = len(self.pending_lines) - self.chunk_size
+            self.pending_lines = self.pending_lines[-self.chunk_size:]
+            if discarded_count > 0:
+                print(f"⚠️  SAMPLING: Discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
+        
+        # Yield complete chunks only when we have enough lines
+        while len(self.pending_lines) >= self.chunk_size:
+            chunk = self.pending_lines[:self.chunk_size]
+            self.pending_lines = self.pending_lines[self.chunk_size:]
+            print(f"📦 CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
+            yield chunk
+    
+    def flush_pending_lines(self) -> Generator[List[str], None, None]:
+        """
+        Flush any remaining pending lines as a final chunk
+        Used when stopping monitoring to process remaining lines
+        
+        Yields:
+            List[str]: Remaining pending lines if any
+        """
+        if self.pending_lines:
+            print(f"🔄 FINAL FLUSH: {len(self.pending_lines)} remaining lines")
+            yield self.pending_lines.copy()
+            self.pending_lines.clear()
+    
+    def monitor_and_analyze(self, model, analysis_prompt_func, 
+                          analysis_schema_class, 
+                          process_callback=None):
+        """
+        Continuously monitor log file and analyze new entries
+        
+        Args:
+            model: LLM model for analysis
+            analysis_prompt_func: Function to create analysis prompt (chunk, response_language) -> prompt
+            analysis_schema_class: Pydantic schema class for structured output
+            process_callback: Optional callback function for processing results
+        """
+        print("🚀 MONITORING STARTED - Press Ctrl+C to stop")
+        print("-" * 50)
+        
+        chunk_counter = 0
+        
+        try:
+            while True:
+                # Check for new log entries
+                for chunk in self.get_new_log_chunks():
+                    chunk_counter += 1
+                    
+                    print(f"\n� CHUNK #{chunk_counter} ({len(chunk)} lines)")
+                    print("─" * 50)
+                    for i, line in enumerate(chunk, 1):
+                        # Truncate long lines for better readability
+                        display_line = line[:100] + "..." if len(line) > 100 else line
+                        print(f"{i:2d}: {display_line}")
+                    print("─" * 50)
+                    
+                    try:
+                        # Create prompt
+                        prompt = analysis_prompt_func(chunk, self.response_language)
+                        
+                        # Process the chunk with processing mode info
+                        result = process_log_chunk_realtime(
+                            model=model,
+                            prompt=prompt,
+                            model_class=analysis_schema_class,
+                            chunk=chunk,
+                            chunk_id=chunk_counter,
+                            log_type=self.log_type,
+                            response_language=self.response_language,
+                            processing_mode=self.processing_mode,
+                            sampling_threshold=self.sampling_threshold
+                        )
+                        
+                        # Call custom callback if provided
+                        if process_callback:
+                            process_callback(result, chunk, chunk_counter)
+                        
+                        print(f"✅ CHUNK #{chunk_counter} COMPLETED")
+                        
+                    except Exception as e:
+                        print(f"❌ CHUNK #{chunk_counter} FAILED: {e}")
+                        continue
+                
+                # Wait before next poll
+                time.sleep(self.realtime_config["polling_interval"])
+                
+        except KeyboardInterrupt:
+            print(f"\n🛑 MONITORING STOPPED")
+            print("=" * 50)
+            print(f"📊 Total chunks processed: {chunk_counter}")
+            
+            # Process any remaining buffered lines
+            for chunk in self.flush_pending_lines():
+                chunk_counter += 1
+                print(f"\n� FINAL CHUNK #{chunk_counter} ({len(chunk)} lines)")
+                print("─" * 50)
+                for i, line in enumerate(chunk, 1):
+                    display_line = line[:100] + "..." if len(line) > 100 else line
+                    print(f"{i:2d}: {display_line}")
+                print("─" * 50)
+                
+                try:
+                    # Create prompt
+                    prompt = analysis_prompt_func(chunk, self.response_language)
+                    
+                    # Process the chunk with processing mode info
+                    result = process_log_chunk_realtime(
+                        model=model,
+                        prompt=prompt,
+                        model_class=analysis_schema_class,
+                        chunk=chunk,
+                        chunk_id=chunk_counter,
+                        log_type=self.log_type,
+                        response_language=self.response_language,
+                        processing_mode=self.processing_mode,
+                        sampling_threshold=self.sampling_threshold
+                    )
+                    
+                    # Call custom callback if provided
+                    if process_callback:
+                        process_callback(result, chunk, chunk_counter)
+                    
+                    print(f"✅ FINAL CHUNK #{chunk_counter} COMPLETED")
+                    
+                except Exception as e:
+                    print(f"❌ FINAL CHUNK #{chunk_counter} FAILED: {e}")
+            
+            print("=" * 50)
+            print(f"🏁 TOTAL CHUNKS PROCESSED: {chunk_counter}")
+            print("=" * 50)
+
+
+def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_type, response_language, 
+                              processing_mode=None, sampling_threshold=None):
+    """
+    Simplified function to process log chunks for real-time monitoring
+    
+    Args:
+        model: LLM model object
+        prompt: Prompt for analysis
+        model_class: Pydantic model class
+        chunk: List of log lines
+        chunk_id: Chunk ID
+        log_type: Log type
+        response_language: Response language
+        processing_mode: Processing mode (full/sampling/auto-sampling)
+        sampling_threshold: Sampling threshold for auto-sampling mode
+    
+    Returns:
+        dict: Analysis result
+    """
+    try:
+        # Record start time
+        chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+        
+        # Run LLM analysis
+        review = model(prompt, model_class)
+        
+        # Record end time
+        chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+        
+        # Parse result - handle different response types
+        if hasattr(review, 'model_dump'):
+            # Pydantic v2 style
+            parsed_data = review.model_dump()
+        elif hasattr(review, 'dict'):
+            # Pydantic v1 style
+            parsed_data = review.dict()
+        elif isinstance(review, dict):
+            # Already a dictionary
+            parsed_data = review
+        else:
+            # Try to convert to dict or handle as string
+            try:
+                if hasattr(review, '__dict__'):
+                    parsed_data = review.__dict__
+                else:
+                    # If it's a string, try to parse as JSON
+                    import json
+                    if isinstance(review, str):
+                        parsed_data = json.loads(review)
+                    else:
+                        raise ValueError(f"Unexpected response type: {type(review)}")
+            except (json.JSONDecodeError, AttributeError, ValueError) as e:
+                print(f"⚠️ Failed to parse LLM response: {e}")
+                print(f"🔍 Response type: {type(review)}")
+                print(f"🔍 Response content: {str(review)[:200]}...")
+                # Create a minimal valid response
+                parsed_data = {
+                    "summary": f"Processing error: {str(e)}",
+                    "events": [{
+                        "event_type": "UNKNOWN",
+                        "severity": "LOW",
+                        "description": "Failed to parse LLM response",
+                        "confidence_score": 0.1,
+                        "recommended_actions": ["Review log processing"],
+                        "requires_human_review": True,
+                        "related_log_ids": []
+                    }],
+                    "statistics": {
+                        "total_events": 1,
+                        "auth_failures": 0,
+                        "unique_ips": 0,
+                        "unique_users": 0,
+                        "event_by_type": {"UNKNOWN": 1},
+                        "top_source_ips": {}
+                    },
+                    "highest_severity": "LOW",
+                    "requires_immediate_attention": False
+                }
+        
+        # Add metadata including processing mode information
+        parsed_data.update({
+            "@chunk_analysis_start_utc": chunk_start_time,
+            "@chunk_analysis_end_utc": chunk_end_time,
+            "@processing_result": "success",
+            "@timestamp": chunk_end_time,
+            "@log_type": log_type,
+            "@document_id": f"{log_type}_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}_chunk_{chunk_id}",
+            "@log_raw_data": _create_log_hash_mapping_realtime(chunk),
+            "@processing_mode": processing_mode if processing_mode else "unknown",
+            "@sampling_threshold": sampling_threshold if sampling_threshold else None
+        })
+        
+        # Send to Elasticsearch
+        send_to_elasticsearch(parsed_data, log_type, chunk_id, chunk)
+        
+        return parsed_data
+        
+    except Exception as e:
+        print(f"❌ Error in real-time processing: {e}")
+        return None
+
+
+def create_realtime_monitor(log_type: str, 
+                          chunk_size: Optional[int] = None) -> RealtimeLogMonitor:
+    """
+    Create a real-time log monitor for specified log type
+    
+    Args:
+        log_type: Type of log to monitor
+        chunk_size: Override default chunk size
+    
+    Returns:
+        RealtimeLogMonitor: Configured monitor instance
+    """
+    config = get_analysis_config(log_type, chunk_size, analysis_mode="realtime")
+    
+    if not config["log_path"]:
+        raise ValueError(f"No real-time log path configured for {log_type}")
+    
+    return RealtimeLogMonitor(log_type, config)

@@ -99,7 +99,8 @@ with open(log_path, "r", encoding="utf-8") as f:
             chunk_number=i+1,
             chunk_data=chunk,
             llm_provider=llm_provider,
-            llm_model=llm_model_name
+            llm_model=llm_model_name,
+            processing_mode="batch"
         )
         
         if success:

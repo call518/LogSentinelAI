@@ -4,15 +4,36 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 
 ## 🌟 Key Features
 
-- **Multi-format Log Support**: HTTP Access Log, Apache Error Log, Linux System Log, Network Packet Analysis
-- **AI-based Security Analysis**: Intelligent security event detection through LLM
-- **Structured Generation**: Uses [Outlines](https://github.com/dottxt-ai/outlines) for reliable JSON output from LLM
+### 1. Multi-format Log Support
+- **HTTP Access Log**: Apache/Nginx access log analysis
+- **Apache Error Log**: Apache error log security analysis  
+- **Linux System Log**: System log monitoring and analysis
 - **Network Packet Analysis**: tcpdump packet inspection and security analysis
-- **Structured Data Output**: JSON schema validation using Pydantic models
-- **Elasticsearch Integration**: Real-time log analysis result storage and search
-- **Kibana Dashboard**: Visualized security analysis result monitoring
-- **LOGID Tracking**: Complete traceability between original logs and analysis results
-- **LLM Provider Support**: Compatible with OpenAI, vLLM, and Ollama
+
+### 2. Structured Generation with Outlines
+- **Reliable JSON Output**: Uses [Outlines](https://github.com/dottxt-ai/outlines) library for guaranteed structured generation
+- **Schema-Guided Generation**: Pydantic models ensure LLM outputs follow exact JSON schemas
+- **Enhanced Parsing Reliability**: Eliminates JSON parsing errors through guided generation
+- **Multi-Provider Support**: Works consistently across OpenAI, vLLM, and Ollama providers
+
+### 3. Intelligent Security Detection
+- **Various Attack Pattern Recognition**: SQL Injection, XSS, Brute Force, Command Injection, etc.
+- **Context-based Analysis**: Analysis considering log patterns and correlations
+- **Confidence Score**: Confidence level for each detection result
+- **Mandatory Event Generation**: Every log chunk generates at least one security event
+
+### 4. Complete Traceability  
+- **LOGID System**: Unique MD5-based identifier for each log line (e.g., `LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9`)
+- **Original Data Preservation**: Raw log data stored with `@log_raw_data` field in Elasticsearch
+- **Related Log Mapping**: LLM specifies which LOGIDs are related to each security event
+- **Full Audit Trail**: Complete traceability from original logs to analysis results
+
+### 5. Scalable Architecture
+- **Modular Design**: Independent analyzer for each log type
+- **Shared Commons Library**: Centralized functions in `commons.py` for code reusability
+- **Chunk-based Processing**: Memory-efficient processing of large log files
+- **Real-time & Batch Modes**: Support for both complete file analysis and live monitoring
+- **Error Handling**: Robust error handling with failure tracking in Elasticsearch
 
 ## 📊 Dashboard Example
 
@@ -164,20 +185,63 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 }'
 ```
 
-### 5. Run Log Analysis (OpenAI API based)
+### 5. Run Log Analysis
 
+#### Analysis Modes
+LogSentinelAI supports two analysis modes:
+
+##### Batch Mode (Default)
+- Analyzes complete, static log files
+- Processes entire files from beginning to end
+- Ideal for historical analysis and one-time processing
+- Uses paths from `LOG_PATH_*` configuration
+
+##### Real-time Mode
+- Monitors live log files for new entries
+- Processes only new log lines as they are written
+- Maintains position tracking to avoid reprocessing
+- Uses paths from `LOG_PATH_REALTIME_*` configuration
+- **Sampling Support**: Three processing modes for high-volume scenarios:
+  - `full`: Process all log entries (auto-sampling when threshold exceeded)
+  - `sampling`: Always keep only latest entries within chunk size
+  - `auto-sampling`: Intelligent sampling based on log volume
+
+#### Batch Mode (Complete log files)
 ```bash
-# HTTP access log analysis
-python analysis-httpd-access-log.py
-
-# Apache error log analysis
-python analysis-httpd-apache-log.py
-
-# Linux system log analysis
+# Use default configuration
 python analysis-linux-system-log.py
 
-# Network packet analysis (tcpdump)
+# Override chunk size
+python analysis-linux-system-log.py --chunk-size 5
+
+# Analyze different log types
+python analysis-httpd-access-log.py
+python analysis-httpd-apache-log.py
 python analysis-tcpdump-packet.py
+```
+
+#### Real-time Mode (Live log monitoring)
+```bash
+# Monitor /var/log/messages in real-time (full processing mode)
+python analysis-linux-system-log.py --mode realtime
+
+# Monitor with sampling mode (for high-volume logs)
+python analysis-linux-system-log.py --mode realtime --processing-mode sampling
+
+# Monitor with custom sampling threshold
+python analysis-linux-system-log.py --mode realtime --processing-mode full --sampling-threshold 200
+
+# Monitor custom log file
+python analysis-linux-system-log.py --mode realtime --log-path /var/log/custom.log
+
+# Monitor with custom chunk size
+python analysis-linux-system-log.py --mode realtime --chunk-size 3
+
+# Dedicated real-time script
+python analysis-linux-system-log-realtime.py
+
+# Monitor with root permissions (often required for system logs)
+sudo python analysis-linux-system-log.py --mode realtime
 ```
 
 ### 6. Import Kibana Dashboard/Settings
@@ -192,7 +256,6 @@ python analysis-tcpdump-packet.py
 ```
 
 ---
-
 ## 🔄 Change LLM Provider/Advanced Options (Optional)
 
 To change from OpenAI API to Ollama (local), vLLM (local/GPU), etc., please refer to the guide below.
@@ -280,23 +343,57 @@ LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 #### Response Language Configuration
 ```bash
 # Configure analysis result language
-RESPONSE_LANGUAGE=korean    # Korean (default)
-# RESPONSE_LANGUAGE=english # English
+RESPONSE_LANGUAGE=english   # English
+# RESPONSE_LANGUAGE=korean  # Korean (default)
+```
+
+#### Analysis Mode Configuration
+```bash
+# Configure analysis mode
+ANALYSIS_MODE=batch         # Batch mode - analyze complete files (default)
+# ANALYSIS_MODE=realtime    # Real-time mode - monitor live logs
 ```
 
 #### Log File Path and Chunk Size Configuration
 ```bash
-# Configure log file paths
+# Batch mode log file paths
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log      # 10k entries (default)
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
+
+# Real-time mode log file paths (live logs)
+LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
+LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
+LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
+LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 
 # Configure chunk sizes (number of log entries to process at once)
 CHUNK_SIZE_HTTPD_ACCESS=10        # HTTP access logs
 CHUNK_SIZE_HTTPD_APACHE_ERROR=10  # Apache error logs
 CHUNK_SIZE_LINUX_SYSTEM=10       # Linux system logs
 CHUNK_SIZE_TCPDUMP_PACKET=5       # Network packets (smaller chunks recommended)
+```
+
+#### Real-time Monitoring Configuration
+```bash
+# Polling interval for checking new log entries (seconds)
+REALTIME_POLLING_INTERVAL=5
+
+# Maximum number of new lines to process at once
+REALTIME_MAX_LINES_PER_BATCH=50
+
+# Position file directory for tracking file read positions
+REALTIME_POSITION_FILE_DIR=.positions
+
+# Buffer time to wait for complete log lines (seconds)
+REALTIME_BUFFER_TIME=2
+
+# Processing mode for real-time monitoring
+REALTIME_PROCESSING_MODE=full     # full, sampling, or auto-sampling
+
+# Sampling threshold for auto-sampling mode (number of lines)
+REALTIME_SAMPLING_THRESHOLD=100   # When exceeded, triggers sampling in 'full' mode
 ```
 
 ### Verify Configuration Changes
@@ -306,56 +403,47 @@ python analysis-httpd-access-log.py
 ```
 
 ---
-## 📁 Project Structure
-
-```
-LogSentinelAI/
-├── analysis-httpd-access-log.py    # HTTP access log analyzer
-├── analysis-httpd-apache-log.py    # Apache error log analyzer
-├── analysis-linux-system-log.py    # Linux system log analyzer
-├── analysis-tcpdump-packet.py      # Network packet analyzer (tcpdump)
-├── commons.py                      # Common functions and utilities
-├── prompts.py                      # LLM prompt templates
-├── requirements.txt                # Python dependencies
-├── config                         # Configuration file (created from template)
-├── config.template                # Configuration template
-├── .env                           # Environment variables (deprecated - use config instead)
-├── .env.template                  # Environment variables template (deprecated)
-├── .gitignore                     # Git ignore file
-├── LICENSE                        # MIT License
-├── README.md                      # This file
-├── sample-logs/                   # Sample log files
-│   ├── access-100.log             # 100 HTTP access log entries
-│   ├── access-10k.log             # 10,000 HTTP access log entries
-│   ├── apache-100.log             # 100 Apache error log entries
-│   ├── apache-10k.log             # 10,000 Apache error log entries
-│   ├── linux-100.log              # 100 Linux system log entries
-│   ├── linux-2k.log               # 2,000 Linux system log entries
-│   ├── tcpdump-packet-39.log      # Sample tcpdump packet capture (39 packets)
-│   └── tcpdump-packet-2k.log      # Sample tcpdump packet capture (2,000 packets)
-├── img/                           # Documentation images
-│   ├── ex-dashboard.png           # Kibana dashboard example
-│   └── ex-json.png                # JSON output example
-├── Kibana-9.0.3-Advanced-Settings.ndjson    # Kibana advanced settings (index patterns, etc.)
-└── Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson # Kibana dashboard configuration
-```
-
 ## 🔧 Configuration Options
 
 ### Change LLM Provider
 
 You can change the LLM provider in each analysis script:
 
-```python
-# In each analysis script (analysis-httpd-access-log.py, etc.)
-llm_provider = "vllm"  # Choose from "ollama", "vllm", "openai"
-model = initialize_llm_model(llm_provider)
+```bash
+# In config file
+LLM_PROVIDER=vllm  # Choose from "ollama", "vllm", "openai"
+LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 ```
 
 Available providers:
 - **Ollama**: Local model execution with models like `qwen2.5-coder:3b`
 - **vLLM**: GPU-accelerated local inference with OpenAI-compatible API
 - **OpenAI**: Cloud-based API using models like `gpt-4o-mini`
+
+### Position Tracking for Real-time Monitoring
+
+Real-time monitoring uses position files to track reading progress:
+
+```bash
+# Position files are stored in .positions/ directory
+.positions/
+├── linux_system_position.txt    # Tracks position for Linux system logs
+├── httpd_access_position.txt     # Tracks position for HTTP access logs
+└── ...
+```
+
+- Position files are automatically created and maintained
+- Delete position files to restart monitoring from beginning
+- Position files prevent duplicate processing during restarts
+
+### Log File Rotation Handling
+
+Real-time monitoring handles log rotation gracefully:
+
+1. **Detection**: Monitors file size and inode changes
+2. **Reset**: Automatically resets to beginning of new log file
+3. **Continuation**: Seamless processing without data loss
+4. **Position Update**: Updates position tracking for new file
 
 ### Adjust Chunk Size
 
@@ -364,17 +452,6 @@ You can adjust chunk size for log processing performance:
 ```python
 # In each analysis script
 chunk_size = 5  # Default value, adjust as needed (typically 5-10)
-```
-
-### Sample Log Files
-
-The project includes different sized sample files for testing:
-
-```python
-# Choose log file size in each script
-# log_path = "sample-logs/access-10.log"     # 10 entries
-# log_path = "sample-logs/access-100.log"    # 100 entries  
-log_path = "sample-logs/access-10k.log"     # 10,000 entries (default)
 ```
 
 ## 📊 Output Data Schema
@@ -402,9 +479,11 @@ log_path = "sample-logs/access-10k.log"     # 10,000 entries (default)
 
 ```json
 {
-  "chunk_analysis_start_utc": "2025-07-18T10:00:00Z",
-  "chunk_analysis_end_utc": "2025-07-18T10:00:05Z", 
+  "@chunk_analysis_start_utc": "2025-07-18T10:00:00Z",
+  "@chunk_analysis_end_utc": "2025-07-18T10:00:05Z", 
   "@processing_result": "success",
+  "@processing_mode": "realtime",
+  "@sampling_threshold": 100,
   "@timestamp": "2025-07-18T10:00:05.123Z",
   "@log_type": "httpd_access",
   "@document_id": "httpd_access_20250718_100005_123456_chunk_1",
@@ -428,162 +507,3 @@ log_path = "sample-logs/access-10k.log"     # 10,000 entries (default)
   "requires_immediate_attention": true
 }
 ```
-
-## 🎯 Advanced Features
-
-### 1. Structured Generation with Outlines
-- **Reliable JSON Output**: Uses [Outlines](https://github.com/dottxt-ai/outlines) library for guaranteed structured generation
-- **Schema-Guided Generation**: Pydantic models ensure LLM outputs follow exact JSON schemas
-- **Enhanced Parsing Reliability**: Eliminates JSON parsing errors through guided generation
-- **Multi-Provider Support**: Works consistently across OpenAI, vLLM, and Ollama providers
-- **Performance Optimization**: Faster and more reliable than post-processing approaches
-
-### 2. Intelligent Security Detection
-- **Various Attack Pattern Recognition**: SQL Injection, XSS, Brute Force, Command Injection, etc.
-- **Context-based Analysis**: Analysis considering log patterns and correlations
-- **Confidence Score**: Confidence level for each detection result
-- **Mandatory Event Generation**: Every log chunk generates at least one security event
-- **Balanced Severity Assessment**: Enhanced sensitivity for security pattern detection
-
-### 3. Complete Traceability  
-- **LOGID System**: Unique MD5-based identifier for each log line (e.g., `LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9`)
-- **Original Data Preservation**: Raw log data stored with `@log_raw_data` field in Elasticsearch
-- **Related Log Mapping**: LLM specifies which LOGIDs are related to each security event
-- **Full Audit Trail**: Complete traceability from original logs to analysis results
-
-### 4. Scalable Architecture
-- **Modular Design**: Independent analyzer for each log type
-- **Shared Commons Library**: Centralized functions in `commons.py` for code reusability
-- **Chunk-based Processing**: Memory-efficient processing of large log files
-- **Error Handling**: Robust error handling with failure tracking in Elasticsearch
-
-## 📈 Performance Optimization
-
-### Structured Generation
-- **Outlines Library**: Eliminates JSON parsing errors through guided generation
-- **Schema Validation**: Pydantic models ensure consistent output structure
-- **Faster Processing**: Avoids retry loops from malformed JSON responses
-- **Memory Efficiency**: Direct structured output without post-processing overhead
-
-### Chunk-based Processing
-- Process large log files by dividing into small chunks (default: 5 entries per chunk)
-- Memory efficiency and error isolation
-- Independent processing of each chunk with failure tracking
-
-### Token Optimization
-- Prompt optimization to minimize LLM input tokens
-- Structured output using Pydantic models for parsing efficiency
-- Simplified JSON schemas to reduce redundancy
-
-### Error Resilience
-- Comprehensive error handling with JSON parsing fallbacks
-- Failed chunk analysis recorded in Elasticsearch for debugging
-- Continued processing even when individual chunks fail
-
-## 🔍 Monitoring & Alerting
-
-### Kibana Dashboard
-- Real-time security event monitoring
-- Attack trend and pattern analysis
-- Geographic location-based attack visualization
-
-### Alert Configuration
-- Automatic alerts for high-risk security events
-- Threshold-based alert rules
-- Email/Slack integration support
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is distributed under the MIT License. See [LICENSE](LICENSE) file for more details.
-
-## 🆘 Support & Contact
-
-- **Issues**: [GitHub Issues](https://github.com/call518/LogSentinelAI/issues)
-- **Documentation**: [GitHub Wiki](https://github.com/call518/LogSentinelAI/wiki)
-- **Repository**: [GitHub Repository](https://github.com/call518/LogSentinelAI)
-- **Email**: support@logsentinelai.dev
-
-## 🏷️ Version Information
-
-- **Python**: 3.11+
-- **Elasticsearch**: 9.0.3+
-- **Kibana**: 9.0.3+
-- **Key Dependencies**: 
-  - `outlines` for structured LLM output generation
-  - `pydantic` for data validation and schema enforcement
-  - `elasticsearch` for data storage and search capabilities
-  - `ollama`, `openai` for LLM provider integrations
-
-### 🔗 Important Links
-- **Outlines Library**: [https://github.com/dottxt-ai/outlines](https://github.com/dottxt-ai/outlines)
-- **Outlines Documentation**: [https://dottxt-ai.github.io/outlines/](https://dottxt-ai.github.io/outlines/)
-- **Pydantic**: [https://docs.pydantic.dev/](https://docs.pydantic.dev/)
-- **Elasticsearch**: [https://www.elastic.co/elasticsearch/](https://www.elastic.co/elasticsearch/)
-
-## 📋 ToDo & Roadmap
-
-### 🎯 Upcoming Features
-
-#### Real-time Log Analysis
-- **Real-time Log File Monitoring**: Implement file watcher to detect new log entries
-- **Sampling vs. Full Processing**: Add configurable sampling strategies for high-volume logs
-- **Stream Processing**: Support for continuous log stream analysis
-- **Performance Modes**: 
-  - Full processing mode for comprehensive analysis
-  - Sampling mode for high-throughput scenarios
-
-#### Performance Enhancements
-- **LLM Processing Optimization**: Improve throughput (logs per second)
-- **Batch Processing**: Process multiple log chunks in parallel
-- **Model Caching**: Cache LLM responses for similar log patterns
-- **Async Processing**: Implement asynchronous log analysis pipeline
-
-### 🚀 Future Enhancements
-- **Machine Learning Integration**: Anomaly detection using ML models
-- **Custom Rule Engine**: User-defined security rules and patterns
-- **Multi-tenant Support**: Support for multiple organizations/tenants
-- **Advanced Visualization**: Enhanced Kibana dashboards with geo-mapping
-- **API Integration**: RESTful API for external system integration
-
-## 🔧 Technical Implementation
-
-### Outlines Integration
-LogSentinelAI leverages the [Outlines](https://github.com/dottxt-ai/outlines) library for structured generation, ensuring reliable JSON output from Language Models:
-
-```python
-# Example of structured generation with Outlines
-from outlines import models, generate
-from pydantic import BaseModel
-
-class SecurityEvent(BaseModel):
-    event_type: str
-    severity: str
-    description: str
-    confidence_score: float
-
-# Initialize model with Outlines
-model = models.transformers("microsoft/DialoGPT-medium")
-generator = generate.json(model, SecurityEvent)
-
-# Generate structured output
-result = generator(prompt)  # Always returns valid SecurityEvent JSON
-```
-
-### Why Outlines?
-- **Guaranteed Structure**: Unlike traditional LLM outputs, Outlines ensures the response always follows the specified schema
-- **No Parsing Errors**: Eliminates JSON parsing failures and retry logic
-- **Better Performance**: Faster processing through guided generation
-- **Multi-Provider Support**: Works with various LLM backends (OpenAI, vLLM, Ollama)
-- **Type Safety**: Perfect integration with Pydantic models for type-safe data handling
-
----
-
-**LogSentinelAI** - Intelligent Log Security Analysis with AI 🔍🛡️
