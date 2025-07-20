@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=http://localhost:5601/app/management/kibana/objects
+HostUrl=http://localhost:5601/

@@ -92,9 +92,30 @@ cd vLLM-Tutorial
 # Install Hugging Face CLI for model download
 pip install huggingface_hub
 
-# Download model (optional)
+# Download model
 huggingface-cli download lmstudio-community/Qwen2.5-3B-Instruct-GGUF Qwen2.5-3B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-3B-Instruct/
-huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local-dir ./config
+huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local-dir ./config/Qwen2.5-3B-Instruct
+
+# Download model (Optional)
+huggingface-cli download lmstudio-community/Qwen2.5-1.5B-Instruct-GGUF Qwen2.5-1.5B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-1.5B-Instruct/
+huggingface-cli download Qwen/Qwen2.5-1.5B-Instruct generation_config.json --local-dir ./config/Qwen2.5-1.5B-Instruct
+
+# Change value of temperature : 0.7 --> 0.0
+cat config/Qwen2.5-3B-Instruct/generation_config.json
+{
+  "bos_token_id": 151643,
+  "pad_token_id": 151643,
+  "do_sample": true,
+  "eos_token_id": [
+    151645,
+    151643
+  ],
+  "repetition_penalty": 1.05,
+  "temperature": 0.0,
+  "top_p": 0.8,
+  "top_k": 20,
+  "transformers_version": "4.37.0"
+}
 
 # Run vLLM with Docker
 ./run-docker-vllm---Qwen2.5-3B-Instruct.sh
@@ -365,8 +386,8 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) file f
 ## 🏷️ Version Information
 
 - **Python**: 3.11+
-- **Elasticsearch**: 8.16+
-- **Kibana**: 8.16+
+- **Elasticsearch**: 9.0.3+
+- **Kibana**: 9.0.3+
 - **Key Dependencies**: 
   - `outlines` for structured LLM output generation
   - `pydantic` for data validation and schema enforcement

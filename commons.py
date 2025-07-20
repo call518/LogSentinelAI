@@ -35,11 +35,21 @@ load_dotenv()
 LLM_PROVIDER = "vllm"
 # LLM_PROVIDER = "openai"
 
+# LLM Models Mapping
 LLM_MODELS = {
-    "ollama": "qwen2.5-coder:3b",
-    # "vllm": "Qwen/Qwen2.5-1.5B-Instruct",
-    "vllm": "Qwen/Qwen2.5-3B-Instruct",
-    "openai": "gpt-4o"
+    ### Ollama
+    # "ollama": "qwen2.5-coder:0.5b",
+    "ollama": "qwen2.5-coder:1.5b",
+    # "ollama": "qwen2.5-coder:3b",
+    ### vLLM
+    # "vllm": "Qwen/Qwen2.5-0.5B-Instruct",
+    "vllm": "Qwen/Qwen2.5-1.5B-Instruct",
+    # "vllm": "Qwen/Qwen2.5-3B-Instruct",
+    ### OpenAI
+    # "openai": "gpt-4o"
+    "openai": "gpt-4o-mini"
+    # "openai": "gpt-4.1"
+    # "openai": "gpt-4.1-mini"
 }
 
 def get_llm_config():
