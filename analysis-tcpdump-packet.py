@@ -14,7 +14,7 @@ from commons import chunked_iterable
 from commons import print_chunk_contents
 
 ### Install the required packages
-# uv add outlines ollama openai python-dotenv numpy
+# uv pip install outlines ollama openai python-dotenv numpy elasticsearch
 
 #---------------------------------- Enums and Models ----------------------------------
 class SeverityLevel(str, Enum):
