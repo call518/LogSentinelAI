@@ -243,7 +243,7 @@ def run_batch_analysis():
             )
             
             if success:
-                print("Analysis completed successfully")
+                print("✅ Analysis completed successfully")
             else:
                 print("Analysis failed")
                 wait_on_failure(30)  # 실패 시 30초 대기
