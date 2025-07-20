@@ -4,15 +4,15 @@
 # API Keys
 # =============================================================================
 # OpenAI API Key (required if using OpenAI provider)
-OPENAI_API_KEY=YOUR_API_KEY
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
 
 # =============================================================================
 # LLM Configuration
 # =============================================================================
 # LLM Provider - Choose from "ollama", "vllm", "openai"
-; LLM_PROVIDER=ollama
+# LLM_PROVIDER=ollama
 LLM_PROVIDER=vllm
-; LLM_PROVIDER=openai
+# LLM_PROVIDER=openai
 
 # LLM Model Names by Provider
 LLM_MODEL_OLLAMA=qwen2.5-coder:1.5b
@@ -23,23 +23,41 @@ LLM_MODEL_OPENAI=gpt-4o-mini
 # Analysis Configuration
 # =============================================================================
 # Response Language - Choose from "english", "korean"
-RESPONSE_LANGUAGE=korean
+RESPONSE_LANGUAGE=english
+
+# Analysis Mode - Choose from "batch", "realtime"
+# batch: Analyze complete log files (existing functionality)
+# realtime: Monitor and analyze new log entries as they are written
+ANALYSIS_MODE=batch
 
 # =============================================================================
 # Log File Paths
 # =============================================================================
+# Batch Mode: Static log files for complete analysis
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 
+# Real-time Mode: Live log files to monitor
+LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
+LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
+LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
+LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
+
 # =============================================================================
 # Chunk Size Configuration (entries per chunk)
 # =============================================================================
-CHUNK_SIZE_HTTPD_ACCESS=10
-CHUNK_SIZE_HTTPD_APACHE_ERROR=10
-CHUNK_SIZE_LINUX_SYSTEM=10
-CHUNK_SIZE_TCPDUMP_PACKET=5
+# CHUNK_SIZE: Number of log entries sent to LLM for analysis in a single request
+# - Controls analysis quality vs performance balance
+# - Larger values: Better context understanding, slower processing
+# - Smaller values: Faster processing, may miss complex patterns
+# - Recommended: 10-50 depending on log complexity and LLM capacity
+# - These values are used for both batch and real-time modes
+CHUNK_SIZE_HTTPD_ACCESS=30
+CHUNK_SIZE_HTTPD_APACHE_ERROR=30
+CHUNK_SIZE_LINUX_SYSTEM=30
+CHUNK_SIZE_TCPDUMP_PACKET=30
 
 # =============================================================================
 # Elasticsearch Configuration
@@ -48,3 +66,62 @@ ELASTICSEARCH_HOST=http://localhost:9200
 ELASTICSEARCH_USER=elastic
 ELASTICSEARCH_PASSWORD=changeme
 ELASTICSEARCH_INDEX=logsentinelai-analysis
+
+# =============================================================================
+# Real-time Monitoring Configuration
+# =============================================================================
+# Polling interval for checking new log entries (seconds)
+# - How often to check log files for new content
+# - Lower values: More responsive, higher CPU usage
+# - Higher values: Less responsive, lower CPU usage
+REALTIME_POLLING_INTERVAL=5
+
+# Maximum number of new lines to process at once (I/O efficiency control)
+# - Limits memory usage and prevents system overload
+# - Controls how many lines are read from file system per polling cycle
+# - IMPORTANT: This is different from CHUNK_SIZE (which controls LLM analysis batching)
+# - If 1000 new lines appear, this setting reads only 50 lines per cycle
+# - Remaining lines are processed in subsequent polling cycles
+# - Recommended: 20-100 depending on system resources and log volume
+REALTIME_MAX_LINES_PER_BATCH=50
+
+# Position file directory for tracking file read positions
+REALTIME_POSITION_FILE_DIR=.positions
+
+# Buffer time to wait for complete log lines (seconds)
+# - Prevents processing incomplete log lines that are still being written
+# - When new lines are detected, waits this many seconds before processing
+# - Ensures log entries are completely written to disk before analysis
+# - Higher values: More safety against incomplete lines, slower responsiveness
+# - Lower values: Faster processing, risk of reading partial log entries
+# - Recommended: 1-5 seconds depending on log writing frequency
+REALTIME_BUFFER_TIME=2
+
+# Real-time processing mode - Choose from "full", "sampling"
+# full: Process all accumulated logs sequentially (default)
+# sampling: Only process the most recent chunk_size logs, discard older ones
+REALTIME_PROCESSING_MODE=full
+
+# Auto-sampling threshold (applies to full mode)
+# Automatically switch to sampling if accumulated lines exceed this number
+# - When pending lines exceed this threshold, automatically switch to sampling mode
+# - Prevents memory buildup in high-volume log environments
+# - Works with CHUNK_SIZE: if CHUNK_SIZE=30 and threshold=100, keeps latest 30 lines
+REALTIME_SAMPLING_THRESHOLD=100
+
+# FLOW EXPLANATION:
+# 1. Every REALTIME_POLLING_INTERVAL seconds, check log file for new lines
+# 2. Read up to REALTIME_MAX_LINES_PER_BATCH lines from file system
+# 3. Add these lines to pending buffer (internal queue)
+# 4. When pending buffer reaches CHUNK_SIZE lines, send to LLM for analysis
+# 5. If pending buffer exceeds REALTIME_SAMPLING_THRESHOLD, apply sampling
+#
+# Example with current settings:
+# - Check file every 5 seconds
+# - Read max 50 lines per check
+# - Analyze when 30 lines accumulated (CHUNK_SIZE)
+# - Apply sampling if 100+ lines pending (REALTIME_SAMPLING_THRESHOLD)
+
+# Note: Real-time monitoring will buffer new log lines until CHUNK_SIZE lines
+# are accumulated before sending to LLM for analysis. This improves efficiency
+# by avoiding single-line analysis calls.
