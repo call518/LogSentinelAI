@@ -366,7 +366,7 @@ cd vLLM-Tutorial
 # Install Hugging Face CLI for model download
 pip install huggingface_hub
 
-# Download model
+# Download model (Default)
 huggingface-cli download lmstudio-community/Qwen2.5-3B-Instruct-GGUF Qwen2.5-3B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-3B-Instruct/
 huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local-dir ./config/Qwen2.5-3B-Instruct
 
@@ -374,7 +374,7 @@ huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local
 huggingface-cli download lmstudio-community/Qwen2.5-1.5B-Instruct-GGUF Qwen2.5-1.5B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-1.5B-Instruct/
 huggingface-cli download Qwen/Qwen2.5-1.5B-Instruct generation_config.json --local-dir ./config/Qwen2.5-1.5B-Instruct
 
-# Change value of temperature : 0.7 --> 0.0
+# It is recommended to set the temperature to 0.1 and top_p to 0.5.
 cat config/Qwen2.5-3B-Instruct/generation_config.json
 {
   "bos_token_id": 151643,
@@ -385,8 +385,8 @@ cat config/Qwen2.5-3B-Instruct/generation_config.json
     151643
   ],
   "repetition_penalty": 1.05,
-  "temperature": 0.0,
-  "top_p": 0.8,
+  "temperature": 0.1,
+  "top_p": 0.5,
   "top_k": 20,
   "transformers_version": "4.37.0"
 }
