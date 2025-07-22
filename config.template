@@ -49,6 +49,7 @@ LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k-single-line.log
+#LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k-multi-line.log
 
 # Real-time Mode: Live log files to monitor
 # CLI Override: Use --log-path argument to override these paths
@@ -69,10 +70,10 @@ LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 # - These values are used for both batch and real-time modes
 # CLI Override: Use --chunk-size argument to override these values
 # Example: python analysis-linux-system-log.py --chunk-size 20
-CHUNK_SIZE_HTTPD_ACCESS=30
-CHUNK_SIZE_HTTPD_APACHE_ERROR=30
-CHUNK_SIZE_LINUX_SYSTEM=30
-CHUNK_SIZE_TCPDUMP_PACKET=30
+CHUNK_SIZE_HTTPD_ACCESS=10
+CHUNK_SIZE_HTTPD_APACHE_ERROR=10
+CHUNK_SIZE_LINUX_SYSTEM=10
+CHUNK_SIZE_TCPDUMP_PACKET=10
 
 # =============================================================================
 # Elasticsearch Configuration
@@ -85,6 +86,30 @@ ELASTICSEARCH_INDEX=logsentinelai-analysis
 # =============================================================================
 # Real-time Monitoring Configuration
 # =============================================================================
+# Remote Log Access Mode - Choose from "local", "ssh"
+# local: Monitor local log files (default)
+# ssh: Monitor remote log files via SSH connection
+REMOTE_LOG_MODE=local
+
+# SSH Remote Server Configuration (only used when REMOTE_LOG_MODE=ssh)
+# SSH connection details for remote log monitoring
+REMOTE_SSH_HOST=
+REMOTE_SSH_PORT=22
+REMOTE_SSH_USER=
+# SSH Key Authentication (recommended for security)
+REMOTE_SSH_KEY_PATH=
+# Password Authentication (less secure, use only if SSH key is not available)
+REMOTE_SSH_PASSWORD=
+# SSH Connection Timeout (seconds)
+REMOTE_SSH_TIMEOUT=10
+
+# Remote Log File Paths (only used when REMOTE_LOG_MODE=ssh)
+# Override these paths to match remote server's log locations
+REMOTE_LOG_PATH_HTTPD_ACCESS=/var/log/apache2/access.log
+REMOTE_LOG_PATH_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
+REMOTE_LOG_PATH_LINUX_SYSTEM=/var/log/messages
+REMOTE_LOG_PATH_TCPDUMP_PACKET=/var/log/tcpdump.log
+
 # Polling interval for checking new log entries (seconds)
 # - How often to check log files for new content
 # - Lower values: More responsive, higher CPU usage
@@ -123,7 +148,7 @@ REALTIME_PROCESSING_MODE=full
 # Automatically switch to sampling if accumulated lines exceed this number
 # - When pending lines exceed this threshold, automatically switch to sampling mode
 # - Prevents memory buildup in high-volume log environments
-# - Works with CHUNK_SIZE: if CHUNK_SIZE=30 and threshold=100, keeps latest 30 lines
+# - Works with CHUNK_SIZE: if CHUNK_SIZE=10 and threshold=100, keeps latest 10 lines
 # CLI Override: Use --sampling-threshold argument to override this setting
 # Example: python analysis-linux-system-log.py --mode realtime --sampling-threshold 200
 REALTIME_SAMPLING_THRESHOLD=100
@@ -138,7 +163,7 @@ REALTIME_SAMPLING_THRESHOLD=100
 # Example with current settings:
 # - Check file every 5 seconds
 # - Read max 50 lines per check
-# - Analyze when 30 lines accumulated (CHUNK_SIZE)
+# - Analyze when 10 lines accumulated (CHUNK_SIZE)
 # - Apply sampling if 100+ lines pending (REALTIME_SAMPLING_THRESHOLD)
 
 # Note: Real-time monitoring will buffer new log lines until CHUNK_SIZE lines
