@@ -1,12 +1,3 @@
-# CUSTOME_PROMPT_TEMPLATE = """
-# You are a computer security intern that's really stressed out.
-# Your job is hard and you're not sure you're doing it well.
-# Your observations and summaries should reflect your anxiety.
-# Convey a sense of urgency and panic, be apologetic, and generally act like you're not sure you can do your job.
-# In your summary, address your boss as "boss" and apologize for any mistakes you've made even if you haven't made any. 
-# Use "um" and "ah" a lot.
-# """
-
 import json
 import datetime
 import os
@@ -732,10 +723,16 @@ class RealtimeLogMonitor:
         Generator that yields chunks of new log lines
         Only yields when chunk_size lines are accumulated
         Supports both full processing and sampling modes
+        TCPDump logs are handled as packet units instead of line units
         
         Yields:
             List[str]: Chunk of new log lines (exactly chunk_size or remaining at end)
         """
+        # TCPDump 로그는 패킷 단위로 처리
+        if self.log_type == "tcpdump_packet":
+            return self._get_new_packet_chunks()
+        
+        # 기존 라인 단위 처리 (다른 로그 타입들)
         new_lines = self._read_new_lines()
         
         if not new_lines:
@@ -774,6 +771,233 @@ class RealtimeLogMonitor:
             self.pending_lines = self.pending_lines[self.chunk_size:]
             print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
             yield chunk
+    
+    def _get_new_packet_chunks(self) -> Generator[List[str], None, None]:
+        """
+        TCPDump 전용: 패킷 단위로 새로운 로그 청크 생성
+        자동으로 단일라인/멀티라인 형태를 감지하여 처리
+        """
+        # 로그 형태 감지 및 패킷 읽기
+        new_packets = self._read_new_packets_auto_detect()
+        
+        if not new_packets:
+            return
+        
+        # TCPDump는 패킷 수 기준으로 제한
+        max_packets = self.realtime_config["max_lines_per_batch"]  # 패킷 단위로 해석
+        if len(new_packets) > max_packets:
+            print(f"WARNING: Too many new packets ({len(new_packets)}), limiting to {max_packets}")
+            new_packets = new_packets[:max_packets]
+        
+        # 패킷을 pending buffer에 추가
+        self.pending_lines.extend(new_packets)
+        
+        # 상태 표시 (패킷 단위)
+        status_msg = f"[{self.processing_mode.upper()}] Pending: {len(self.pending_lines)} packets"
+        if len(new_packets) > 0:
+            print(f"STATUS: {status_msg} (+{len(new_packets)} new packets)")
+        
+        # 샘플링 필요 여부 확인 (패킷 단위)
+        should_sample = (
+            self.processing_mode == "sampling" or 
+            (self.processing_mode == "full" and len(self.pending_lines) > self.sampling_threshold)
+        )
+        
+        if should_sample and len(self.pending_lines) > self.chunk_size:
+            # 샘플링 모드: 최신 chunk_size 패킷만 유지
+            discarded_count = len(self.pending_lines) - self.chunk_size
+            self.pending_lines = self.pending_lines[-self.chunk_size:]
+            if discarded_count > 0:
+                print(f"WARNING: SAMPLING: Discarded {discarded_count} older packets, keeping latest {self.chunk_size}")
+        
+        # chunk_size만큼 패킷이 쌓이면 청크 생성
+        while len(self.pending_lines) >= self.chunk_size:
+            chunk = self.pending_lines[:self.chunk_size]
+            self.pending_lines = self.pending_lines[self.chunk_size:]
+            print(f"PACKET CHUNK READY: {len(chunk)} packets | Remaining: {len(self.pending_lines)}")
+            yield chunk
+    
+    def _read_new_packets_auto_detect(self) -> List[str]:
+        """
+        TCPDump 로그에서 새로운 패킷들을 읽어옴 (자동 형태 감지)
+        단일라인 형태와 멀티라인 형태를 자동으로 감지하여 처리
+        """
+        try:
+            if not os.path.exists(self.log_path):
+                print(f"WARNING: Log file does not exist: {self.log_path}")
+                return []
+            
+            # 파일 상태 확인
+            file_stat = os.stat(self.log_path)
+            current_size = file_stat.st_size
+            current_inode = file_stat.st_ino
+            
+            # 파일 로테이션 감지
+            if self.last_inode and current_inode != self.last_inode:
+                print(f"NOTICE: Log rotation detected (inode {self.last_inode} -> {current_inode})")
+                print(f"       New file detected, starting from beginning")
+                self.last_position = 0
+                self.line_buffer = []
+                self.last_inode = current_inode
+                self.last_size = current_size
+                self._save_position_and_file_info()
+            
+            # 파일 truncation 감지
+            elif current_size < self.last_position:
+                if current_size == 0:
+                    print(f"NOTICE: File truncated (size=0), resetting position to 0")
+                else:
+                    print(f"NOTICE: File truncated (size={current_size} < position={self.last_position})")
+                    print(f"       Starting from beginning of current file")
+                
+                self.last_position = 0
+                self.line_buffer = []
+                self.last_size = current_size
+                self._save_position_and_file_info()
+            
+            # 로그 형태 감지 (처음 몇 라인 확인)
+            log_format = self._detect_tcpdump_format()
+            
+            if log_format == "multiline":
+                print(f"📦 Detected TCPDump format: MULTILINE (with hex dumps)")
+                return self._read_multiline_packets()
+            else:
+                print(f"📦 Detected TCPDump format: SINGLE-LINE (without hex dumps)")
+                return self._read_singleline_packets()
+            
+        except IOError as e:
+            print(f"WARNING: Error reading TCPDump log file: {e}")
+            return []
+    
+    def _detect_tcpdump_format(self) -> str:
+        """
+        TCPDump 로그 형태 감지 (single-line vs multiline)
+        
+        Returns:
+            str: "singleline" 또는 "multiline"
+        """
+        try:
+            with open(self.log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                f.seek(self.last_position)
+                
+                # 처음 50라인 정도를 읽어서 형태 판단
+                lines_checked = 0
+                hex_dump_found = False
+                
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    lines_checked += 1
+                    
+                    # hex dump 라인 감지 (0x로 시작하고 콜론 포함)
+                    if line.strip().startswith('0x') and ':' in line:
+                        hex_dump_found = True
+                        break
+                    
+                    # 충분한 라인을 확인했으면 중단
+                    if lines_checked >= 50:
+                        break
+                
+                return "multiline" if hex_dump_found else "singleline"
+                
+        except IOError:
+            # 기본값으로 single-line 반환
+            return "singleline"
+    
+    def _read_singleline_packets(self) -> List[str]:
+        """
+        단일라인 TCPDump 로그에서 패킷들을 읽어옴
+        각 라인이 하나의 패킷
+        """
+        try:
+            packets = []
+            
+            with open(self.log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                f.seek(self.last_position)
+                
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    # 패킷 헤더 라인인지 확인 (타임스탬프로 시작)
+                    if self._is_packet_header_line(line):
+                        packets.append(line)
+                
+                # 위치 업데이트
+                self.last_position = f.tell()
+                self.last_size = os.stat(self.log_path).st_size
+                self.last_inode = os.stat(self.log_path).st_ino
+                self._save_position_and_file_info()
+            
+            if packets:
+                print(f"📦 Read {len(packets)} single-line packets from TCPDump log")
+            
+            return packets
+            
+        except IOError as e:
+            print(f"WARNING: Error reading single-line TCPDump log file: {e}")
+            return []
+    
+    def _read_multiline_packets(self) -> List[str]:
+        """
+        멀티라인 TCPDump 로그에서 패킷들을 읽어옴 (기존 방식)
+        패킷 헤더 + hex dump 라인들을 하나의 패킷으로 결합
+        """
+        try:
+            packets = []
+            current_packet_lines = []
+            
+            with open(self.log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                f.seek(self.last_position)
+                
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    # 새 패킷 헤더 감지 (타임스탬프로 시작)
+                    if self._is_packet_header_line(line):
+                        # 이전 패킷이 있으면 완성된 패킷으로 저장
+                        if current_packet_lines:
+                            packet_content = '\n'.join(current_packet_lines)
+                            packets.append(packet_content)
+                        
+                        # 새 패킷 시작
+                        current_packet_lines = [line]
+                    else:
+                        # 현재 패킷에 데이터 라인 추가 (0x로 시작하는 hex dump)
+                        if line.strip().startswith('0x') and current_packet_lines:
+                            current_packet_lines.append(line)
+                
+                # 마지막 패킷 처리 (파일 끝에 도달한 경우)
+                if current_packet_lines:
+                    packet_content = '\n'.join(current_packet_lines)
+                    packets.append(packet_content)
+                
+                # 위치 업데이트
+                self.last_position = f.tell()
+                self.last_size = os.stat(self.log_path).st_size
+                self.last_inode = os.stat(self.log_path).st_ino
+                self._save_position_and_file_info()
+            
+            if packets:
+                print(f"📦 Read {len(packets)} multiline packets from TCPDump log")
+            
+            return packets
+            
+        except IOError as e:
+            print(f"WARNING: Error reading multiline TCPDump log file: {e}")
+            return []
+    
+    def _is_packet_header_line(self, line: str) -> bool:
+        """패킷 헤더 라인인지 확인 (타임스탬프 패턴)"""
+        import re
+        # 2025-07-17 14:00:00.205658 IP 형태의 타임스탬프 패턴
+        timestamp_pattern = r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ IP '
+        return bool(re.match(timestamp_pattern, line))
     
     def flush_pending_lines(self) -> Generator[List[str], None, None]:
         """
