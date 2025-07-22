@@ -282,14 +282,6 @@ python analysis-httpd-access-log.py \
   --ssh webuser@web.company.com:8022 \
   --ssh-key ~/.ssh/web_key \
   --log-path /var/log/apache2/access.log
-
-# Real-time remote monitoring
-python analysis-tcpdump-packet.py \
-  --mode realtime \
-  --remote \
-  --ssh security@firewall.example.com \
-  --ssh-key ~/.ssh/firewall_key \
-  --log-path /var/log/tcpdump.log
 ```
 
 #### Multi-Server Monitoring
@@ -299,16 +291,6 @@ python analysis-httpd-access-log.py --remote --ssh web@web1.com --ssh-key ~/.ssh
 
 # Terminal 2: Database server logs  
 python analysis-linux-system-log.py --remote --ssh db@db1.com --ssh-key ~/.ssh/db1 --log-path /var/log/messages
-
-# Terminal 3: Firewall packet logs
-python analysis-tcpdump-packet.py --remote --ssh fw@firewall.com --ssh-key ~/.ssh/fw --log-path /var/log/tcpdump.log
-```
-
-#### TCPDump Auto-Format Detection (TCPDump-specific)
-```bash
-# Automatic detection of single-line vs multi-line packet formats
-python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-single-line.log
-python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-multi-line.log
 ```
 
 **CLI Options Override Config Settings:**
