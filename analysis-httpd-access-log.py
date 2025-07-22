@@ -67,8 +67,9 @@ def main():
     parser = create_argument_parser('HTTPD Access Log Analysis')
     args = parser.parse_args()
     
-    # SSH 연결이 필요한 경우 처리
-    ssh_client = handle_ssh_arguments(args)
+    # SSH 설정 파싱
+    ssh_config = handle_ssh_arguments(args)
+    remote_mode = "ssh" if ssh_config else "local"
     
     log_type = "httpd_access"
     analysis_title = "HTTPD Access Log Analysis"
@@ -83,7 +84,8 @@ def main():
             log_path=args.log_path,
             processing_mode=args.processing_mode,
             sampling_threshold=args.sampling_threshold,
-            ssh_client=ssh_client
+            remote_mode=remote_mode,
+            ssh_config=ssh_config
         )
     else:
         run_generic_batch_analysis(
@@ -92,7 +94,8 @@ def main():
             prompt_template=PROMPT_TEMPLATE_HTTPD_ACCESS_LOG,
             analysis_title=analysis_title,
             log_path=args.log_path,
-            ssh_client=ssh_client
+            remote_mode=remote_mode,
+            ssh_config=ssh_config
         )
 
 

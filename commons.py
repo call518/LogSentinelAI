@@ -1943,13 +1943,13 @@ def get_log_path_from_args(args) -> Optional[str]:
 
 def handle_ssh_arguments(args):
     """
-    Handle SSH connection setup from command line arguments
+    Handle SSH configuration setup from command line arguments
     
     Args:
         args: Parsed command line arguments
     
     Returns:
-        paramiko.SSHClient or None: Connected SSH client or None for local mode
+        dict or None: SSH configuration dictionary or None for local mode
     """
     if not getattr(args, 'remote', False):
         return None
@@ -1959,6 +1959,19 @@ def handle_ssh_arguments(args):
     
     # Parse SSH configuration
     ssh_config = parse_ssh_config_from_args(args)
+    return ssh_config
+
+
+def create_ssh_client(ssh_config):
+    """
+    Create SSH client from configuration
+    
+    Args:
+        ssh_config: SSH configuration dictionary
+    
+    Returns:
+        paramiko.SSHClient or None: Connected SSH client or None if failed
+    """
     if not ssh_config:
         return None
     
@@ -1991,26 +2004,32 @@ def handle_ssh_arguments(args):
         return None
 
 
-def read_file_content(log_path: str, ssh_client=None) -> str:
+def read_file_content(log_path: str, ssh_config=None) -> str:
     """
     Read file content either locally or via SSH
     
     Args:
         log_path: Path to the log file
-        ssh_client: SSH client for remote access (optional)
+        ssh_config: SSH configuration dictionary for remote access (optional)
     
     Returns:
         str: File content
     """
-    if ssh_client:
+    if ssh_config:
         # Read via SSH
+        ssh_client = create_ssh_client(ssh_config)
+        if not ssh_client:
+            raise Exception("Failed to establish SSH connection")
+        
         try:
             sftp = ssh_client.open_sftp()
             with sftp.open(log_path, 'r') as f:
                 content = f.read()
             sftp.close()
+            ssh_client.close()
             return content
         except Exception as e:
+            ssh_client.close()
             print(f"✗ Failed to read remote file {log_path}: {e}")
             raise
     else:

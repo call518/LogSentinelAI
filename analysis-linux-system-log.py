@@ -6,7 +6,8 @@ from prompts import PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
 from commons import (
     run_generic_batch_analysis, 
     run_generic_realtime_analysis,
-    create_argument_parser
+    create_argument_parser,
+    handle_ssh_arguments
 )
 
 ### Install the required packages
@@ -69,14 +70,9 @@ def main():
     parser = create_argument_parser('Linux System Log Analysis')
     args = parser.parse_args()
     
-    # Validate arguments
-    from commons import validate_args, parse_ssh_config_from_args, get_remote_mode_from_args, get_log_path_from_args
-    validate_args(args)
-    
-    # Parse configuration from arguments
-    ssh_config = parse_ssh_config_from_args(args)
-    remote_mode = get_remote_mode_from_args(args)
-    log_path = get_log_path_from_args(args)
+    # SSH 설정 파싱
+    ssh_config = handle_ssh_arguments(args)
+    remote_mode = "ssh" if ssh_config else "local"
     
     log_type = "linux_system"
     analysis_title = "Linux System Log Analysis"
@@ -88,12 +84,11 @@ def main():
             prompt_template=PROMPT_TEMPLATE_LINUX_SYSTEM_LOG,
             analysis_title=analysis_title,
             chunk_size=args.chunk_size,
-            log_path=log_path,
+            log_path=args.log_path,
             processing_mode=args.processing_mode,
             sampling_threshold=args.sampling_threshold,
             remote_mode=remote_mode,
-            ssh_config=ssh_config,
-            remote_log_path=log_path if remote_mode == "ssh" else None
+            ssh_config=ssh_config
         )
     else:
         run_generic_batch_analysis(
@@ -101,11 +96,9 @@ def main():
             analysis_schema_class=LogAnalysis,
             prompt_template=PROMPT_TEMPLATE_LINUX_SYSTEM_LOG,
             analysis_title=analysis_title,
-            log_path=log_path,
-            chunk_size=args.chunk_size,
+            log_path=args.log_path,
             remote_mode=remote_mode,
-            ssh_config=ssh_config,
-            remote_log_path=log_path if remote_mode == "ssh" else None
+            ssh_config=ssh_config
         )
 
 

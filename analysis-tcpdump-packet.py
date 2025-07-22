@@ -178,7 +178,7 @@ def assign_logid_to_packets(packets):
 
 #--------------------------------------------------------------------------------------
 
-def run_batch_analysis(ssh_client=None, log_path=None):
+def run_batch_analysis(ssh_config=None, log_path=None):
     """Run batch analysis on static log file"""
     print("=" * 70)
     print("LogSentinelAI - TCPDump Packet Analysis (Batch Mode)")
@@ -196,7 +196,7 @@ def run_batch_analysis(ssh_client=None, log_path=None):
     print(f"Chunk size:        {config['chunk_size']}")
     print(f"Response language: {config['response_language']}")
     print(f"Analysis mode:     {config['analysis_mode']}")
-    if ssh_client:
+    if ssh_config:
         print("Access mode:       SSH (Remote)")
     
     log_path = config["log_path"]
@@ -206,7 +206,7 @@ def run_batch_analysis(ssh_client=None, log_path=None):
     model = initialize_llm_model()
     
     # Read and preprocess tcpdump file (special handling for multi-line packets)
-    content = read_file_content(log_path, ssh_client)
+    content = read_file_content(log_path, ssh_config)
         
     # Parse tcpdump packets and assign LOGID
     packets = parse_tcpdump_packets(content)
@@ -255,14 +255,15 @@ def main():
     parser = create_argument_parser('TCPDump Packet Analysis')
     args = parser.parse_args()
     
-    # SSH 연결이 필요한 경우 처리
-    ssh_client = handle_ssh_arguments(args)
+    # SSH 설정 파싱
+    ssh_config = handle_ssh_arguments(args)
     
     log_type = "tcpdump_packet"
     analysis_title = "TCPDump Packet Analysis"
     
     if args.mode == 'realtime':
         # TCPDump real-time analysis uses generic function
+        remote_mode = "ssh" if ssh_config else "local"
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=PacketAnalysis,
@@ -272,11 +273,12 @@ def main():
             log_path=args.log_path,
             processing_mode=args.processing_mode,
             sampling_threshold=args.sampling_threshold,
-            ssh_client=ssh_client
+            remote_mode=remote_mode,
+            ssh_config=ssh_config
         )
     else:
         # TCPDump batch analysis needs special parsing, so use custom function
-        run_batch_analysis(ssh_client=ssh_client, log_path=args.log_path)
+        run_batch_analysis(ssh_config=ssh_config, log_path=args.log_path)
 
 
 if __name__ == "__main__":
