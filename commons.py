@@ -1812,27 +1812,19 @@ def create_argument_parser(description: str):
     parser.add_argument('--chunk-size', type=int, default=None,
                        help='Override default chunk size')
     
-    # Local file configuration
+    # Log file path (unified for local and remote)
     parser.add_argument('--log-path', type=str, default=None,
-                       help='Override default log file path (local mode only)')
+                       help='Log file path (local: /path/to/log, remote: /var/log/remote.log)')
     
-    # Access mode configuration
-    parser.add_argument('--access-mode', choices=['local', 'ssh'], default=None,
-                       help='Log access mode: local (default) or ssh (remote)')
-    
-    # SSH configuration
-    parser.add_argument('--ssh-host', type=str, default=None,
-                       help='SSH remote host (required for ssh mode)')
-    parser.add_argument('--ssh-port', type=int, default=22,
-                       help='SSH port (default: 22)')
-    parser.add_argument('--ssh-user', type=str, default=None,
-                       help='SSH username (required for ssh mode)')
+    # Remote access configuration
+    parser.add_argument('--remote', action='store_true',
+                       help='Enable remote log access via SSH')
+    parser.add_argument('--ssh', type=str, default=None,
+                       help='SSH connection info: user@host[:port] (required with --remote)')
     parser.add_argument('--ssh-key', type=str, default=None,
                        help='SSH private key file path')
     parser.add_argument('--ssh-password', type=str, default=None,
-                       help='SSH password (if no key file)')
-    parser.add_argument('--remote-log-path', type=str, default=None,
-                       help='Remote log file path (ssh mode only)')
+                       help='SSH password (if no key file provided)')
     
     # Real-time processing configuration
     parser.add_argument('--processing-mode', choices=['full', 'sampling'], default=None,
@@ -1851,24 +1843,35 @@ def parse_ssh_config_from_args(args) -> Optional[Dict[str, Any]]:
         args: Parsed command line arguments
     
     Returns:
-        Dict or None: SSH configuration dictionary or None if not ssh mode
+        Dict or None: SSH configuration dictionary or None if not remote mode
     """
-    if getattr(args, 'access_mode', None) != 'ssh':
+    if not getattr(args, 'remote', False):
         return None
     
     ssh_config = {}
     
-    # Required SSH parameters
-    if hasattr(args, 'ssh_host') and args.ssh_host:
-        ssh_config['host'] = args.ssh_host
+    # Parse SSH connection string (user@host[:port])
+    if hasattr(args, 'ssh') and args.ssh:
+        ssh_parts = args.ssh.split('@')
+        if len(ssh_parts) != 2:
+            raise ValueError("SSH format must be: user@host[:port]")
+        
+        user, host_port = ssh_parts
+        ssh_config['user'] = user
+        
+        # Parse host and optional port
+        if ':' in host_port:
+            host, port = host_port.split(':', 1)
+            ssh_config['host'] = host
+            try:
+                ssh_config['port'] = int(port)
+            except ValueError:
+                raise ValueError(f"Invalid SSH port: {port}")
+        else:
+            ssh_config['host'] = host_port
+            ssh_config['port'] = 22  # Default port
     
-    if hasattr(args, 'ssh_user') and args.ssh_user:
-        ssh_config['user'] = args.ssh_user
-    
-    # Optional SSH parameters
-    if hasattr(args, 'ssh_port') and args.ssh_port:
-        ssh_config['port'] = args.ssh_port
-    
+    # Authentication method
     if hasattr(args, 'ssh_key') and args.ssh_key:
         ssh_config['key_path'] = args.ssh_key
     
@@ -1878,22 +1881,143 @@ def parse_ssh_config_from_args(args) -> Optional[Dict[str, Any]]:
     return ssh_config if ssh_config else None
 
 
-def validate_ssh_args(args):
+def validate_args(args):
     """
-    Validate SSH-related command line arguments
+    Validate command line arguments for consistency and requirements
     
     Args:
         args: Parsed command line arguments
     
     Raises:
-        ValueError: If required SSH parameters are missing
+        ValueError: If arguments are invalid or inconsistent
     """
-    if getattr(args, 'access_mode', None) == 'ssh':
-        if not getattr(args, 'ssh_host', None):
-            raise ValueError("--ssh-host is required when using --access-mode ssh")
+    # Remote mode validation
+    if getattr(args, 'remote', False):
+        # SSH connection info is required
+        if not getattr(args, 'ssh', None):
+            raise ValueError("--ssh user@host[:port] is required when using --remote")
         
-        if not getattr(args, 'ssh_user', None):
-            raise ValueError("--ssh-user is required when using --access-mode ssh")
-        
+        # At least one authentication method is required
         if not getattr(args, 'ssh_key', None) and not getattr(args, 'ssh_password', None):
-            raise ValueError("Either --ssh-key or --ssh-password is required when using --access-mode ssh")
+            raise ValueError("Either --ssh-key or --ssh-password is required with --remote")
+        
+        # Validate SSH format
+        ssh = getattr(args, 'ssh', '')
+        if '@' not in ssh:
+            raise ValueError("SSH format must be: user@host[:port]")
+    
+    # Local mode validation
+    else:
+        # SSH options should not be used in local mode
+        ssh_options = ['ssh', 'ssh_key', 'ssh_password']
+        for opt in ssh_options:
+            if getattr(args, opt, None):
+                print(f"WARNING: --{opt.replace('_', '-')} is ignored in local mode")
+
+
+def get_remote_mode_from_args(args) -> str:
+    """
+    Determine access mode from command line arguments
+    
+    Args:
+        args: Parsed command line arguments
+    
+    Returns:
+        str: "ssh" if remote mode, "local" otherwise
+    """
+    return "ssh" if getattr(args, 'remote', False) else "local"
+
+
+def get_log_path_from_args(args) -> Optional[str]:
+    """
+    Get log path from command line arguments
+    
+    Args:
+        args: Parsed command line arguments
+    
+    Returns:
+        str or None: Log file path or None if not specified
+    """
+    return getattr(args, 'log_path', None)
+
+
+def handle_ssh_arguments(args):
+    """
+    Handle SSH connection setup from command line arguments
+    
+    Args:
+        args: Parsed command line arguments
+    
+    Returns:
+        paramiko.SSHClient or None: Connected SSH client or None for local mode
+    """
+    if not getattr(args, 'remote', False):
+        return None
+    
+    # Validate arguments
+    validate_args(args)
+    
+    # Parse SSH configuration
+    ssh_config = parse_ssh_config_from_args(args)
+    if not ssh_config:
+        return None
+    
+    try:
+        import paramiko
+        
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Prepare connection parameters
+        connect_kwargs = {
+            'hostname': ssh_config['host'],
+            'port': ssh_config.get('port', 22),
+            'username': ssh_config['user'],
+            'timeout': 10
+        }
+        
+        # Add authentication
+        if 'key_path' in ssh_config:
+            connect_kwargs['key_filename'] = ssh_config['key_path']
+        elif 'password' in ssh_config:
+            connect_kwargs['password'] = ssh_config['password']
+        
+        ssh_client.connect(**connect_kwargs)
+        print(f"✓ SSH connection established to {ssh_config['user']}@{ssh_config['host']}:{ssh_config.get('port', 22)}")
+        return ssh_client
+        
+    except Exception as e:
+        print(f"✗ SSH connection failed: {e}")
+        return None
+
+
+def read_file_content(log_path: str, ssh_client=None) -> str:
+    """
+    Read file content either locally or via SSH
+    
+    Args:
+        log_path: Path to the log file
+        ssh_client: SSH client for remote access (optional)
+    
+    Returns:
+        str: File content
+    """
+    if ssh_client:
+        # Read via SSH
+        try:
+            sftp = ssh_client.open_sftp()
+            with sftp.open(log_path, 'r') as f:
+                content = f.read()
+            sftp.close()
+            return content
+        except Exception as e:
+            print(f"✗ Failed to read remote file {log_path}: {e}")
+            raise
+    else:
+        # Read local file
+        try:
+            with open(log_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            print(f"✗ Failed to read local file {log_path}: {e}")
+            raise

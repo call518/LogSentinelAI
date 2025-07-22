@@ -6,7 +6,8 @@ from prompts import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
 from commons import (
     run_generic_batch_analysis, 
     run_generic_realtime_analysis,
-    create_argument_parser
+    create_argument_parser,
+    handle_ssh_arguments
 )
 
 ### Install the required packages
@@ -66,6 +67,9 @@ def main():
     parser = create_argument_parser('HTTPD Apache Error Log Analysis')
     args = parser.parse_args()
     
+    # SSH 연결이 필요한 경우 처리
+    ssh_client = handle_ssh_arguments(args)
+    
     log_type = "httpd_apache_error"
     analysis_title = "HTTPD Apache Error Log Analysis"
     
@@ -78,14 +82,17 @@ def main():
             chunk_size=args.chunk_size,
             log_path=args.log_path,
             processing_mode=args.processing_mode,
-            sampling_threshold=args.sampling_threshold
+            sampling_threshold=args.sampling_threshold,
+            ssh_client=ssh_client
         )
     else:
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
             prompt_template=PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG,
-            analysis_title=analysis_title
+            analysis_title=analysis_title,
+            log_path=args.log_path,
+            ssh_client=ssh_client
         )
 
 

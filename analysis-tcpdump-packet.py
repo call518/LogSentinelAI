@@ -8,7 +8,8 @@ import hashlib
 from commons import (
     initialize_llm_model, process_log_chunk, wait_on_failure, 
     get_analysis_config, run_generic_realtime_analysis,
-    create_argument_parser, chunked_iterable, print_chunk_contents
+    create_argument_parser, chunked_iterable, print_chunk_contents,
+    handle_ssh_arguments, read_file_content
 )
 from prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
 
@@ -177,7 +178,7 @@ def assign_logid_to_packets(packets):
 
 #--------------------------------------------------------------------------------------
 
-def run_batch_analysis():
+def run_batch_analysis(ssh_client=None, log_path=None):
     """Run batch analysis on static log file"""
     print("=" * 70)
     print("LogSentinelAI - TCPDump Packet Analysis (Batch Mode)")
@@ -187,10 +188,16 @@ def run_batch_analysis():
     # config = get_analysis_config("tcpdump_packet", chunk_size=3)  # Override chunk_size
     config = get_analysis_config("tcpdump_packet")  # Use default chunk_size
     
+    # Use provided log_path or fall back to config
+    if log_path:
+        config['log_path'] = log_path
+    
     print(f"Log file:          {config['log_path']}")
     print(f"Chunk size:        {config['chunk_size']}")
     print(f"Response language: {config['response_language']}")
     print(f"Analysis mode:     {config['analysis_mode']}")
+    if ssh_client:
+        print("Access mode:       SSH (Remote)")
     
     log_path = config["log_path"]
     chunk_size = config["chunk_size"]
@@ -199,8 +206,7 @@ def run_batch_analysis():
     model = initialize_llm_model()
     
     # Read and preprocess tcpdump file (special handling for multi-line packets)
-    with open(log_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = read_file_content(log_path, ssh_client)
         
     # Parse tcpdump packets and assign LOGID
     packets = parse_tcpdump_packets(content)
@@ -249,6 +255,9 @@ def main():
     parser = create_argument_parser('TCPDump Packet Analysis')
     args = parser.parse_args()
     
+    # SSH 연결이 필요한 경우 처리
+    ssh_client = handle_ssh_arguments(args)
+    
     log_type = "tcpdump_packet"
     analysis_title = "TCPDump Packet Analysis"
     
@@ -262,11 +271,12 @@ def main():
             chunk_size=args.chunk_size,
             log_path=args.log_path,
             processing_mode=args.processing_mode,
-            sampling_threshold=args.sampling_threshold
+            sampling_threshold=args.sampling_threshold,
+            ssh_client=ssh_client
         )
     else:
         # TCPDump batch analysis needs special parsing, so use custom function
-        run_batch_analysis()
+        run_batch_analysis(ssh_client=ssh_client, log_path=args.log_path)
 
 
 if __name__ == "__main__":

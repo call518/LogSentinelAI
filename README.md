@@ -44,7 +44,7 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 - **Docker-based deployment** for consistent, scalable infrastructure
 
 ### 🛠️ Developer-Friendly Design
-- **Unified CLI interface** across all analysis scripts with consistent command-line options
+- **Simplified CLI interface** with unified `--remote` and `--ssh user@host[:port]` syntax across all scripts
 - **Modular codebase** with generic functions and minimal code duplication (60%+ reduction)
 - **Comprehensive logging** with detailed metadata, timestamps, and processing status tracking
 
@@ -53,8 +53,7 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 - **Configurable chunking**: Optimized processing sizes for different log types and volumes
 - **Environment-based settings**: Centralized configuration management with config file support
 - **CLI override capabilities**: Command-line options can override any config file setting for flexibility
-- **Remote access options**: SSH-based remote log monitoring with per-script configuration support
-- **Multi-server deployment**: Monitor multiple remote servers simultaneously with individual SSH settings
+- **SSH remote access**: Simplified `--remote --ssh user@host[:port]` syntax for secure remote log monitoring
 
 ## 🏗️ System Architecture
 
@@ -244,138 +243,79 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 ### 5. Run Log Analysis
 
 #### Universal Command-Line Interface
-All analysis scripts now support the same command-line arguments and modes:
+All analysis scripts support the same simplified command-line arguments:
 
 ```bash
 # View available options for any script
 python analysis-httpd-access-log.py --help
-python analysis-httpd-apache-log.py --help
 python analysis-linux-system-log.py --help
 python analysis-tcpdump-packet.py --help
 
-# All scripts support: --mode, --chunk-size, --log-path, --processing-mode, --sampling-threshold
+# Core options: --mode, --chunk-size, --log-path, --remote, --ssh, --ssh-key
+```
+
+#### Local File Analysis (Default Mode)
+```bash
+# Batch analysis with default config settings
+python analysis-linux-system-log.py
+
+# Override log path and chunk size
+python analysis-linux-system-log.py --log-path /var/log/messages --chunk-size 15
+
+# Real-time monitoring
+python analysis-linux-system-log.py --mode realtime
+python analysis-httpd-access-log.py --mode realtime --processing-mode sampling
+```
+
+#### SSH Remote Access (Simplified Syntax)
+```bash
+# SSH key authentication (recommended)
+python analysis-linux-system-log.py \
+  --remote \
+  --ssh admin@192.168.1.100 \
+  --ssh-key ~/.ssh/id_rsa \
+  --log-path /var/log/messages
+
+# SSH with custom port
+python analysis-httpd-access-log.py \
+  --remote \
+  --ssh webuser@web.company.com:8022 \
+  --ssh-key ~/.ssh/web_key \
+  --log-path /var/log/apache2/access.log
+
+# Real-time remote monitoring
+python analysis-tcpdump-packet.py \
+  --mode realtime \
+  --remote \
+  --ssh security@firewall.example.com \
+  --ssh-key ~/.ssh/firewall_key \
+  --log-path /var/log/tcpdump.log
+```
+
+#### Multi-Server Monitoring
+```bash
+# Terminal 1: Web server logs
+python analysis-httpd-access-log.py --remote --ssh web@web1.com --ssh-key ~/.ssh/web1 --log-path /var/log/apache2/access.log
+
+# Terminal 2: Database server logs  
+python analysis-linux-system-log.py --remote --ssh db@db1.com --ssh-key ~/.ssh/db1 --log-path /var/log/messages
+
+# Terminal 3: Firewall packet logs
+python analysis-tcpdump-packet.py --remote --ssh fw@firewall.com --ssh-key ~/.ssh/fw --log-path /var/log/tcpdump.log
+```
+
+#### TCPDump Auto-Format Detection (TCPDump-specific)
+```bash
+# Automatic detection of single-line vs multi-line packet formats
+python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-single-line.log
+python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-multi-line.log
 ```
 
 **CLI Options Override Config Settings:**
 - `--chunk-size`: Overrides `CHUNK_SIZE_*` settings in config file
 - `--log-path`: Overrides `LOG_PATH_*` settings in config file  
-- `--processing-mode`: Overrides `REALTIME_PROCESSING_MODE` setting in config file
-- `--sampling-threshold`: Overrides `REALTIME_SAMPLING_THRESHOLD` setting in config file
-
-#### Analysis Modes
-LogSentinelAI supports two analysis modes:
-
-##### Batch Mode (Default)
-- Analyzes complete, static log files
-- Processes entire files from beginning to end
-- Ideal for historical analysis and one-time processing
-- Uses paths from `LOG_PATH_*` configuration
-
-##### Real-time Mode
-- Monitors live log files for new entries
-- Processes only new log lines as they are written
-- Maintains position tracking to avoid reprocessing
-- Uses paths from `LOG_PATH_REALTIME_*` configuration
-- **Sampling Support**: Three processing modes for high-volume scenarios:
-  - `full`: Process all log entries (auto-sampling when threshold exceeded)
-  - `sampling`: Always keep only latest entries within chunk size
-  - `auto-sampling`: Intelligent sampling based on log volume
-
-#### Batch Mode (Complete log files)
-```bash
-# Use default configuration from config file
-python analysis-linux-system-log.py
-
-# Override chunk size (overrides CHUNK_SIZE_LINUX_SYSTEM in config)
-python analysis-linux-system-log.py --chunk-size 5
-
-# Override log file path (overrides LOG_PATH_LINUX_SYSTEM in config)
-python analysis-linux-system-log.py --log-path /custom/path/messages.log
-
-# All analysis scripts support the same batch mode options
-python analysis-httpd-access-log.py --chunk-size 8
-python analysis-httpd-apache-log.py --log-path /path/to/custom/error.log
-python analysis-tcpdump-packet.py --chunk-size 3
-```
-
-#### Real-time Mode (Live log monitoring)
-```bash
-# Monitor /var/log/messages in real-time (uses LOG_PATH_REALTIME_LINUX_SYSTEM from config)
-python analysis-linux-system-log.py --mode realtime
-
-# Override processing mode (overrides REALTIME_PROCESSING_MODE in config)
-python analysis-linux-system-log.py --mode realtime --processing-mode sampling
-
-# Override sampling threshold (overrides REALTIME_SAMPLING_THRESHOLD in config)
-python analysis-linux-system-log.py --mode realtime --processing-mode full --sampling-threshold 200
-
-# Override log file path (overrides LOG_PATH_REALTIME_LINUX_SYSTEM in config)
-python analysis-linux-system-log.py --mode realtime --log-path /var/log/custom.log
-
-# Override chunk size (overrides CHUNK_SIZE_LINUX_SYSTEM in config)
-python analysis-linux-system-log.py --mode realtime --chunk-size 15
-
-# All analysis scripts support the same real-time options
-python analysis-httpd-access-log.py --mode realtime --processing-mode sampling
-python analysis-httpd-apache-log.py --mode realtime --log-path /var/log/apache2/error.log
-python analysis-tcpdump-packet.py --mode realtime --chunk-size 5
-
-# Monitor with root permissions (often required for system logs)
-sudo python analysis-linux-system-log.py --mode realtime
-```
-
-#### SSH Remote Access (Monitor logs on remote servers)
-```bash
-# SSH Key Authentication (Recommended)
-python analysis-linux-system-log.py \
-  --access-mode ssh \
-  --ssh-host 192.168.1.100 \
-  --ssh-user admin \
-  --ssh-key ~/.ssh/id_rsa \
-  --remote-log-path /var/log/messages
-
-# SSH Password Authentication
-python analysis-httpd-access-log.py \
-  --access-mode ssh \
-  --ssh-host web.company.com \
-  --ssh-user webuser \
-  --ssh-password "password123" \
-  --remote-log-path /var/log/apache2/access.log
-
-# Real-time monitoring of remote logs
-python analysis-tcpdump-packet.py \
-  --mode realtime \
-  --access-mode ssh \
-  --ssh-host firewall.example.com \
-  --ssh-user security \
-  --ssh-key ~/.ssh/firewall_key \
-  --remote-log-path /var/log/tcpdump.log \
-  --chunk-size 5
-
-# Multiple servers monitoring (different terminals)
-# Terminal 1: Web server
-python analysis-httpd-access-log.py --access-mode ssh --ssh-host web1.com --ssh-user admin --ssh-key ~/.ssh/web1
-# Terminal 2: Database server  
-python analysis-linux-system-log.py --access-mode ssh --ssh-host db1.com --ssh-user dbadmin --ssh-key ~/.ssh/db1
-```
-
-#### TCPDump Packet Analysis (Auto-format detection)
-```bash
-# Automatic detection of single-line vs multi-line packet formats
-python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-packet-2k-single-line.log
-python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-packet-2k-multi-line.log
-
-# Real-time packet monitoring with format auto-detection
-python analysis-tcpdump-packet.py --mode realtime --log-path /var/log/tcpdump.log
-
-# Remote packet analysis via SSH
-python analysis-tcpdump-packet.py \
-  --access-mode ssh \
-  --ssh-host packet-capture.company.com \
-  --ssh-user capture \
-  --ssh-key ~/.ssh/capture_key \
-  --remote-log-path /var/log/tcpdump.log
-```
+- `--processing-mode`: Overrides `REALTIME_PROCESSING_MODE` setting
+- `--sampling-threshold`: Overrides `REALTIME_SAMPLING_THRESHOLD` setting
 
 ### 6. Import Kibana Dashboard/Settings
 
