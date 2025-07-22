@@ -47,6 +47,7 @@ ollama==0.5.1
 openai==1.97.0
 outlines==1.1.1
 outlines-core==0.1.26
+paramiko==3.5.0
 pillow==11.3.0
 pip==25.1.1
 ply==3.11

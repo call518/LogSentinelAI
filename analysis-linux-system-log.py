@@ -69,6 +69,13 @@ def main():
     parser = create_argument_parser('Linux System Log Analysis')
     args = parser.parse_args()
     
+    # Validate SSH arguments if SSH mode is specified
+    from commons import validate_ssh_args, parse_ssh_config_from_args
+    validate_ssh_args(args)
+    
+    # Parse SSH configuration from arguments
+    ssh_config = parse_ssh_config_from_args(args)
+    
     log_type = "linux_system"
     analysis_title = "Linux System Log Analysis"
     
@@ -81,14 +88,22 @@ def main():
             chunk_size=args.chunk_size,
             log_path=args.log_path,
             processing_mode=args.processing_mode,
-            sampling_threshold=args.sampling_threshold
+            sampling_threshold=args.sampling_threshold,
+            remote_mode=args.access_mode,
+            ssh_config=ssh_config,
+            remote_log_path=args.remote_log_path
         )
     else:
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
             prompt_template=PROMPT_TEMPLATE_LINUX_SYSTEM_LOG,
-            analysis_title=analysis_title
+            analysis_title=analysis_title,
+            log_path=args.log_path,
+            chunk_size=args.chunk_size,
+            remote_mode=args.access_mode,
+            ssh_config=ssh_config,
+            remote_log_path=args.remote_log_path
         )
 
 

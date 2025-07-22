@@ -3,6 +3,7 @@ import datetime
 import os
 import time
 import hashlib
+import re
 from typing import Dict, Any, Optional, List, Generator
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError, RequestError
@@ -58,6 +59,25 @@ REALTIME_CONFIG = {
     "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
 }
 
+# Default Remote SSH Configuration (can be overridden per script)
+DEFAULT_REMOTE_SSH_CONFIG = {
+    "mode": os.getenv("REMOTE_LOG_MODE", "local"),
+    "host": os.getenv("REMOTE_SSH_HOST", ""),
+    "port": int(os.getenv("REMOTE_SSH_PORT", "22")),
+    "user": os.getenv("REMOTE_SSH_USER", ""),
+    "key_path": os.getenv("REMOTE_SSH_KEY_PATH", ""),
+    "password": os.getenv("REMOTE_SSH_PASSWORD", ""),
+    "timeout": int(os.getenv("REMOTE_SSH_TIMEOUT", "10"))
+}
+
+# Default Remote Log Paths Configuration (can be overridden per script)
+DEFAULT_REMOTE_LOG_PATHS = {
+    "httpd_access": os.getenv("REMOTE_LOG_PATH_HTTPD_ACCESS", "/var/log/apache2/access.log"),
+    "httpd_apache_error": os.getenv("REMOTE_LOG_PATH_HTTPD_APACHE_ERROR", "/var/log/apache2/error.log"),
+    "linux_system": os.getenv("REMOTE_LOG_PATH_LINUX_SYSTEM", "/var/log/messages"),
+    "tcpdump_packet": os.getenv("REMOTE_LOG_PATH_TCPDUMP_PACKET", "/var/log/tcpdump.log")
+}
+
 # Default Chunk Sizes - Read from config file (can be overridden by individual analysis scripts)
 LOG_CHUNK_SIZES = {
     "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
@@ -66,7 +86,8 @@ LOG_CHUNK_SIZES = {
     "tcpdump_packet": int(os.getenv("CHUNK_SIZE_TCPDUMP_PACKET", "5"))
 }
 
-def get_analysis_config(log_type, chunk_size=None, analysis_mode=None):
+def get_analysis_config(log_type, chunk_size=None, analysis_mode=None, 
+                       remote_mode=None, ssh_config=None, remote_log_path=None):
     """
     Get analysis configuration for specific log type
     
@@ -74,22 +95,49 @@ def get_analysis_config(log_type, chunk_size=None, analysis_mode=None):
         log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
         chunk_size: Override chunk size (optional)
         analysis_mode: Override analysis mode (optional) - "batch" or "realtime"
+        remote_mode: Override remote mode (optional) - "local" or "ssh" 
+        ssh_config: Custom SSH configuration dict (optional)
+        remote_log_path: Custom remote log path (optional)
     
     Returns:
-        dict: Configuration containing log_path, chunk_size, response_language, analysis_mode
+        dict: Configuration containing log_path, chunk_size, response_language, analysis_mode, ssh_config
     """
     mode = analysis_mode if analysis_mode is not None else ANALYSIS_MODE
     
-    if mode == "realtime":
-        log_path = REALTIME_LOG_PATHS.get(log_type, "")
+    # Determine access mode (local or ssh)
+    access_mode = remote_mode if remote_mode is not None else DEFAULT_REMOTE_SSH_CONFIG["mode"]
+    
+    # Get log path based on access mode
+    if access_mode == "ssh":
+        if remote_log_path:
+            log_path = remote_log_path
+        else:
+            log_path = DEFAULT_REMOTE_LOG_PATHS.get(log_type, "")
     else:
-        log_path = LOG_PATHS.get(log_type, "")
+        # Local mode
+        if mode == "realtime":
+            log_path = REALTIME_LOG_PATHS.get(log_type, "")
+        else:
+            log_path = LOG_PATHS.get(log_type, "")
+    
+    # SSH configuration (only relevant for ssh mode)
+    if access_mode == "ssh":
+        if ssh_config:
+            # Use custom SSH config
+            final_ssh_config = {**DEFAULT_REMOTE_SSH_CONFIG, **ssh_config, "mode": "ssh"}
+        else:
+            # Use default SSH config
+            final_ssh_config = {**DEFAULT_REMOTE_SSH_CONFIG, "mode": "ssh"}
+    else:
+        final_ssh_config = {"mode": "local"}
     
     config = {
         "log_path": log_path,
         "chunk_size": chunk_size if chunk_size is not None else LOG_CHUNK_SIZES.get(log_type, 3),
         "response_language": RESPONSE_LANGUAGE,
         "analysis_mode": mode,
+        "access_mode": access_mode,
+        "ssh_config": final_ssh_config,
         "realtime_config": REALTIME_CONFIG if mode == "realtime" else None
     }
     return config
@@ -507,6 +555,169 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
     return _send_to_elasticsearch(analysis_data, log_type, chunk_id)
 
 
+class RemoteSSHLogMonitor:
+    """
+    SSH-based remote log file monitoring
+    """
+    
+    def __init__(self, ssh_config: Dict[str, Any], remote_log_path: str):
+        """
+        Initialize SSH remote log monitor
+        
+        Args:
+            ssh_config: SSH connection configuration
+            remote_log_path: Remote log file path
+        """
+        self.ssh_host = ssh_config["host"]
+        self.ssh_port = ssh_config["port"]
+        self.ssh_user = ssh_config["user"]
+        self.ssh_key_path = ssh_config["key_path"]
+        self.ssh_password = ssh_config["password"]
+        self.ssh_timeout = ssh_config["timeout"]
+        self.remote_log_path = remote_log_path
+        
+        # SSH 연결 검증
+        self._validate_ssh_config()
+        
+        print(f"SSH Target:       {self.ssh_user}@{self.ssh_host}:{self.ssh_port}")
+        print(f"Remote Log:       {self.remote_log_path}")
+        print(f"Auth Method:      {'SSH Key' if self.ssh_key_path else 'Password'}")
+        
+    def _validate_ssh_config(self):
+        """SSH 설정 유효성 검사"""
+        if not self.ssh_host:
+            raise ValueError("REMOTE_SSH_HOST is required for SSH mode")
+        if not self.ssh_user:
+            raise ValueError("REMOTE_SSH_USER is required for SSH mode")
+        if not self.ssh_key_path and not self.ssh_password:
+            raise ValueError("Either REMOTE_SSH_KEY_PATH or REMOTE_SSH_PASSWORD is required")
+        
+        # SSH 키 파일 존재 확인
+        if self.ssh_key_path and not os.path.exists(self.ssh_key_path):
+            raise FileNotFoundError(f"SSH key file not found: {self.ssh_key_path}")
+    
+    def _create_ssh_connection(self):
+        """SSH 연결 생성"""
+        try:
+            import paramiko
+        except ImportError:
+            raise ImportError("paramiko library is required for SSH functionality. Install with: pip install paramiko")
+        
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        try:
+            if self.ssh_key_path:
+                # SSH 키 인증
+                ssh.connect(
+                    hostname=self.ssh_host,
+                    port=self.ssh_port,
+                    username=self.ssh_user,
+                    key_filename=self.ssh_key_path,
+                    timeout=self.ssh_timeout
+                )
+            else:
+                # 패스워드 인증
+                ssh.connect(
+                    hostname=self.ssh_host,
+                    port=self.ssh_port,
+                    username=self.ssh_user,
+                    password=self.ssh_password,
+                    timeout=self.ssh_timeout
+                )
+            
+            return ssh
+            
+        except Exception as e:
+            ssh.close()
+            raise ConnectionError(f"Failed to connect to SSH server: {e}")
+    
+    def get_file_size(self) -> int:
+        """원격 파일 크기 확인"""
+        ssh = self._create_ssh_connection()
+        try:
+            # stat 명령으로 파일 크기 확인
+            command = f"stat -c %s '{self.remote_log_path}' 2>/dev/null || echo 0"
+            stdin, stdout, stderr = ssh.exec_command(command)
+            stdout.channel.recv_exit_status()  # 명령 완료 대기
+            
+            size_str = stdout.read().decode('utf-8').strip()
+            return int(size_str) if size_str.isdigit() else 0
+            
+        except Exception as e:
+            print(f"WARNING: Failed to get remote file size: {e}")
+            return 0
+        finally:
+            ssh.close()
+    
+    def get_file_inode(self) -> Optional[int]:
+        """원격 파일 inode 확인 (로그 로테이션 감지용)"""
+        ssh = self._create_ssh_connection()
+        try:
+            # stat 명령으로 inode 확인
+            command = f"stat -c %i '{self.remote_log_path}' 2>/dev/null || echo 0"
+            stdin, stdout, stderr = ssh.exec_command(command)
+            stdout.channel.recv_exit_status()
+            
+            inode_str = stdout.read().decode('utf-8').strip()
+            return int(inode_str) if inode_str.isdigit() and inode_str != "0" else None
+            
+        except Exception as e:
+            print(f"WARNING: Failed to get remote file inode: {e}")
+            return None
+        finally:
+            ssh.close()
+    
+    def read_from_position(self, position: int) -> List[str]:
+        """특정 위치부터 원격 파일 읽기"""
+        ssh = self._create_ssh_connection()
+        try:
+            # tail 명령으로 특정 바이트부터 읽기
+            # +숫자는 바이트 위치를 의미 (1-based이므로 +1)
+            command = f"tail -c +{position + 1} '{self.remote_log_path}' 2>/dev/null || echo ''"
+            stdin, stdout, stderr = ssh.exec_command(command)
+            stdout.channel.recv_exit_status()
+            
+            content = stdout.read().decode('utf-8', errors='ignore')
+            
+            if not content.strip():
+                return []
+            
+            # 라인 단위로 분할
+            lines = content.split('\n')
+            
+            # 마지막 빈 라인 제거
+            if lines and not lines[-1].strip():
+                lines = lines[:-1]
+            
+            # 빈 라인 필터링
+            return [line.strip() for line in lines if line.strip()]
+            
+        except Exception as e:
+            print(f"WARNING: Failed to read remote file: {e}")
+            return []
+        finally:
+            ssh.close()
+    
+    def test_connection(self) -> bool:
+        """SSH 연결 테스트"""
+        try:
+            ssh = self._create_ssh_connection()
+            
+            # 간단한 명령 실행으로 연결 테스트
+            stdin, stdout, stderr = ssh.exec_command("echo 'SSH connection test'")
+            stdout.channel.recv_exit_status()
+            
+            result = stdout.read().decode('utf-8').strip()
+            ssh.close()
+            
+            return result == "SSH connection test"
+            
+        except Exception as e:
+            print(f"SSH connection test failed: {e}")
+            return False
+
+
 class RealtimeLogMonitor:
     """
     Real-time log file monitoring and analysis
@@ -525,6 +736,11 @@ class RealtimeLogMonitor:
         self.chunk_size = config["chunk_size"]
         self.response_language = config["response_language"]
         self.realtime_config = config["realtime_config"]
+        
+        # Access mode and SSH configuration
+        self.access_mode = config["access_mode"]
+        self.ssh_config = config["ssh_config"]
+        self.ssh_monitor = None
         
         # Sampling configuration
         self.processing_mode = self.realtime_config["processing_mode"]
@@ -550,6 +766,10 @@ class RealtimeLogMonitor:
         self.last_inode = None
         self.last_size = 0
         
+        # Initialize SSH monitor if in SSH mode
+        if self.access_mode == "ssh":
+            self._initialize_ssh_monitor()
+        
         # Load position and file info
         self._load_position_and_file_info()
         
@@ -558,15 +778,39 @@ class RealtimeLogMonitor:
         print(f"REALTIME LOG MONITOR INITIALIZED")
         print("=" * 80)
         print(f"Log Type:         {log_type}")
-        print(f"Monitoring:       {self.log_path}")
+        print(f"Access Mode:      {self.access_mode.upper()}")
+        if self.access_mode == "ssh":
+            print(f"Monitoring:       {self.log_path}")
+        else:
+            print(f"Monitoring:       {self.log_path}")
         print(f"Mode:             {self.processing_mode.upper()}")
         if self.processing_mode == "full":
-            print(f"Auto-sampling:    {self.sampling_threshold} lines threshold")
+            print(f"Auto-sampling:    {self.sampling_threshold} {'packets' if log_type == 'tcpdump_packet' else 'lines'} threshold")
         elif self.processing_mode == "sampling":
-            print(f"Sampling:         Always keep latest {self.chunk_size} lines")
+            print(f"Sampling:         Always keep latest {self.chunk_size} {'packets' if log_type == 'tcpdump_packet' else 'lines'}")
         print(f"Poll Interval:    {self.realtime_config['polling_interval']}s")
-        print(f"Chunk Size:       {self.chunk_size} lines")
+        print(f"Chunk Size:       {self.chunk_size} {'packets' if log_type == 'tcpdump_packet' else 'lines'}")
         print("=" * 80)
+    
+    def _initialize_ssh_monitor(self):
+        """SSH 원격 모니터 초기화"""
+        try:
+            if not self.log_path:
+                raise ValueError(f"No remote log path configured for {self.log_type}")
+            
+            self.ssh_monitor = RemoteSSHLogMonitor(self.ssh_config, self.log_path)
+            
+            # SSH 연결 테스트
+            print("🔗 Testing SSH connection...")
+            if self.ssh_monitor.test_connection():
+                print("✅ SSH connection successful")
+            else:
+                raise ConnectionError("SSH connection test failed")
+                
+        except Exception as e:
+            print(f"❌ SSH initialization failed: {e}")
+            print("💡 Please check your SSH configuration")
+            raise
     
     def _load_position_and_file_info(self):
         """Load last read position and file info from position file"""
@@ -634,7 +878,14 @@ class RealtimeLogMonitor:
             print(f"WARNING: Error saving position: {e}")
     
     def _read_new_lines(self) -> List[str]:
-        """Read new lines from log file since last position"""
+        """Read new lines from log file since last position (local or remote)"""
+        if self.access_mode == "ssh":
+            return self._read_remote_new_lines()
+        else:
+            return self._read_local_new_lines()
+    
+    def _read_local_new_lines(self) -> List[str]:
+        """Read new lines from local log file since last position (기존 방식)"""
         try:
             if not os.path.exists(self.log_path):
                 print(f"WARNING: Log file does not exist: {self.log_path}")
@@ -708,14 +959,67 @@ class RealtimeLogMonitor:
                 # Filter out empty lines
                 complete_lines = [line.strip() for line in complete_lines if line.strip()]
                 
-                if complete_lines:
-                    # More concise output
-                    pass  # Remove verbose output here
-                
                 return complete_lines
                 
         except IOError as e:
-            print(f"WARNING: Error reading log file: {e}")
+            print(f"WARNING: Error reading local log file: {e}")
+            return []
+    
+    def _read_remote_new_lines(self) -> List[str]:
+        """SSH를 통해 원격 파일에서 새로운 라인들을 읽어옴"""
+        try:
+            if not self.ssh_monitor:
+                print(f"WARNING: SSH monitor not initialized")
+                return []
+            
+            # 원격 파일 상태 확인
+            current_size = self.ssh_monitor.get_file_size()
+            current_inode = self.ssh_monitor.get_file_inode()
+            
+            # 파일 로테이션 감지
+            if self.last_inode and current_inode and current_inode != self.last_inode:
+                print(f"NOTICE: Remote log rotation detected (inode {self.last_inode} -> {current_inode})")
+                print(f"       New file detected, starting from beginning")
+                self.last_position = 0
+                self.line_buffer = []
+                self.last_inode = current_inode
+                self.last_size = current_size
+                self._save_position_and_file_info()
+            
+            # 파일 크기 감소 감지 (truncation)
+            elif current_size < self.last_position:
+                if current_size == 0:
+                    print(f"NOTICE: Remote file truncated (size=0), resetting position to 0")
+                else:
+                    print(f"NOTICE: Remote file truncated (size={current_size} < position={self.last_position})")
+                    print(f"       Starting from beginning of current file")
+                
+                self.last_position = 0
+                self.line_buffer = []
+                self.last_size = current_size
+                self._save_position_and_file_info()
+            
+            # 새로운 내용이 없는 경우
+            if current_size <= self.last_position:
+                return []
+            
+            # 원격 파일에서 새로운 라인들 읽기
+            new_lines = self.ssh_monitor.read_from_position(self.last_position)
+            
+            if new_lines:
+                # 위치 정보 업데이트
+                self.last_position = current_size
+                self.last_size = current_size
+                if current_inode:
+                    self.last_inode = current_inode
+                self._save_position_and_file_info()
+                
+                print(f"📡 Read {len(new_lines)} new lines from remote log")
+            
+            return new_lines
+            
+        except Exception as e:
+            print(f"WARNING: Error reading remote log file: {e}")
             return []
     
     def get_new_log_chunks(self) -> Generator[List[str], None, None]:
@@ -1240,26 +1544,48 @@ def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_
 
 
 def create_realtime_monitor(log_type: str, 
-                          chunk_size: Optional[int] = None) -> RealtimeLogMonitor:
+                          chunk_size: Optional[int] = None,
+                          remote_mode: Optional[str] = None,
+                          ssh_config: Optional[Dict[str, Any]] = None,
+                          remote_log_path: Optional[str] = None) -> RealtimeLogMonitor:
     """
     Create a real-time log monitor for specified log type
     
     Args:
         log_type: Type of log to monitor
         chunk_size: Override default chunk size
+        remote_mode: "local" or "ssh" (overrides config default)
+        ssh_config: Custom SSH configuration dict (optional)
+                   Example: {"host": "server1.example.com", "user": "admin", "key_path": "/path/to/key"}
+        remote_log_path: Custom remote log path (optional)
     
     Returns:
         RealtimeLogMonitor: Configured monitor instance
     """
-    config = get_analysis_config(log_type, chunk_size, analysis_mode="realtime")
+    config = get_analysis_config(
+        log_type, 
+        chunk_size, 
+        analysis_mode="realtime",
+        remote_mode=remote_mode,
+        ssh_config=ssh_config,
+        remote_log_path=remote_log_path
+    )
     
     if not config["log_path"]:
-        raise ValueError(f"No real-time log path configured for {log_type}")
+        if config["access_mode"] == "ssh":
+            raise ValueError(f"No remote log path configured for {log_type}. "
+                           f"Provide remote_log_path parameter or set REMOTE_LOG_PATH_{log_type.upper()} in config")
+        else:
+            raise ValueError(f"No log path configured for {log_type}. "
+                           f"Check LOG_PATH_REALTIME_{log_type.upper()} in config")
     
     return RealtimeLogMonitor(log_type, config)
 
 
-def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_template, analysis_title: str):
+def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_template, analysis_title: str,
+                             log_path: Optional[str] = None, chunk_size: Optional[int] = None,
+                             remote_mode: Optional[str] = None, ssh_config: Optional[Dict[str, Any]] = None,
+                             remote_log_path: Optional[str] = None):
     """
     Generic batch analysis function for all log types
     
@@ -1268,6 +1594,11 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
         analysis_schema_class: Pydantic schema class for structured output
         prompt_template: Prompt template string
         analysis_title: Title to display in output header
+        log_path: Override log file path (for local files)
+        chunk_size: Override chunk size
+        remote_mode: "local" or "ssh" (overrides config default)
+        ssh_config: Custom SSH configuration dict
+        remote_log_path: Custom remote log path
     """
     print("=" * 70)
     print(f"LogSentinelAI - {analysis_title} (Batch Mode)")
@@ -1278,13 +1609,28 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
     llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
     
     # Get analysis configuration
-    config = get_analysis_config(log_type)
+    config = get_analysis_config(
+        log_type,
+        chunk_size=chunk_size,
+        analysis_mode="batch",
+        remote_mode=remote_mode,
+        ssh_config=ssh_config,
+        remote_log_path=remote_log_path
+    )
     
+    # Override log path if provided (for local files)
+    if log_path and config["access_mode"] == "local":
+        config["log_path"] = log_path
+    
+    print(f"Access mode:       {config['access_mode'].upper()}")
     print(f"Log file:          {config['log_path']}")
     print(f"Chunk size:        {config['chunk_size']}")
     print(f"Response language: {config['response_language']}")
     print(f"LLM Provider:      {llm_provider}")
     print(f"LLM Model:         {llm_model_name}")
+    if config["access_mode"] == "ssh":
+        ssh_info = config["ssh_config"]
+        print(f"SSH Target:        {ssh_info.get('user', 'unknown')}@{ssh_info.get('host', 'unknown')}:{ssh_info.get('port', 22)}")
     print("=" * 70)
     
     log_path = config["log_path"]
@@ -1329,7 +1675,8 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
 
 
 def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_template, analysis_title: str,
-                                 chunk_size=None, log_path=None, processing_mode=None, sampling_threshold=None):
+                                 chunk_size=None, log_path=None, processing_mode=None, sampling_threshold=None,
+                                 remote_mode=None, ssh_config=None, remote_log_path=None):
     """
     Generic real-time analysis function for all log types
     
@@ -1339,9 +1686,12 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         prompt_template: Prompt template string
         analysis_title: Title to display in output header
         chunk_size: Override default chunk size
-        log_path: Override default log file path
+        log_path: Override default log file path (local mode only)
         processing_mode: Processing mode (full/sampling)
         sampling_threshold: Sampling threshold
+        remote_mode: "local" or "ssh"
+        ssh_config: SSH configuration dict
+        remote_log_path: Remote log file path
     """
     print("=" * 70)
     print(f"LogSentinelAI - {analysis_title} (Real-time Mode)")
@@ -1356,16 +1706,27 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         os.environ["REALTIME_SAMPLING_THRESHOLD"] = str(sampling_threshold)
     
     # Get configuration
-    config = get_analysis_config(log_type, chunk_size, analysis_mode="realtime")
+    config = get_analysis_config(
+        log_type, 
+        chunk_size, 
+        analysis_mode="realtime",
+        remote_mode=remote_mode,
+        ssh_config=ssh_config,
+        remote_log_path=remote_log_path
+    )
     
-    # Override log path if specified
-    if log_path:
+    # Override local log path if specified (for local mode only)
+    if log_path and config["access_mode"] == "local":
         config["log_path"] = log_path
     
+    print(f"Access mode:       {config['access_mode'].upper()}")
     print(f"Log file:          {config['log_path']}")
     print(f"Chunk size:        {config['chunk_size']}")
     print(f"Response language: {config['response_language']}")
     print(f"Analysis mode:     {config['analysis_mode']}")
+    if config["access_mode"] == "ssh":
+        ssh_info = config["ssh_config"]
+        print(f"SSH Target:        {ssh_info.get('user', 'unknown')}@{ssh_info.get('host', 'unknown')}:{ssh_info.get('port', 22)}")
     
     # Initialize LLM model
     print("\nInitializing LLM model...")
@@ -1373,13 +1734,10 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
     
     # Create real-time monitor
     try:
-        config = get_analysis_config(log_type, chunk_size, analysis_mode="realtime")
-        if not config["log_path"]:
-            raise ValueError(f"No real-time log path configured for {log_type}")
         monitor = RealtimeLogMonitor(log_type, config)
     except ValueError as e:
         print(f"ERROR: Configuration error: {e}")
-        print("Please check your config file for real-time log paths")
+        print("Please check your configuration settings")
         return
     
     # Function to create analysis prompt
@@ -1445,14 +1803,97 @@ def create_argument_parser(description: str):
     """
     import argparse
     parser = argparse.ArgumentParser(description=description)
+    
+    # Analysis mode
     parser.add_argument('--mode', choices=['batch', 'realtime'], default='batch',
                        help='Analysis mode: batch (default) or realtime')
+    
+    # Chunk configuration
     parser.add_argument('--chunk-size', type=int, default=None,
                        help='Override default chunk size')
+    
+    # Local file configuration
     parser.add_argument('--log-path', type=str, default=None,
-                       help='Override default log file path')
+                       help='Override default log file path (local mode only)')
+    
+    # Access mode configuration
+    parser.add_argument('--access-mode', choices=['local', 'ssh'], default=None,
+                       help='Log access mode: local (default) or ssh (remote)')
+    
+    # SSH configuration
+    parser.add_argument('--ssh-host', type=str, default=None,
+                       help='SSH remote host (required for ssh mode)')
+    parser.add_argument('--ssh-port', type=int, default=22,
+                       help='SSH port (default: 22)')
+    parser.add_argument('--ssh-user', type=str, default=None,
+                       help='SSH username (required for ssh mode)')
+    parser.add_argument('--ssh-key', type=str, default=None,
+                       help='SSH private key file path')
+    parser.add_argument('--ssh-password', type=str, default=None,
+                       help='SSH password (if no key file)')
+    parser.add_argument('--remote-log-path', type=str, default=None,
+                       help='Remote log file path (ssh mode only)')
+    
+    # Real-time processing configuration
     parser.add_argument('--processing-mode', choices=['full', 'sampling'], default=None,
                        help='Real-time processing mode: full (process all) or sampling (latest only)')
     parser.add_argument('--sampling-threshold', type=int, default=None,
                        help='Auto-switch to sampling if accumulated lines exceed this (only for full mode)')
+    
     return parser
+
+
+def parse_ssh_config_from_args(args) -> Optional[Dict[str, Any]]:
+    """
+    Parse SSH configuration from command line arguments
+    
+    Args:
+        args: Parsed command line arguments
+    
+    Returns:
+        Dict or None: SSH configuration dictionary or None if not ssh mode
+    """
+    if getattr(args, 'access_mode', None) != 'ssh':
+        return None
+    
+    ssh_config = {}
+    
+    # Required SSH parameters
+    if hasattr(args, 'ssh_host') and args.ssh_host:
+        ssh_config['host'] = args.ssh_host
+    
+    if hasattr(args, 'ssh_user') and args.ssh_user:
+        ssh_config['user'] = args.ssh_user
+    
+    # Optional SSH parameters
+    if hasattr(args, 'ssh_port') and args.ssh_port:
+        ssh_config['port'] = args.ssh_port
+    
+    if hasattr(args, 'ssh_key') and args.ssh_key:
+        ssh_config['key_path'] = args.ssh_key
+    
+    if hasattr(args, 'ssh_password') and args.ssh_password:
+        ssh_config['password'] = args.ssh_password
+    
+    return ssh_config if ssh_config else None
+
+
+def validate_ssh_args(args):
+    """
+    Validate SSH-related command line arguments
+    
+    Args:
+        args: Parsed command line arguments
+    
+    Raises:
+        ValueError: If required SSH parameters are missing
+    """
+    if getattr(args, 'access_mode', None) == 'ssh':
+        if not getattr(args, 'ssh_host', None):
+            raise ValueError("--ssh-host is required when using --access-mode ssh")
+        
+        if not getattr(args, 'ssh_user', None):
+            raise ValueError("--ssh-user is required when using --access-mode ssh")
+        
+        if not getattr(args, 'ssh_key', None) and not getattr(args, 'ssh_password', None):
+            raise ValueError("Either --ssh-key or --ssh-password is required when using --access-mode ssh")

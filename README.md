@@ -21,16 +21,22 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 - **HTTP Access Logs**: Web attack detection (SQL injection, XSS, path traversal, brute force)
 - **Apache Error Logs**: Server-side security events and application errors
 - **Linux System Logs**: System-level security monitoring and authentication events
-- **Network Packet Analysis**: TCPDump packet inspection for network-based threats
+- **Network Packet Analysis**: TCPDump packet inspection with automatic format detection for single-line and multi-line packet formats (TCPDump-specific feature)
 
 ### ⚡ Dual Analysis Modes
 - **Batch Mode**: Complete historical log file analysis for forensics and compliance
 - **Real-time Mode**: Live log monitoring with intelligent sampling for high-volume environments
 
+### 🌐 Flexible Access Methods
+- **Local Log Files**: Direct access to local system log files (default mode)
+- **SSH Remote Access**: Secure remote log monitoring via SSH with key/password authentication
+- **Per-Script Configuration**: Individual SSH settings for monitoring multiple remote servers simultaneously
+
 ### 🔄 Advanced Real-time Processing
 - **Position tracking** with automatic log rotation detection and handling
 - **Intelligent sampling**: Auto-switch between full processing and sampling based on log volume
 - **Graceful error handling** with automatic retry mechanisms and failure recovery
+- **TCPDump format detection**: Automatic detection and processing of single-line vs multi-line packet formats (specific to TCPDump logs only)
 
 ### 🏗️ Enterprise-Ready Architecture
 - **Elasticsearch integration** with automatic indexing, ILM policies, and data lifecycle management
@@ -47,18 +53,22 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 - **Configurable chunking**: Optimized processing sizes for different log types and volumes
 - **Environment-based settings**: Centralized configuration management with config file support
 - **CLI override capabilities**: Command-line options can override any config file setting for flexibility
+- **Remote access options**: SSH-based remote log monitoring with per-script configuration support
+- **Multi-server deployment**: Monitor multiple remote servers simultaneously with individual SSH settings
 
 ## 🏗️ System Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Log Files     │───>│ LogSentinelAI   │───>│ Elasticsearch   │
+│   Log Sources   │───>│ LogSentinelAI   │───>│ Elasticsearch   │
 │                 │    │   Analysis      │    │                 │
-│ • HTTP Access   │    │                 │    │ • Security      │
-│ • Apache Error  │    │ • LLM Analysis  │    │   Events        │
-│ • System Logs   │    │ • Outlines      │    │ • Raw Logs      │
-│ • Network Pcap  │    │ • Pydantic      │    │ • Metadata      │
-│                 │    │   Validation    │    │                 │
+│ • Local Files   │    │                 │    │ • Security      │
+│ • Remote SSH    │    │ • LLM Analysis  │    │   Events        │
+│ • HTTP Access   │    │ • Outlines      │    │ • Raw Logs      │
+│ • Apache Error  │    │ • Pydantic      │    │ • Metadata      │
+│ • System Logs   │    │   Validation    │    │                 │
+│ • TCPDump       │    │ • Multi-format  │    │                 │
+│   (Auto-detect) │    │   Support       │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                         │
                                                         ▼
@@ -312,6 +322,59 @@ python analysis-tcpdump-packet.py --mode realtime --chunk-size 5
 
 # Monitor with root permissions (often required for system logs)
 sudo python analysis-linux-system-log.py --mode realtime
+```
+
+#### SSH Remote Access (Monitor logs on remote servers)
+```bash
+# SSH Key Authentication (Recommended)
+python analysis-linux-system-log.py \
+  --access-mode ssh \
+  --ssh-host 192.168.1.100 \
+  --ssh-user admin \
+  --ssh-key ~/.ssh/id_rsa \
+  --remote-log-path /var/log/messages
+
+# SSH Password Authentication
+python analysis-httpd-access-log.py \
+  --access-mode ssh \
+  --ssh-host web.company.com \
+  --ssh-user webuser \
+  --ssh-password "password123" \
+  --remote-log-path /var/log/apache2/access.log
+
+# Real-time monitoring of remote logs
+python analysis-tcpdump-packet.py \
+  --mode realtime \
+  --access-mode ssh \
+  --ssh-host firewall.example.com \
+  --ssh-user security \
+  --ssh-key ~/.ssh/firewall_key \
+  --remote-log-path /var/log/tcpdump.log \
+  --chunk-size 5
+
+# Multiple servers monitoring (different terminals)
+# Terminal 1: Web server
+python analysis-httpd-access-log.py --access-mode ssh --ssh-host web1.com --ssh-user admin --ssh-key ~/.ssh/web1
+# Terminal 2: Database server  
+python analysis-linux-system-log.py --access-mode ssh --ssh-host db1.com --ssh-user dbadmin --ssh-key ~/.ssh/db1
+```
+
+#### TCPDump Packet Analysis (Auto-format detection)
+```bash
+# Automatic detection of single-line vs multi-line packet formats
+python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-packet-2k-single-line.log
+python analysis-tcpdump-packet.py --log-path sample-logs/tcpdump-packet-2k-multi-line.log
+
+# Real-time packet monitoring with format auto-detection
+python analysis-tcpdump-packet.py --mode realtime --log-path /var/log/tcpdump.log
+
+# Remote packet analysis via SSH
+python analysis-tcpdump-packet.py \
+  --access-mode ssh \
+  --ssh-host packet-capture.company.com \
+  --ssh-user capture \
+  --ssh-key ~/.ssh/capture_key \
+  --remote-log-path /var/log/tcpdump.log
 ```
 
 ### 6. Import Kibana Dashboard/Settings
