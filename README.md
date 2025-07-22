@@ -94,9 +94,9 @@ LogSentinelAI has been successfully tested and validated on the following config
 - Docker Desktop: v4.39.0
 - GPU Support: NVIDIA GeForce GTX 1660 with CUDA 12.9
 
-# GPU Verification (on WSL2 RockyLinux8)
-$ docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
-Sun Jul 20 20:53:55 2025
+# GPU Verification (RockyLinux8 Distro on WSL2)
+$ nvidia-smi
+Tue Jul 22 22:39:22 2025
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 575.64.01              Driver Version: 576.88         CUDA Version: 12.9     |
 |-----------------------------------------+------------------------+----------------------+
@@ -105,7 +105,7 @@ Sun Jul 20 20:53:55 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  NVIDIA GeForce GTX 1660 ...    On  |   00000000:01:00.0  On |                  N/A |
-| 25%   42C    P8             17W /  125W |    5911MiB /   6144MiB |      5%      Default |
+| 45%   63C    P2            120W /  125W |    5891MiB /   6144MiB |    100%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
 
