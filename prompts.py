@@ -209,6 +209,14 @@ MANDATORY EVENT CREATION GUIDELINES:
 - Large data transfers from CDNs (AWS, Google, CloudFront, Cloudflare, Akamai, etc.) are typically NORMAL
 - Standard HTTPS/HTTP traffic, expected database queries, regular email delivery, legitimate DNS queries should be INFO/LOW unless suspicious patterns exist
 
+EVENT GROUPING AND EFFICIENCY:
+- CONSOLIDATE similar packets with the same severity and description into SINGLE events
+- For normal traffic patterns (same protocol, similar behavior), create ONE comprehensive INFO event covering multiple packets
+- Group packets by: same protocol + same behavior pattern + same severity level
+- Example: Multiple normal HTTP requests → ONE "Normal HTTP traffic" INFO event with all related LOGIDs
+- Only create separate events for genuinely different security concerns or threat types
+- Use related_log_ids to include ALL relevant packet LOGIDs in each consolidated event
+
 NORMAL vs SUSPICIOUS TRAFFIC:
 - NORMAL: CDN traffic (CloudFront, Cloudflare, Akamai, AWS, Google), standard web browsing, routine API calls, expected database queries, regular email delivery, legitimate DNS queries, normal service discovery
 - SUSPICIOUS: Unusual payload patterns, non-standard protocols, excessive connection attempts, abnormal data volumes from single sources, malformed packets, repeated failed authentications, scanner-like behavior
@@ -229,6 +237,7 @@ RULES:
 - Consider source IP reputation and context
 - Focus on actionable security intelligence, not routine network activity
 - EXTRACT actual LOGID values from logs and include in related_log_ids
+- CONSOLIDATE similar packets into single events to reduce noise and improve efficiency
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
 
