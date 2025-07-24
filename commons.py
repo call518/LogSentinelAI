@@ -428,27 +428,25 @@ def chunked_iterable(iterable, size, debug=False):
         yield chunk
 
 def print_chunk_contents(chunk):
-    # Chunk 내용 출력 (/w LOGID, 순번, 분리)
+    # Chunk 내용 출력 (콘솔용 - LOGID 제거한 원본 로그만 표시)
     print(f"\n[LOG DATA]")
     for idx, line in enumerate(chunk, 1):
         line = line.strip()
-        # LOGID-문자열 추출 (시작 부분)
+        # LOGID-문자열 제거하고 원본 로그 내용만 추출
         if line.startswith("LOGID-"):
             body = line.split(" ", 1)
-            logid = body[0]
-            rest = body[1] if len(body) > 1 else ""
+            original_content = body[1] if len(body) > 1 else ""
         else:
-            logid = "UNKNOWN-LOGID"
-            rest = line
+            original_content = line
         
         # tcpdump 데이터인 경우 \\n을 실제 개행 문자로 변환하여 출력
-        if "\\n" in rest:
+        if "\\n" in original_content:
             # 멀티라인 tcpdump 데이터를 보기 좋게 출력
-            multiline_content = rest.replace('\\n', '\n')
-            print(f"{logid} {multiline_content}")
+            multiline_content = original_content.replace('\\n', '\n')
+            print(f"{idx:2d}: {multiline_content}")
         else:
-            # 일반 싱글라인 데이터
-            print(f"{logid} {rest}")
+            # 일반 싱글라인 데이터 (라인 번호만 표시)
+            print(f"{idx:2d}: {original_content}")
     print("")
 
 ### Elasticsearch - Read from config file
@@ -1670,8 +1668,15 @@ class RealtimeLogMonitor:
                     print(f"\n� CHUNK #{chunk_counter} ({len(chunk)} lines)")
                     print("─" * 50)
                     for i, line in enumerate(chunk, 1):
-                        # Truncate long lines for better readability
-                        display_line = line[:100] + "..." if len(line) > 100 else line
+                        # Remove LOGID prefix for console display and truncate long lines
+                        if line.startswith("LOGID-"):
+                            # Extract original content without LOGID
+                            parts = line.split(" ", 1)
+                            original_line = parts[1] if len(parts) > 1 else ""
+                        else:
+                            original_line = line
+                        
+                        display_line = original_line[:100] + "..." if len(original_line) > 100 else original_line
                         print(f"{i:2d}: {display_line}")
                     print("─" * 50)
                     
@@ -1718,7 +1723,15 @@ class RealtimeLogMonitor:
                 print(f"\n� FINAL CHUNK #{chunk_counter} ({len(chunk)} lines)")
                 print("─" * 50)
                 for i, line in enumerate(chunk, 1):
-                    display_line = line[:100] + "..." if len(line) > 100 else line
+                    # Remove LOGID prefix for console display and truncate long lines
+                    if line.startswith("LOGID-"):
+                        # Extract original content without LOGID
+                        parts = line.split(" ", 1)
+                        original_line = parts[1] if len(parts) > 1 else ""
+                    else:
+                        original_line = line
+                    
+                    display_line = original_line[:100] + "..." if len(original_line) > 100 else original_line
                     print(f"{i:2d}: {display_line}")
                 print("─" * 50)
                 
