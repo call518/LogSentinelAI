@@ -1,4 +1,4 @@
-# LogSentinelAI - AI-Powered Log Securit### 🌍 GeoIP Enrichment
+# LogSentinelAI - AI-Powered Log Analyzer
 - **Automatic IP geolocation**: Enriches source IPs with country information using MaxMind GeoLite2 database
 - **Elasticsearch-compatible format**: Country info appended as text (e.g., "192.168.1.1 (Private)") for seamless ES indexing
 - **Intelligent IP handling**: Automatically detects and handles private IPs, invalid IPs, and lookup failures
