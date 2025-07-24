@@ -38,6 +38,14 @@ WEB BROWSING CONTEXT:
 
 CRITICAL REQUIREMENT: For each security event, you MUST populate related_log_ids with the actual LOGID values from the logs that are relevant to that event. NEVER leave related_log_ids empty unless there are truly no relevant logs.
 
+STATISTICS REQUIREMENT: You MUST provide complete and accurate statistics:
+- total_requests: Count ALL log entries provided (count every single line)
+- unique_ips: Count UNIQUE IP addresses found in the logs  
+- error_rate: Calculate percentage of 4xx/5xx responses (as decimal 0.0-1.0)
+- top_source_ips: Create a dictionary mapping each IP address to its request count from the logs
+- response_code_dist: Create a dictionary mapping each response code to its count from the logs
+DO NOT leave these empty! Calculate them from the actual log data provided.
+
 RULES:
 - NEVER empty events array - MANDATORY
 - Be balanced with severity assessment - avoid over-flagging normal web browsing and static resource requests
@@ -99,6 +107,13 @@ RULES:
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
 
+STATISTICS REQUIREMENT: You MUST provide complete and accurate statistics:
+- total_event: Count ALL error log entries provided  
+- event_by_level: Create a dictionary mapping error levels (error, warn, notice, info) to their counts
+- event_by_type: Create a dictionary mapping error types to their counts
+- top_event_ips: Create a dictionary mapping IP addresses to their error counts from the logs
+DO NOT leave these empty! Calculate them from the actual log data provided.
+
 JSON RULES:
 - No empty string keys, use [] not null for lists
 - Required fields: file_path (null ok), source_ips[], attack_patterns[], recommended_actions[], related_log_ids[]
@@ -147,6 +162,15 @@ RULES:
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
+
+STATISTICS REQUIREMENT: You MUST provide complete and accurate statistics:
+- total_events: Count ALL system log entries provided
+- auth_failures: Count authentication failure events from the logs
+- unique_ips: Count UNIQUE IP addresses found in the logs
+- unique_users: Count UNIQUE usernames found in the logs
+- event_by_type: Create a dictionary mapping event types to their counts
+- top_event_ips: Create a dictionary mapping IP addresses to their event counts from the logs
+DO NOT leave these empty! Calculate them from the actual log data provided.
 
 JSON RULES:
 - No empty string keys, use [] not null for lists
@@ -207,6 +231,15 @@ RULES:
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
+
+STATISTICS REQUIREMENT: You MUST provide complete and accurate statistics:
+- total_packets: Count ALL packet entries provided
+- unique_connections: Count UNIQUE source-destination IP:port pairs
+- protocols_detected: List all protocols found in the packets 
+- connection_attempts: Count connection initiation attempts
+- failed_connections: Count failed/rejected connections
+- data_transfer_bytes: Sum up data transfer volumes from packets
+DO NOT leave these empty! Calculate them from the actual packet data provided.
 
 JSON RULES:
 - No empty string keys, use [] not null for lists

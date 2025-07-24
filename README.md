@@ -1,4 +1,9 @@
-# LogSentinelAI - AI-Powered Log Security Analysis
+# LogSentinelAI - AI-Powered Log Securit### 🌍 GeoIP Enrichment
+- **Automatic IP geolocation**: Enriches source IPs with country information using MaxMind GeoLite2 database
+- **Elasticsearch-compatible format**: Country info appended as text (e.g., "192.168.1.1 (Private)") for seamless ES indexing
+- **Intelligent IP handling**: Automatically detects and handles private IPs, invalid IPs, and lookup failures
+- **Performance optimized**: Built-in LRU cache for repeated IP lookups with configurable cache size
+- **Non-blocking processing**: GeoIP enrichment happens after LLM analysis, ensuring zero impact on analysis performancelysis
 
 LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
 
@@ -15,6 +20,7 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 ### 🧠 AI-Powered Security Analysis
 - **LLM-based log analysis** using OpenAI, Ollama, or vLLM for intelligent threat detection
 - **Structured output validation** with Pydantic schemas ensuring consistent, reliable results
+- **Enhanced statistics calculation** with improved prompts ensuring complete data extraction (IP counts, response codes, etc.)
 - **Multi-language support** for analysis results (English/Korean)
 
 ### 📊 Comprehensive Log Coverage  
@@ -38,7 +44,13 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 - **Graceful error handling** with automatic retry mechanisms and failure recovery
 - **TCPDump format detection**: Automatic detection and processing of single-line vs multi-line packet formats (specific to TCPDump logs only)
 
-### 🏗️ Enterprise-Ready Architecture
+### � GeoIP Enrichment
+- **Automatic IP geolocation**: Enriches source IPs with country information using MaxMind GeoLite2 database
+- **Intelligent IP handling**: Automatically detects and handles private IPs, invalid IPs, and lookup failures
+- **Performance optimized**: Built-in LRU cache for repeated IP lookups with configurable cache size
+- **Non-blocking processing**: GeoIP enrichment happens after LLM analysis, ensuring zero impact on analysis performance
+
+### �🏗️ Enterprise-Ready Architecture
 - **Elasticsearch integration** with automatic indexing, ILM policies, and data lifecycle management
 - **Kibana dashboards** for visualization, alerting, and security analytics
 - **Docker-based deployment** for consistent, scalable infrastructure
@@ -145,7 +157,15 @@ pip install -r requirements.txt
 cp config.template config
 # Edit config file and set OPENAI_API_KEY value (obtained from OpenAI account)
 
-# 5. LLM Configuration (set in config file)
+# 5. GeoIP Database Setup (Optional but Recommended)
+# Download MaxMind GeoLite2-Country database for IP geolocation
+python download_geoip_database.py
+# This will download GeoLite2-Country.mmdb to current directory
+# Enable GeoIP in config file:
+#   GEOIP_ENABLED=true  (default)
+#   GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb  (default)
+
+# 6. LLM Configuration (set in config file)
 # For OpenAI API usage, configure in config file as follows:
 #   LLM_PROVIDER=openai  (default)
 #   LLM_MODEL_OPENAI=gpt-4o-mini  (default)
@@ -456,6 +476,68 @@ REALTIME_SAMPLING_THRESHOLD=100   # When exceeded, triggers sampling in 'full' m
 # Run analysis after configuration changes to verify operation
 python analysis-httpd-access-log.py
 ```
+
+---
+## 🌍 GeoIP Enrichment
+
+LogSentinelAI automatically enriches IP addresses in analysis results with country information using MaxMind GeoLite2 database.
+
+### 🚀 Quick Setup
+
+```bash
+# 1. Download GeoIP database
+python download_geoip_database.py
+
+# 2. Enable in configuration
+# In config file:
+GEOIP_ENABLED=true
+GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb
+
+# 3. Test functionality
+python test_geoip.py
+```
+
+### 📊 Feature Overview
+
+- **Country identification**: Automatically appends country information to IP addresses
+- **Text-based format**: Uses format like "192.168.1.1 (US - United States)" for Elasticsearch compatibility
+- **Private IP handling**: Marks internal IPs as "(Private)" without database lookup
+- **Statistics enrichment**: Enhances IP counts and frequency data with geographic context
+
+### ⚙️ Configuration Options
+
+```bash
+# Enable/disable GeoIP enrichment
+GEOIP_ENABLED=true
+
+# Path to MaxMind database file
+GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb
+
+# Fallback country for unknown IPs
+GEOIP_FALLBACK_COUNTRY=Unknown
+
+# Include private IPs in GeoIP processing
+GEOIP_INCLUDE_PRIVATE_IPS=false
+
+# Cache size for IP lookups (performance optimization)
+GEOIP_CACHE_SIZE=1000
+```
+
+### 🔧 Manual Database Download
+
+If automatic download fails, manually download from MaxMind:
+
+1. Visit: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
+2. Download "GeoLite2 Country" in MaxMind DB format (.mmdb)
+3. Extract and place as `GeoLite2-Country.mmdb` in project directory
+4. Update `GEOIP_DATABASE_PATH` in config if using different location
+
+### 📈 Performance Impact
+
+- **Zero impact on LLM processing**: GeoIP enrichment happens after LLM analysis
+- **Cached lookups**: Repeated IP addresses are cached for better performance
+- **Graceful degradation**: Analysis continues normally if GeoIP is unavailable
+- **Private IP optimization**: Private IPs are handled without database queries
 
 ---
 ## 🔧 Configuration Options

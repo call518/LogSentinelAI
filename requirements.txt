@@ -69,3 +69,5 @@ typing-extensions==4.14.1
 typing-inspection==0.4.1
 urllib3==2.5.0
 wheel==0.45.1
+geoip2==4.8.0
+maxminddb==2.6.2

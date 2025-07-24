@@ -4,6 +4,7 @@ import os
 import time
 import hashlib
 import re
+import ipaddress
 from typing import Dict, Any, Optional, List, Generator
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError, RequestError
@@ -11,6 +12,13 @@ from dotenv import load_dotenv
 import outlines
 import ollama
 import openai
+
+try:
+    import geoip2.database
+    import geoip2.errors
+    GEOIP_AVAILABLE = True
+except ImportError:
+    GEOIP_AVAILABLE = False
 
 # .env 파일 로드
 load_dotenv(dotenv_path="config")
@@ -84,6 +92,15 @@ LOG_CHUNK_SIZES = {
     "httpd_apache_error": int(os.getenv("CHUNK_SIZE_HTTPD_APACHE_ERROR", "10")),
     "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10")),
     "tcpdump_packet": int(os.getenv("CHUNK_SIZE_TCPDUMP_PACKET", "5"))
+}
+
+# GeoIP Configuration - Read from config file
+GEOIP_CONFIG = {
+    "enabled": os.getenv("GEOIP_ENABLED", "true").lower() == "true",
+    "database_path": os.getenv("GEOIP_DATABASE_PATH", "./GeoLite2-Country.mmdb"),
+    "fallback_country": os.getenv("GEOIP_FALLBACK_COUNTRY", "Unknown"),
+    "cache_size": int(os.getenv("GEOIP_CACHE_SIZE", "1000")),
+    "include_private_ips": os.getenv("GEOIP_INCLUDE_PRIVATE_IPS", "false").lower() == "true"
 }
 
 def get_analysis_config(log_type, chunk_size=None, analysis_mode=None, 
@@ -539,9 +556,242 @@ def _create_log_hash_mapping_realtime(chunk: list[str]) -> Dict[str, str]:
             mapping[logid] = line.strip()
     return mapping
 
+
+class GeoIPLookup:
+    """
+    GeoIP lookup utility for enriching IP addresses with country information
+    """
+    
+    def __init__(self):
+        """Initialize GeoIP lookup with MaxMind database"""
+        self.enabled = GEOIP_CONFIG["enabled"] and GEOIP_AVAILABLE
+        self.database_path = GEOIP_CONFIG["database_path"]
+        self.fallback_country = GEOIP_CONFIG["fallback_country"]
+        self.include_private_ips = GEOIP_CONFIG["include_private_ips"]
+        self.cache_size = GEOIP_CONFIG["cache_size"]
+        
+        # IP lookup cache to avoid repeated database queries
+        self._cache = {}
+        self._cache_order = []  # For LRU eviction
+        
+        # GeoIP database reader
+        self._reader = None
+        
+        if self.enabled:
+            self._initialize_database()
+    
+    def _initialize_database(self):
+        """Initialize GeoIP database reader"""
+        try:
+            if not os.path.exists(self.database_path):
+                print(f"WARNING: GeoIP database not found at {self.database_path}")
+                print("NOTE: You can download GeoLite2-Country.mmdb from MaxMind")
+                print("NOTE: GeoIP enrichment will be disabled")
+                self.enabled = False
+                return
+            
+            self._reader = geoip2.database.Reader(self.database_path)
+            print(f"✓ GeoIP database loaded: {self.database_path}")
+            
+        except Exception as e:
+            print(f"WARNING: Failed to initialize GeoIP database: {e}")
+            print("NOTE: GeoIP enrichment will be disabled")
+            self.enabled = False
+    
+    def _is_private_ip(self, ip_str: str) -> bool:
+        """Check if IP address is private/internal"""
+        try:
+            ip = ipaddress.ip_address(ip_str)
+            return ip.is_private or ip.is_loopback or ip.is_link_local
+        except ValueError:
+            return False
+    
+    def _manage_cache(self, ip: str):
+        """Manage cache size using LRU eviction"""
+        if len(self._cache) >= self.cache_size:
+            # Remove oldest entry
+            oldest_ip = self._cache_order.pop(0)
+            del self._cache[oldest_ip]
+        
+        # Add to end of order list
+        if ip in self._cache_order:
+            self._cache_order.remove(ip)
+        self._cache_order.append(ip)
+    
+    def lookup_country(self, ip_str: str) -> Dict[str, str]:
+        """
+        Lookup country information for an IP address
+        
+        Args:
+            ip_str: IP address string
+        
+        Returns:
+            Dict with country information: {"country_code": "US", "country_name": "United States"}
+        """
+        if not self.enabled:
+            return {"country_code": "N/A", "country_name": "GeoIP Disabled"}
+        
+        # Validate IP format
+        try:
+            ipaddress.ip_address(ip_str)
+        except ValueError:
+            return {"country_code": "INVALID", "country_name": "Invalid IP"}
+        
+        # Check for private IPs
+        if self._is_private_ip(ip_str) and not self.include_private_ips:
+            return {"country_code": "PRIVATE", "country_name": "Private IP"}
+        
+        # Check cache first
+        if ip_str in self._cache:
+            # Move to end of LRU list
+            self._cache_order.remove(ip_str)
+            self._cache_order.append(ip_str)
+            return self._cache[ip_str]
+        
+        # Lookup in database
+        try:
+            response = self._reader.country(ip_str)
+            country_info = {
+                "country_code": response.country.iso_code or "UNKNOWN",
+                "country_name": response.country.name or self.fallback_country
+            }
+            
+            # Cache the result
+            self._manage_cache(ip_str)
+            self._cache[ip_str] = country_info
+            
+            return country_info
+            
+        except geoip2.errors.AddressNotFoundError:
+            # IP not found in database
+            country_info = {"country_code": "UNKNOWN", "country_name": self.fallback_country}
+            self._manage_cache(ip_str)
+            self._cache[ip_str] = country_info
+            return country_info
+            
+        except Exception as e:
+            print(f"WARNING: GeoIP lookup failed for {ip_str}: {e}")
+            return {"country_code": "ERROR", "country_name": "Lookup Failed"}
+    
+    def close(self):
+        """Close GeoIP database reader"""
+        if self._reader:
+            self._reader.close()
+            self._reader = None
+
+
+# Global GeoIP lookup instance
+_geoip_lookup = None
+
+def get_geoip_lookup() -> GeoIPLookup:
+    """Get or create global GeoIP lookup instance"""
+    global _geoip_lookup
+    if _geoip_lookup is None:
+        _geoip_lookup = GeoIPLookup()
+    return _geoip_lookup
+
+
+def enrich_source_ips_with_geoip(analysis_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enrich source_ips in analysis data with GeoIP country information
+    
+    This function appends country information as text to IP addresses to maintain
+    Elasticsearch compatibility. Instead of converting IPs to objects, it creates
+    enriched text strings like "1.1.1.1 (US - United States)".
+    
+    Args:
+        analysis_data: Analysis result data containing events with source_ips
+    
+    Returns:
+        Dict[str, Any]: Analysis data with enriched source_ips as text strings
+    """
+    if not GEOIP_CONFIG["enabled"] or not GEOIP_AVAILABLE:
+        return analysis_data
+    
+    geoip = get_geoip_lookup()
+    if not geoip.enabled:
+        return analysis_data
+    
+    # Deep copy to avoid modifying original data
+    enriched_data = analysis_data.copy()
+    
+    # Process events array
+    if "events" in enriched_data and isinstance(enriched_data["events"], list):
+        for event in enriched_data["events"]:
+            if "source_ips" in event and isinstance(event["source_ips"], list):
+                enriched_ips = []
+                
+                for ip_item in event["source_ips"]:
+                    if isinstance(ip_item, str):
+                        # Simple IP string - enrich with country info as text
+                        country_info = geoip.lookup_country(ip_item)
+                        
+                        # Skip enrichment for certain cases to keep clean output
+                        if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
+                            enriched_ips.append(ip_item)
+                        elif country_info["country_code"] == "PRIVATE":
+                            enriched_ips.append(f"{ip_item} (Private)")
+                        elif country_info["country_code"] == "UNKNOWN":
+                            enriched_ips.append(f"{ip_item} (Unknown)")
+                        else:
+                            # Standard format: IP (COUNTRY_CODE - Country Name)
+                            enriched_ip = f"{ip_item} ({country_info['country_code']} - {country_info['country_name']})"
+                            enriched_ips.append(enriched_ip)
+                        
+                    elif isinstance(ip_item, dict) and "ip" in ip_item:
+                        # IP dict - extract IP and enrich as text
+                        ip_str = ip_item["ip"]
+                        country_info = geoip.lookup_country(ip_str)
+                        
+                        if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
+                            enriched_ips.append(ip_str)
+                        elif country_info["country_code"] == "PRIVATE":
+                            enriched_ips.append(f"{ip_str} (Private)")
+                        elif country_info["country_code"] == "UNKNOWN":
+                            enriched_ips.append(f"{ip_str} (Unknown)")
+                        else:
+                            enriched_ip = f"{ip_str} ({country_info['country_code']} - {country_info['country_name']})"
+                            enriched_ips.append(enriched_ip)
+                        
+                    else:
+                        # Unknown format - keep as is
+                        enriched_ips.append(ip_item)
+                
+                # Replace source_ips with enriched version
+                event["source_ips"] = enriched_ips
+    
+    # Process statistics if it contains IP information
+    if "statistics" in enriched_data and isinstance(enriched_data["statistics"], dict):
+        stats = enriched_data["statistics"]
+        
+        # Enrich top_source_ips if present
+        if "top_source_ips" in stats and isinstance(stats["top_source_ips"], dict):
+            enriched_top_ips = {}
+            
+            for ip, count in stats["top_source_ips"].items():
+                country_info = geoip.lookup_country(ip)
+                
+                # Create enriched key with country info
+                if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
+                    enriched_key = ip
+                elif country_info["country_code"] == "PRIVATE":
+                    enriched_key = f"{ip} (Private)"
+                elif country_info["country_code"] == "UNKNOWN":
+                    enriched_key = f"{ip} (Unknown)"
+                else:
+                    enriched_key = f"{ip} ({country_info['country_code']} - {country_info['country_name']})"
+                
+                enriched_top_ips[enriched_key] = count
+            
+            stats["top_source_ips"] = enriched_top_ips
+    
+    return enriched_data
+
+
 def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None, chunk: Optional[list] = None) -> bool:
     """
     Integrated function to format analysis results and send them to Elasticsearch.
+    Includes GeoIP enrichment of source_ips before sending to Elasticsearch.
     
     Args:
         analysis_data: Analysis result data
@@ -552,7 +802,10 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
     Returns:
         bool: Whether transmission was successful
     """
-    return _send_to_elasticsearch(analysis_data, log_type, chunk_id)
+    # Enrich source_ips with GeoIP information before sending to Elasticsearch
+    enriched_data = enrich_source_ips_with_geoip(analysis_data)
+    
+    return _send_to_elasticsearch(enriched_data, log_type, chunk_id)
 
 
 class RemoteSSHLogMonitor:

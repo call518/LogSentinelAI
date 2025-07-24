@@ -169,3 +169,27 @@ REALTIME_SAMPLING_THRESHOLD=100
 # Note: Real-time monitoring will buffer new log lines until CHUNK_SIZE lines
 # are accumulated before sending to LLM for analysis. This improves efficiency
 # by avoiding single-line analysis calls.
+
+# =============================================================================
+# GeoIP Configuration
+# =============================================================================
+# Enable GeoIP enrichment of source IP addresses with country information
+# When enabled, source_ips in analysis results will include country data
+GEOIP_ENABLED=true
+
+# Path to MaxMind GeoLite2-Country database file (.mmdb format)
+# Download from: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
+# Enriches IP addresses with country information in text format (e.g., "8.8.8.8 (US - United States)")
+GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb
+
+# Fallback country name for unknown IP addresses
+GEOIP_FALLBACK_COUNTRY=Unknown
+
+# Include private/internal IP addresses in GeoIP processing
+# When false, private IPs (192.168.x.x, 10.x.x.x, etc.) are marked as "Private IP"
+# When true, private IPs are processed through GeoIP database (usually results in "Unknown")
+GEOIP_INCLUDE_PRIVATE_IPS=false
+
+# Size of GeoIP lookup cache (number of IP addresses to cache)
+# Higher values reduce database queries but consume more memory
+GEOIP_CACHE_SIZE=1000
