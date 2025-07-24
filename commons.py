@@ -1095,25 +1095,48 @@ class RealtimeLogMonitor:
                     print(f"Loaded state: position={self.last_position}, inode={self.last_inode}, size={self.last_size}")
                     
                     # Verify current file matches saved state
-                    if os.path.exists(self.log_path):
-                        current_stat = os.stat(self.log_path)
-                        current_inode = current_stat.st_ino
-                        current_size = current_stat.st_size
-                        
-                        if self.last_inode and current_inode != self.last_inode:
-                            print(f"WARNING: File inode changed ({self.last_inode} -> {current_inode})")
-                            print(f"         Possible log rotation detected, starting from beginning")
-                            self.last_position = 0
-                            self.last_size = 0
-                        elif current_size < self.last_position:
-                            print(f"WARNING: File size decreased ({self.last_size} -> {current_size})")
-                            print(f"         File truncated or rotated, starting from beginning")
-                            self.last_position = 0
-                        
-                        # Update current file info
-                        self.last_inode = current_inode
-                        self.last_size = current_size
-                        self._save_position_and_file_info()
+                    if self.access_mode == "ssh":
+                        # SSH 모드: 원격 파일 상태 확인
+                        if self.ssh_monitor:
+                            current_size = self.ssh_monitor.get_file_size()
+                            current_inode = self.ssh_monitor.get_file_inode()
+                            
+                            if self.last_inode and current_inode and current_inode != self.last_inode:
+                                print(f"WARNING: Remote file inode changed ({self.last_inode} -> {current_inode})")
+                                print(f"         Possible log rotation detected, starting from beginning")
+                                self.last_position = 0
+                                self.last_size = 0
+                            elif current_size < self.last_position:
+                                print(f"WARNING: Remote file size decreased ({self.last_size} -> {current_size})")
+                                print(f"         File truncated or rotated, starting from beginning")
+                                self.last_position = 0
+                            
+                            # Update current file info
+                            if current_inode:
+                                self.last_inode = current_inode
+                            self.last_size = current_size
+                            self._save_position_and_file_info()
+                    else:
+                        # 로컬 모드: 로컬 파일 상태 확인
+                        if os.path.exists(self.log_path):
+                            current_stat = os.stat(self.log_path)
+                            current_inode = current_stat.st_ino
+                            current_size = current_stat.st_size
+                            
+                            if self.last_inode and current_inode != self.last_inode:
+                                print(f"WARNING: File inode changed ({self.last_inode} -> {current_inode})")
+                                print(f"         Possible log rotation detected, starting from beginning")
+                                self.last_position = 0
+                                self.last_size = 0
+                            elif current_size < self.last_position:
+                                print(f"WARNING: File size decreased ({self.last_size} -> {current_size})")
+                                print(f"         File truncated or rotated, starting from beginning")
+                                self.last_position = 0
+                            
+                            # Update current file info
+                            self.last_inode = current_inode
+                            self.last_size = current_size
+                            self._save_position_and_file_info()
                     
                     return
         except (ValueError, IOError) as e:
@@ -1121,14 +1144,52 @@ class RealtimeLogMonitor:
         
         # If file doesn't exist or error, start from end of file
         try:
-            if os.path.exists(self.log_path):
-                file_stat = os.stat(self.log_path)
-                self.last_position = file_stat.st_size
-                self.last_inode = file_stat.st_ino
-                self.last_size = file_stat.st_size
-                print(f"📍 Starting from end of file: position={self.last_position}, inode={self.last_inode}")
-                self._save_position_and_file_info()
-        except IOError as e:
+            if self.access_mode == "ssh":
+                # SSH 모드: 원격 파일에서 초기화
+                if self.ssh_monitor:
+                    current_size = self.ssh_monitor.get_file_size()
+                    current_inode = self.ssh_monitor.get_file_inode()
+                    
+                    # 초기 실행 시 최근 chunk_size 라인을 읽기 위해 적절한 위치에서 시작
+                    # 파일 크기가 충분히 크면 마지막 몇 KB에서 시작하여 최근 라인들 확보
+                    if current_size > 10000:  # 10KB 이상이면 마지막 5KB에서 시작
+                        self.last_position = max(0, current_size - 5000)
+                        print(f"📍 Starting from recent position in remote file: position={self.last_position} (file_size={current_size})")
+                    else:
+                        self.last_position = 0  # 작은 파일은 처음부터
+                        print(f"📍 Starting from beginning of remote file: position={self.last_position} (file_size={current_size})")
+                    
+                    self.last_inode = current_inode
+                    self.last_size = current_size
+                    self._save_position_and_file_info()
+                else:
+                    print(f"WARNING: SSH monitor not available for initialization")
+                    self.last_position = 0
+                    self.last_inode = None
+                    self.last_size = 0
+            else:
+                # 로컬 모드: 로컬 파일에서 초기화
+                if os.path.exists(self.log_path):
+                    file_stat = os.stat(self.log_path)
+                    current_size = file_stat.st_size
+                    
+                    # 초기 실행 시 최근 chunk_size 라인을 읽기 위해 적절한 위치에서 시작
+                    if current_size > 10000:  # 10KB 이상이면 마지막 5KB에서 시작
+                        self.last_position = max(0, current_size - 5000)
+                        print(f"📍 Starting from recent position in file: position={self.last_position} (file_size={current_size})")
+                    else:
+                        self.last_position = 0  # 작은 파일은 처음부터
+                        print(f"📍 Starting from beginning of file: position={self.last_position} (file_size={current_size})")
+                    
+                    self.last_inode = file_stat.st_ino
+                    self.last_size = current_size
+                    self._save_position_and_file_info()
+                else:
+                    print(f"WARNING: Local log file does not exist: {self.log_path}")
+                    self.last_position = 0
+                    self.last_inode = None
+                    self.last_size = 0
+        except Exception as e:
             print(f"WARNING: Error accessing log file: {e}")
             self.last_position = 0
             self.last_inode = None
