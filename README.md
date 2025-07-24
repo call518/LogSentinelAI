@@ -17,57 +17,43 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
 
 ## 🚀 Key Features
 
-### 🧠 AI-Powered Security Analysis
-- **LLM-based log analysis** using OpenAI, Ollama, or vLLM for intelligent threat detection
-- **Structured output validation** with Pydantic schemas ensuring consistent, reliable results
-- **Enhanced statistics calculation** with improved prompts ensuring complete data extraction (IP counts, response codes, etc.)
-- **Multi-language support** for analysis results (English/Korean)
+### 🧠 AI-Powered Log Analysis
+- **Multi-provider LLM support**: OpenAI API, local Ollama, or GPU-accelerated vLLM
+- **Comprehensive log types**: HTTP access, Apache error, Linux system, and TCPDump packet analysis
+- **Intelligent threat detection**: SQL injection, XSS, brute force, system intrusions, and network anomalies
+- **Structured validation**: Pydantic schemas ensure consistent, reliable analysis results
 
-### 📊 Comprehensive Log Coverage  
-- **HTTP Access Logs**: Web attack detection (SQL injection, XSS, path traversal, brute force)
-- **Apache Error Logs**: Server-side security events and application errors
-- **Linux System Logs**: System-level security monitoring and authentication events
-- **Network Packet Analysis**: TCPDump packet inspection with automatic format detection for single-line and multi-line packet formats (TCPDump-specific feature)
+### 🔄 Flexible Processing Modes
+- **Batch analysis**: Complete historical log file processing for forensics and compliance
+- **Real-time monitoring**: Live log analysis with intelligent sampling for high-volume environments
+- **Dual access methods**: Local file processing or secure SSH remote monitoring
 
-### ⚡ Dual Analysis Modes
-- **Batch Mode**: Complete historical log file analysis for forensics and compliance
-- **Real-time Mode**: Live log monitoring with intelligent sampling for high-volume environments
+### 🏗️ Enhanced Data Enrichment
+- **GeoIP integration**: Automatic IP geolocation with MaxMind GeoLite2 database
+- **Statistics calculation**: Complete IP counts, response codes, and security metrics
+- **Multi-language output**: Analysis results in English or Korean
 
-### 🌐 Flexible Access Methods
-- **Local Log Files**: Direct access to local system log files (default mode)
-- **SSH Remote Access**: Secure remote log monitoring via SSH with key/password authentication
-- **Per-Script Configuration**: Individual SSH settings for monitoring multiple remote servers simultaneously
+### 🏗️ Enterprise Integration
+- **Elasticsearch/Kibana**: Automatic indexing, dashboards, and visualization
+- **Docker deployment**: Consistent, scalable infrastructure with ILM policies
+- **Unified CLI**: Simplified command-line interface with SSH remote access support
 
-### 🔄 Advanced Real-time Processing
-- **Position tracking** with automatic log rotation detection and handling
-- **Intelligent sampling**: Auto-switch between full processing and sampling based on log volume
-- **Graceful error handling** with automatic retry mechanisms and failure recovery
-- **TCPDump format detection**: Automatic detection and processing of single-line vs multi-line packet formats (specific to TCPDump logs only)
-
-### � GeoIP Enrichment
+### 🏗️ GeoIP Enrichment
 - **Automatic IP geolocation**: Enriches source IPs with country information using MaxMind GeoLite2 database
 - **Intelligent IP handling**: Automatically detects and handles private IPs, invalid IPs, and lookup failures
 - **Performance optimized**: Built-in LRU cache for repeated IP lookups with configurable cache size
 - **Non-blocking processing**: GeoIP enrichment happens after LLM analysis, ensuring zero impact on analysis performance
 
-### �🏗️ Enterprise-Ready Architecture
+### 🏗️ Enterprise-Ready Architecture
 - **Elasticsearch integration** with automatic indexing, ILM policies, and data lifecycle management
 - **Kibana dashboards** for visualization, alerting, and security analytics
 - **Docker-based deployment** for consistent, scalable infrastructure
 
-### 🛠️ Developer-Friendly Design
-- **Simplified CLI interface** with unified `--remote` and `--ssh user@host[:port]` syntax across all scripts
-- **Modular codebase** with generic functions and minimal code duplication (60%+ reduction)
-- **Comprehensive logging** with detailed metadata, timestamps, and processing status tracking
 
-### 🔧 Flexible Configuration
-- **Multi-provider LLM support**: Switch between OpenAI API, local Ollama, or GPU-accelerated vLLM
-- **Configurable chunking**: Optimized processing sizes for different log types and volumes
-- **Environment-based settings**: Centralized configuration management with config file support
-- **CLI override capabilities**: Command-line options can override any config file setting for flexibility
-- **SSH remote access**: Simplified `--remote --ssh user@host[:port]` syntax for secure remote log monitoring
 
-## 🏗️ System Architecture
+
+
+## System Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
