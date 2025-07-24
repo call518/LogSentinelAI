@@ -52,7 +52,7 @@ class Statistics(BaseModel):
     unique_ips: int = Field(description="Number of unique IPs")
     unique_users: int = Field(description="Number of unique users")
     event_by_type: dict[str, int] = Field(default_factory=dict, description="Events by type")
-    top_source_ips: dict[str, int] = Field(default_factory=dict, description="Top source IPs")
+    top_event_ips: dict[str, int] = Field(default_factory=dict, description="Top source IPs")
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")

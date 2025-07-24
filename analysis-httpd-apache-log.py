@@ -37,7 +37,7 @@ class SecurityEvent(BaseModel):
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
     log_level: str = Field(description="Apache log level")
-    error_message: str = Field(description="Error message")
+    event_message: str = Field(description="Event message")
     file_path: Optional[str] = Field(description="Related file path")
     source_ips: list[str] = Field(description="Source IP list")
     attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
@@ -46,10 +46,10 @@ class SecurityEvent(BaseModel):
     related_log_ids: list[str] = Field(description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
-    total_errors: int = Field(description="Total number of errors")
-    error_by_level: dict[str, int] = Field(default_factory=dict, description="Errors by level")
-    error_by_type: dict[str, int] = Field(default_factory=dict, description="Errors by type")
-    top_error_ips: dict[str, int] = Field(default_factory=dict, description="Top error IPs")
+    total_event: int = Field(description="Total number of errors")
+    event_by_level: dict[str, int] = Field(default_factory=dict, description="Errors by level")
+    event_by_type: dict[str, int] = Field(default_factory=dict, description="Errors by type")
+    top_event_ips: dict[str, int] = Field(default_factory=dict, description="Top error IPs")
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
