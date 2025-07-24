@@ -2007,7 +2007,16 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
     
     # Function to create analysis prompt
     def create_analysis_prompt(chunk, response_language):
-        logs = "".join(chunk)
+        # Add LOGID prefix to each line for consistency with batch mode
+        lines_with_logid = []
+        for line in chunk:
+            if line.strip():  # Skip empty lines
+                # Generate LOGID for the line
+                logid = f"LOGID-{hashlib.md5(line.strip().encode()).hexdigest().upper()}"
+                # Add LOGID prefix to the line
+                lines_with_logid.append(f"{logid} {line.strip()}\n")
+        
+        logs = "".join(lines_with_logid)
         model_schema = analysis_schema_class.model_json_schema()
         return prompt_template.format(
             logs=logs, 
