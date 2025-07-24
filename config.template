@@ -10,9 +10,9 @@ OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
 # LLM Configuration
 # =============================================================================
 # LLM Provider - Choose from "ollama", "vllm", "openai"
-# LLM_PROVIDER=ollama
-LLM_PROVIDER=vllm
-# LLM_PROVIDER=openai
+#LLM_PROVIDER=ollama
+#LLM_PROVIDER=vllm
+LLM_PROVIDER=openai
 
 # LLM Model Names by Provider
 LLM_MODEL_OLLAMA=qwen2.5-coder:1.5b
