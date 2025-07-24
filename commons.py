@@ -226,7 +226,7 @@ def wait_on_failure(delay_seconds=30):
 
 def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
                      elasticsearch_index, chunk_number, chunk_data, llm_provider=None, llm_model=None,
-                     processing_mode=None, log_path=None):
+                     processing_mode=None, log_path=None, access_mode=None):
     """
     Common function to process log chunks
     
@@ -243,6 +243,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         llm_model: LLM model name (e.g., "Qwen/Qwen2.5-3B-Instruct")
         processing_mode: Processing mode information (default: "batch")
         log_path: Log file path to include in metadata
+        access_mode: Access mode (local/ssh) to include in metadata
     
     Returns:
         (success: bool, parsed_data: dict or None)
@@ -290,7 +291,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@processing_result": "success",
             "@log_count": log_count,
             "@log_raw_data": log_raw_data,
-            "@processing_mode": processing_mode if processing_mode else "batch"
+            "@processing_mode": processing_mode if processing_mode else "batch",
+            "@access_mode": access_mode if access_mode else "local"
         }
         
         # LLM 정보 추가 (선택사항)
@@ -1688,7 +1690,8 @@ class RealtimeLogMonitor:
                             response_language=self.response_language,
                             processing_mode=self.processing_mode,
                             sampling_threshold=self.sampling_threshold,
-                            log_path=self.log_path
+                            log_path=self.log_path,
+                            access_mode=self.access_mode
                         )
                         
                         # Call custom callback if provided
@@ -1734,7 +1737,8 @@ class RealtimeLogMonitor:
                         response_language=self.response_language,
                         processing_mode=self.processing_mode,
                         sampling_threshold=self.sampling_threshold,
-                        log_path=self.log_path
+                        log_path=self.log_path,
+                        access_mode=self.access_mode
                     )
                     
                     # Call custom callback if provided
@@ -1752,7 +1756,7 @@ class RealtimeLogMonitor:
 
 
 def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_type, response_language, 
-                              processing_mode=None, sampling_threshold=None, log_path=None):
+                              processing_mode=None, sampling_threshold=None, log_path=None, access_mode=None):
     """
     Simplified function to process log chunks for real-time monitoring
     
@@ -1767,6 +1771,7 @@ def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_
         processing_mode: Processing mode (full/sampling/auto-sampling)
         sampling_threshold: Sampling threshold for auto-sampling mode
         log_path: Log file path to include in metadata
+        access_mode: Access mode (local/ssh) to include in metadata
     
     Returns:
         dict: Analysis result
@@ -1852,7 +1857,8 @@ def process_log_chunk_realtime(model, prompt, model_class, chunk, chunk_id, log_
             "@log_count": len(chunk),
             "@log_raw_data": _create_log_hash_mapping_realtime(chunk),
             "@processing_mode": processing_mode if processing_mode else "unknown",
-            "@sampling_threshold": sampling_threshold if sampling_threshold else None
+            "@sampling_threshold": sampling_threshold if sampling_threshold else None,
+            "@access_mode": access_mode if access_mode else "local"
         })
         
         # 로그 파일 경로 추가 (선택사항)
@@ -1988,7 +1994,8 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
                 llm_provider=llm_provider,
                 llm_model=llm_model_name,
                 processing_mode="batch",
-                log_path=log_path
+                log_path=log_path,
+                access_mode=config["access_mode"]
             )
             
             if success:
