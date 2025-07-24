@@ -699,8 +699,12 @@ def enrich_source_ips_with_geoip(analysis_data: Dict[str, Any]) -> Dict[str, Any
     Elasticsearch compatibility. Instead of converting IPs to objects, it creates
     enriched text strings like "1.1.1.1 (US - United States)".
     
+    Handles both:
+    1. source_ips arrays (HTTP access, Apache error, Linux system logs)
+    2. Individual source_ip/dest_ip fields (TCPDUMP packet logs)
+    
     Args:
-        analysis_data: Analysis result data containing events with source_ips
+        analysis_data: Analysis result data containing events with source_ips or source_ip/dest_ip
     
     Returns:
         Dict[str, Any]: Analysis data with enriched source_ips as text strings
@@ -712,78 +716,86 @@ def enrich_source_ips_with_geoip(analysis_data: Dict[str, Any]) -> Dict[str, Any
     if not geoip.enabled:
         return analysis_data
     
+    def enrich_ip_text(ip_str):
+        """Convert IP string to enriched format"""
+        if not isinstance(ip_str, str):
+            return ip_str
+        
+        try:
+            country_info = geoip.lookup_country(ip_str)
+            if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
+                return ip_str
+            elif country_info["country_code"] == "PRIVATE":
+                return f"{ip_str} (Private)"
+            elif country_info["country_code"] == "UNKNOWN":
+                return f"{ip_str} (Unknown)"
+            else:
+                return f"{ip_str} ({country_info['country_code']} - {country_info['country_name']})"
+        except Exception:
+            return ip_str
+    
     # Deep copy to avoid modifying original data
     enriched_data = analysis_data.copy()
     
     # Process events array
     if "events" in enriched_data and isinstance(enriched_data["events"], list):
         for event in enriched_data["events"]:
-            if "source_ips" in event and isinstance(event["source_ips"], list):
-                enriched_ips = []
-                
-                for ip_item in event["source_ips"]:
-                    if isinstance(ip_item, str):
-                        # Simple IP string - enrich with country info as text
-                        country_info = geoip.lookup_country(ip_item)
-                        
-                        # Skip enrichment for certain cases to keep clean output
-                        if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
+            if isinstance(event, dict):
+                # Handle source_ips arrays (HTTP access, Apache error, Linux system logs)
+                if "source_ips" in event and isinstance(event["source_ips"], list):
+                    enriched_ips = []
+                    
+                    for ip_item in event["source_ips"]:
+                        if isinstance(ip_item, str):
+                            # Simple IP string - enrich with country info as text
+                            enriched_ips.append(enrich_ip_text(ip_item))
+                            
+                        elif isinstance(ip_item, dict) and "ip" in ip_item:
+                            # IP dict - extract IP and enrich as text
+                            ip_str = ip_item["ip"]
+                            enriched_ips.append(enrich_ip_text(ip_str))
+                            
+                        else:
+                            # Unknown format - keep as is
                             enriched_ips.append(ip_item)
-                        elif country_info["country_code"] == "PRIVATE":
-                            enriched_ips.append(f"{ip_item} (Private)")
-                        elif country_info["country_code"] == "UNKNOWN":
-                            enriched_ips.append(f"{ip_item} (Unknown)")
-                        else:
-                            # Standard format: IP (COUNTRY_CODE - Country Name)
-                            enriched_ip = f"{ip_item} ({country_info['country_code']} - {country_info['country_name']})"
-                            enriched_ips.append(enriched_ip)
-                        
-                    elif isinstance(ip_item, dict) and "ip" in ip_item:
-                        # IP dict - extract IP and enrich as text
-                        ip_str = ip_item["ip"]
-                        country_info = geoip.lookup_country(ip_str)
-                        
-                        if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
-                            enriched_ips.append(ip_str)
-                        elif country_info["country_code"] == "PRIVATE":
-                            enriched_ips.append(f"{ip_str} (Private)")
-                        elif country_info["country_code"] == "UNKNOWN":
-                            enriched_ips.append(f"{ip_str} (Unknown)")
-                        else:
-                            enriched_ip = f"{ip_str} ({country_info['country_code']} - {country_info['country_name']})"
-                            enriched_ips.append(enriched_ip)
-                        
-                    else:
-                        # Unknown format - keep as is
-                        enriched_ips.append(ip_item)
+                    
+                    # Replace source_ips with enriched version
+                    event["source_ips"] = enriched_ips
                 
-                # Replace source_ips with enriched version
-                event["source_ips"] = enriched_ips
+                # Handle individual source_ip and dest_ip fields (TCPDUMP)
+                if "source_ip" in event:
+                    event["source_ip"] = enrich_ip_text(event["source_ip"])
+                if "dest_ip" in event:
+                    event["dest_ip"] = enrich_ip_text(event["dest_ip"])
     
     # Process statistics if it contains IP information
     if "statistics" in enriched_data and isinstance(enriched_data["statistics"], dict):
         stats = enriched_data["statistics"]
         
-        # Enrich top_source_ips if present
+        # Enrich top_source_ips if present (HTTP access, Apache error, Linux system logs)
         if "top_source_ips" in stats and isinstance(stats["top_source_ips"], dict):
             enriched_top_ips = {}
             
             for ip, count in stats["top_source_ips"].items():
-                country_info = geoip.lookup_country(ip)
-                
-                # Create enriched key with country info
-                if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
-                    enriched_key = ip
-                elif country_info["country_code"] == "PRIVATE":
-                    enriched_key = f"{ip} (Private)"
-                elif country_info["country_code"] == "UNKNOWN":
-                    enriched_key = f"{ip} (Unknown)"
-                else:
-                    enriched_key = f"{ip} ({country_info['country_code']} - {country_info['country_name']})"
-                
+                enriched_key = enrich_ip_text(ip)
                 enriched_top_ips[enriched_key] = count
             
             stats["top_source_ips"] = enriched_top_ips
+        
+        # Handle TCPDUMP-specific statistics
+        if "top_source_addresses" in stats and isinstance(stats["top_source_addresses"], dict):
+            enriched_sources = {}
+            for ip, count in stats["top_source_addresses"].items():
+                enriched_key = enrich_ip_text(ip)
+                enriched_sources[enriched_key] = count
+            stats["top_source_addresses"] = enriched_sources
+        
+        if "top_destination_addresses" in stats and isinstance(stats["top_destination_addresses"], dict):
+            enriched_destinations = {}
+            for ip, count in stats["top_destination_addresses"].items():
+                enriched_key = enrich_ip_text(ip)
+                enriched_destinations[enriched_key] = count
+            stats["top_destination_addresses"] = enriched_destinations
     
     return enriched_data
 

@@ -239,6 +239,8 @@ STATISTICS REQUIREMENT: You MUST provide complete and accurate statistics:
 - connection_attempts: Count connection initiation attempts
 - failed_connections: Count failed/rejected connections
 - data_transfer_bytes: Sum up data transfer volumes from packets
+- top_source_addresses: Create a dictionary mapping each source IP address to its packet count from the logs
+- top_destination_addresses: Create a dictionary mapping each destination IP address to its packet count from the logs
 DO NOT leave these empty! Calculate them from the actual packet data provided.
 
 JSON RULES:
