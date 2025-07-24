@@ -587,54 +587,81 @@ python analysis-httpd-access-log.py --chunk-size 25
 
 ## 📊 Output Data Schema
 
-### Security Event Structure
-
-```json
-{
-  "event_type": "SQL_INJECTION",
-  "severity": "HIGH",
-  "description": "SQL injection attack attempt detected",
-  "confidence_score": 0.85,
-  "url_pattern": "/api/users",
-  "http_method": "POST",
-  "source_ips": ["192.168.1.100"],
-  "response_codes": ["403"],
-  "attack_patterns": ["SQL_INJECTION"],
-  "recommended_actions": ["Block IP", "Add WAF rule"],
-  "requires_human_review": true,
-  "related_log_ids": ["LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9", "LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51"]
-}
-```
-
 ### Elasticsearch Document Structure
 
 ```json
 {
-  "@chunk_analysis_start_utc": "2025-07-18T10:00:00Z",
-  "@chunk_analysis_end_utc": "2025-07-18T10:00:05Z", 
+  "@chunk_analysis_start_utc": "2025-07-25T10:00:00Z",
+  "@chunk_analysis_end_utc": "2025-07-25T10:00:05Z", 
   "@processing_result": "success",
   "@processing_mode": "realtime",
+  "@access_mode": "ssh",
   "@sampling_threshold": 100,
   "@log_count": 15,
-  "@timestamp": "2025-07-18T10:00:05.123Z",
+  "@timestamp": "2025-07-25T10:00:05.123Z",
   "@log_type": "httpd_access",
-  "@document_id": "httpd_access_20250718_100005_123456_chunk_1",
+  "@document_id": "httpd_access_20250725_100005_123456_chunk_1",
+  "@llm_provider": "vllm",
+  "@llm_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "@log_path": "/var/log/apache2/access.log",
   "@log_raw_data": {
-    "LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9": "192.168.1.100 - - [18/Jul/2025:10:00:01] GET /api/users",
-    "LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51": "192.168.1.100 - - [18/Jul/2025:10:00:02] POST /api/login"
+    "LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9": "203.0.113.45 - - [25/Jul/2025:10:00:01 +0000] \"GET /api/users?id=1' OR '1'='1 HTTP/1.1\" 403 2847",
+    "LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51": "198.51.100.23 - - [25/Jul/2025:10:00:02 +0000] \"POST /api/login HTTP/1.1\" 200 1205"
   },
-  "summary": "Analysis summary in English",
+  "summary": "Analysis detected SQL injection attempts and suspicious authentication patterns from multiple international sources. Immediate review recommended.",
   "events": [
     {
       "event_type": "SQL_INJECTION",
       "severity": "HIGH", 
-      "description": "SQL injection attack attempt detected",
-      "confidence_score": 0.85,
-      "related_log_ids": ["LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9"],
-      ...
+      "description": "SQL injection attack attempt detected in GET parameter from US-based IP",
+      "confidence_score": 0.92,
+      "source_ips": ["203.0.113.45 (US - United States)"],
+      "url_pattern": "/api/users",
+      "http_method": "GET",
+      "response_codes": ["403"],
+      "attack_patterns": ["SQL_INJECTION", "PARAMETER_MANIPULATION"],
+      "recommended_actions": ["Block IP immediately", "Add WAF rule", "Review user account security"],
+      "requires_human_review": true,
+      "related_log_ids": ["LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9"]
+    },
+    {
+      "event_type": "SUSPICIOUS_LOGIN",
+      "severity": "MEDIUM",
+      "description": "Multiple authentication attempts from France-based IP within short timeframe",
+      "confidence_score": 0.75,
+      "source_ips": ["198.51.100.23 (FR - France)"],
+      "url_pattern": "/api/login",
+      "http_method": "POST", 
+      "response_codes": ["200"],
+      "attack_patterns": ["BRUTE_FORCE", "CREDENTIAL_STUFFING"],
+      "recommended_actions": ["Monitor IP", "Enable 2FA", "Check user account activity"],
+      "requires_human_review": false,
+      "related_log_ids": ["LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51"]
     }
   ],
-  "statistics": {...},
+  "statistics": {
+    "total_requests": 15,
+    "unique_ips": 8,
+    "error_rate": 0.13,
+    "top_source_ips": {
+      "203.0.113.45 (US - United States)": 3,
+      "198.51.100.23 (FR - France)": 2,
+      "192.168.1.100 (Private)": 5,
+      "10.0.0.50 (Private)": 3,
+      "172.16.0.25 (Private)": 2
+    },
+    "response_code_dist": {
+      "200": 11,
+      "403": 2,
+      "404": 1,
+      "500": 1
+    },
+    "event_by_type": {
+      "SQL_INJECTION": 1,
+      "SUSPICIOUS_LOGIN": 1,
+      "INFO": 2
+    }
+  },
   "highest_severity": "HIGH",
   "requires_immediate_attention": true
 }
@@ -642,7 +669,7 @@ python analysis-httpd-access-log.py --chunk-size 25
 
 ---
 
-## �️ Roadmap
+## Roadmap
 
 LogSentinelAI is continuously evolving to provide more comprehensive security analysis capabilities. Here are our planned enhancements:
 
