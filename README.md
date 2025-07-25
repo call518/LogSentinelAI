@@ -494,6 +494,70 @@ REALTIME_PROCESSING_MODE=full     # full, sampling, or auto-sampling
 REALTIME_SAMPLING_THRESHOLD=100   # When exceeded, triggers sampling in 'full' mode
 ```
 
+#### 🔄 Real-time Sampling Logic Explained
+
+**Scenario: High-Traffic Web Server Monitoring**
+
+When monitoring a busy Apache access log in real-time, LogSentinelAI automatically switches to sampling mode to prevent analysis bottlenecks:
+
+```bash
+# Initial setup: Real-time monitoring with auto-sampling
+logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-threshold 100
+```
+
+**Example Timeline:**
+```
+[10:00:00] Normal traffic: 15 new log lines
+           → Buffer: 15 lines pending
+           → Status: FULL mode (under threshold)
+           → Processing: Waiting for chunk_size=10 to accumulate
+
+[10:00:05] Traffic spike: 250 new log lines accumulated  
+           → Buffer: 265 total lines pending (15+250)
+           → Trigger: Exceeds REALTIME_SAMPLING_THRESHOLD=100
+           → Action: Auto-switch to SAMPLING mode
+           → Sampling: Keep latest 10 lines only (chunk_size=10)
+           → Skipped: 255 lines excluded from analysis (preserved in original log)
+           → Processing: 10 lines analyzed by LLM
+
+[10:00:10] Traffic continues: 180 new log lines
+           → Buffer: 180 lines pending
+           → Status: SAMPLING mode continues  
+           → Sampling: Keep latest 10 lines only
+           → Skipped: 170 lines excluded from analysis (preserved in original log)
+           → Processing: 10 lines analyzed by LLM
+
+[10:00:30] Traffic normalizes: 25 new log lines  
+           → Buffer: 25 lines pending
+           → Status: Back to FULL mode (under threshold)
+           → Processing: ALL 25 lines will be processed in chunks of 10
+```
+
+**Sampling Strategy:**
+- **FIFO Buffer**: Uses First-In-First-Out buffer (pending_lines) to accumulate logs
+- **Threshold Trigger**: When buffer exceeds sampling_threshold, discards older logs
+- **Simple Retention**: Keeps only latest `chunk_size` logs, discards all others
+- **No Smart Selection**: Does not prioritize by severity, IP, or patterns - purely chronological
+- **Original Files Intact**: Source log files remain unchanged and complete
+
+**Configuration Impact:**
+```bash
+# Conservative sampling (analyze more, slower)
+REALTIME_SAMPLING_THRESHOLD=50    # Trigger sampling earlier
+--chunk-size 5                    # Smaller analysis chunks
+
+# Aggressive sampling (analyze less, faster)  
+REALTIME_SAMPLING_THRESHOLD=200   # Allow more accumulation
+--chunk-size 20                   # Larger analysis chunks
+```
+
+**Key Benefits:**
+- ✅ **Memory Control**: Prevents unlimited buffer growth during traffic spikes
+- ✅ **Adaptive Behavior**: Automatically switches modes based on log volume
+- ✅ **Cost Efficiency**: Reduces LLM API calls during high-traffic periods
+- ⚠️ **Analysis Gaps**: Some logs excluded from AI analysis (not lost from disk)
+- ⚠️ **Detection Limits**: May miss security events in unanalyzed logs
+
 ### Verify Configuration Changes
 ```bash
 # Run analysis after configuration changes to verify operation
