@@ -18,7 +18,7 @@ LogSentinelAI is a modern Python package that leverages LLM (Large Language Mode
 ### Data Enrichment
 - **GeoIP**: MaxMind GeoLite2 country lookup
 - **Statistics**: IP counts, response codes, metrics
-- **Languages**: English, Korean output
+- **Languages**: Output in any language (configurable)
 
 ### Enterprise Integration
 - **Storage**: Elasticsearch with ILM policies
