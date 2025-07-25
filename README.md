@@ -76,6 +76,49 @@ LogSentinelAI is a modern Python package that leverages LLM (Large Language Mode
 
 ## �🚀 Quick Start: Installation & Setup
 
+### Demo Environment Verification
+
+LogSentinelAI has been successfully tested and validated on the following configuration:
+
+```bash
+# Test Environment Specifications
+- Host OS: Windows 11
+- WSL2: v2.5.9 running RockyLinux 8
+- Docker Desktop: v4.39.0
+- GPU Support: NVIDIA GeForce GTX 1660 with CUDA 12.9
+
+# GPU Verification (RockyLinux8 Distro on WSL2)
+$ nvidia-smi
+Tue Jul 22 22:39:22 2025
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 575.64.01              Driver Version: 576.88         CUDA Version: 12.9     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce GTX 1660 ...    On  |   00000000:01:00.0  On |                  N/A |
+| 45%   63C    P2            120W /  125W |    5891MiB /   6144MiB |    100%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              45      C   /python3.12                           N/A      |
++-----------------------------------------------------------------------------------------+
+```
+
+✅ **Validation Status**: All core features including OpenAI API, local Ollama, and GPU-accelerated vLLM deployments have been thoroughly tested and verified working on this configuration.
+
+### 1. Prerequisites
+
+- **Operating Systems**: Linux, Windows, Mac all supported
+- **Python**: 3.11 or higher
+- **Elasticsearch/Kibana**: 9.0.3 or higher (Docker-based installation recommended)
+
 ### 📦 Package Installation
 
 LogSentinelAI is available on PyPI and can be installed with a single command:
