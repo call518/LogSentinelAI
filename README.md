@@ -363,7 +363,7 @@ cat config/Qwen2.5-3B-Instruct/generation_config.json
 }
 
 # Run vLLM with Docker
-./run-docker-vllm---Qwen2.5-3B-Instruct.sh
+./run-docker-vllm---Qwen2.5-1.5B-Instruct.sh
 
 # Verify API is working
 curl -s -X GET http://localhost:5000/v1/models | jq
