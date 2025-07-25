@@ -4,30 +4,26 @@ LogSentinelAI is a modern Python package that leverages LLM (Large Language Mode
 
 ## 🚀 Key Features
 
-### 🧠 AI-Powered Analysis
+### AI-Powered Analysis
 - **LLM Providers**: OpenAI API, Ollama, vLLM
 - **Log Types**: HTTP Access, Apache Error, Linux System, TCPDump
 - **Threat Detection**: SQL Injection, XSS, Brute Force, Network Anomalies
 - **Output**: Structured JSON with Pydantic validation
 
-### 🔄 Processing Modes
+### Processing Modes
 - **Batch**: Historical log analysis
 - **Real-time**: Live monitoring with sampling
 - **Access**: Local files, SSH remote
 
-### � Data Enrichment
+### Data Enrichment
 - **GeoIP**: MaxMind GeoLite2 country lookup
 - **Statistics**: IP counts, response codes, metrics
 - **Languages**: English, Korean output
 
-### 🏗️ Enterprise Integration
+### Enterprise Integration
 - **Storage**: Elasticsearch with ILM policies
 - **Visualization**: Kibana dashboards
 - **Deployment**: Docker containers
-
-
-
-
 
 ## System Architecture
 
@@ -727,6 +723,8 @@ We would like to express our sincere gratitude to the following projects and com
 - **[Outlines](https://dottxt-ai.github.io/outlines/latest/)** - Structured LLM output generation framework that powers our reliable AI analysis
 - **[dottxt-ai Demos](https://github.com/dottxt-ai/demos/tree/main/logs)** - Excellent log analysis examples and implementation patterns
 - **[Docker ELK Stack](https://github.com/deviantony/docker-elk)** - Comprehensive Elasticsearch, Logstash, and Kibana Docker setup
+- **[Elastic Stack Docker-Compose Part 1](https://www.elastic.co/blog/getting-started-with-the-elastic-stack-and-docker-compose)** - Official Elastic documentation for Docker deployment
+- **[Elastic Stack Docker-Compose Part 2](https://www.elastic.co/blog/getting-started-with-the-elastic-stack-and-docker-compose-part-2)** - Advanced configuration and security setup
 
 ### 🤖 LLM Infrastructure & Deployment
 - **[vLLM](https://github.com/vllm-project/vllm)** - High-performance LLM inference engine for GPU-accelerated local deployment
