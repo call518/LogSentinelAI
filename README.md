@@ -162,24 +162,21 @@ logsentinelai-geoip-download
 # View available commands
 logsentinelai --help
 
-# Download sample log files for testing
-curl -o access-10k.log https://raw.githubusercontent.com/call518/LogSentinelAI/main/sample-logs/access-10k.log
-curl -o apache-10k.log https://raw.githubusercontent.com/call518/LogSentinelAI/main/sample-logs/apache-10k.log
-curl -o linux-2k.log https://raw.githubusercontent.com/call518/LogSentinelAI/main/sample-logs/linux-2k.log
-curl -o tcpdump-packet-2k-single-line.log https://raw.githubusercontent.com/call518/LogSentinelAI/main/sample-logs/tcpdump-packet-2k-single-line.log
-curl -o tcpdump-packet-2k-multi-line.log https://raw.githubusercontent.com/call518/LogSentinelAI/main/sample-logs/tcpdump-packet-2k-multi-line.log
+# Clone repository for sample log files
+git clone https://github.com/call518/LogSentinelAI.git
+cd LogSentinelAI
 
 # HTTP Access Log Analysis
-logsentinelai-httpd-access --log-path access-10k.log
+logsentinelai-httpd-access --log-path sample-logs/access-10k.log
 
 # Apache Error Log Analysis
-logsentinelai-apache-error --log-path apache-10k.log
+logsentinelai-apache-error --log-path sample-logs/apache-10k.log
 
 # Linux System Log Analysis
-logsentinelai-linux-system --log-path linux-2k.log
+logsentinelai-linux-system --log-path sample-logs/linux-2k.log
 
 # TCPDump Packet Analysis
-logsentinelai-tcpdump --log-path tcpdump-packet-2k-single-line.log
+logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-2k-single-line.log
 
 # Real-time monitoring  
 logsentinelai-linux-system --mode realtime
