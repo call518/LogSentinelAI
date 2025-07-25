@@ -318,14 +318,14 @@ OPENAI_API_KEY=your_openai_api_key_here
 #### Ollama (Local LLM) Configuration
 ```bash
 # 1. Install Ollama and download model
-ollama pull qwen3:1.7b
+ollama pull qwen2.5:1.5b
 ollama serve
 ```
 
 ```bash
 # Change configuration in config file
 LLM_PROVIDER=ollama
-LLM_MODEL_OLLAMA=qwen3:1.7b
+LLM_MODEL_OLLAMA=qwen2.5:1.5b
 ```
 
 #### vLLM (Local GPU) Configuration
