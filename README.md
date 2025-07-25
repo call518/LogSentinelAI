@@ -188,6 +188,39 @@ logsentinelai-tcpdump --remote --ssh admin@server.com --ssh-key ~/.ssh/id_rsa
 logsentinelai-geoip-download
 ```
 
+### ⚙️ CLI Options Reference
+
+All analysis commands (`logsentinelai-httpd-access`, `logsentinelai-apache-error`, `logsentinelai-linux-system`, `logsentinelai-tcpdump`) support the same CLI options:
+
+| Option | Description | Config Default | Override |
+|--------|-------------|----------------|----------|
+| `--log-path <path>` | Log file path to analyze | `LOG_PATH_*` settings | ✅ Yes |
+| `--mode <mode>` | Analysis mode: `batch` or `realtime` | `ANALYSIS_MODE=batch` | ✅ Yes |
+| `--chunk-size <num>` | Number of log entries per analysis chunk | `CHUNK_SIZE_*=10` | ✅ Yes |
+| `--processing-mode <mode>` | Real-time processing: `full` or `sampling` | `REALTIME_PROCESSING_MODE=full` | ✅ Yes |
+| `--sampling-threshold <num>` | Auto-sampling threshold for real-time mode | `REALTIME_SAMPLING_THRESHOLD=100` | ✅ Yes |
+| `--remote` | Enable remote SSH log access | `REMOTE_LOG_MODE=local` | ✅ Yes |
+| `--ssh <user@host:port>` | SSH connection string | `REMOTE_SSH_*` settings | ✅ Yes |
+| `--ssh-key <path>` | SSH private key file path | `REMOTE_SSH_KEY_PATH` | ✅ Yes |
+| `--help` | Show command help and available options | N/A | N/A |
+
+**Key Usage Patterns:**
+```bash
+# Override config defaults
+logsentinelai-linux-system --chunk-size 20 --mode realtime
+
+# Remote analysis with SSH
+logsentinelai-httpd-access --remote --ssh admin@server.com:2222 --ssh-key ~/.ssh/id_rsa
+
+# Real-time with sampling
+logsentinelai-tcpdump --mode realtime --processing-mode sampling --sampling-threshold 50
+```
+
+**Notes:**
+- CLI options always override config file settings
+- Config values are used as defaults when CLI options are not specified
+- Use `--help` with any command to see all available options
+
 ### 🚀 Elasticsearch & Kibana Setup (Optional)
 
 For advanced visualization and analytics, you can set up Elasticsearch and Kibana:
@@ -283,19 +316,7 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 
 ### 📈 Advanced Usage Examples
 
-#### Universal Command-Line Interface
-All analysis commands support the same simplified command-line arguments:
-
-```bash
-# View available options for any command
-logsentinelai-httpd-access --help
-logsentinelai-linux-system --help
-logsentinelai-tcpdump --help
-
-# Core options: --mode, --chunk-size, --log-path, --remote, --ssh, --ssh-key
-```
-
-#### Local File Analysis (Default Mode)
+#### Local File Analysis
 ```bash
 # Batch analysis with default config settings
 logsentinelai-linux-system
@@ -303,12 +324,12 @@ logsentinelai-linux-system
 # Override log path and chunk size
 logsentinelai-linux-system --log-path /var/log/messages --chunk-size 15
 
-# Real-time monitoring
+# Real-time monitoring with different processing modes
 logsentinelai-linux-system --mode realtime
 logsentinelai-httpd-access --mode realtime --processing-mode sampling
 ```
 
-#### SSH Remote Access (Simplified Syntax)
+#### SSH Remote Access
 ```bash
 # SSH key authentication (recommended)
 logsentinelai-linux-system \
@@ -333,12 +354,6 @@ logsentinelai-httpd-access --remote --ssh web@web1.com --ssh-key ~/.ssh/web1 --l
 # Terminal 2: Database server logs  
 logsentinelai-linux-system --remote --ssh db@db1.com --ssh-key ~/.ssh/db1 --log-path /var/log/messages
 ```
-
-**CLI Options Override Config Settings:**
-- `--chunk-size`: Overrides `CHUNK_SIZE_*` settings in config file
-- `--log-path`: Overrides `LOG_PATH_*` settings in config file  
-- `--processing-mode`: Overrides `REALTIME_PROCESSING_MODE` setting
-- `--sampling-threshold`: Overrides `REALTIME_SAMPLING_THRESHOLD` setting
 
 ### 📊 Import Kibana Dashboard/Settings
 
