@@ -335,7 +335,7 @@ git clone https://github.com/call518/vLLM-Workspace.git
 cd vLLM-Workspace
 
 # Run vLLM with Docker (Qwen/Qwen3-1.7B is the default model)
-./run_vllm.sh
+./run_vllm.sh Qwen/Qwen3-1.7B
 
 # Verify API is working
 curl -s -X GET http://localhost:5000/v1/models | jq
