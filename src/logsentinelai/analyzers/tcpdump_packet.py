@@ -5,13 +5,13 @@ import datetime
 import re
 import hashlib
 
-from commons import (
+from ..core.commons import (
     initialize_llm_model, process_log_chunk, wait_on_failure, 
     get_analysis_config, run_generic_realtime_analysis,
     create_argument_parser, chunked_iterable, print_chunk_contents,
     handle_ssh_arguments, read_file_content
 )
-from prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
+from ..core.prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy elasticsearch

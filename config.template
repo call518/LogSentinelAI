@@ -180,7 +180,8 @@ GEOIP_ENABLED=true
 # Path to MaxMind GeoLite2-Country database file (.mmdb format)
 # Download from: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
 # Enriches IP addresses with country information in text format (e.g., "8.8.8.8 (US - United States)")
-GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb
+# Default: ~/.logsentinelai/GeoLite2-Country.mmdb (automatically downloaded if missing)
+GEOIP_DATABASE_PATH=~/.logsentinelai/GeoLite2-Country.mmdb
 
 # Fallback country name for unknown IP addresses
 GEOIP_FALLBACK_COUNTRY=Unknown

@@ -1,19 +1,6 @@
 # LogSentinelAI - AI-Powered Log Analyzer
-- **Automatic IP geolocation**: Enriches source IPs with country information using MaxMind GeoLite2 database
-- **Elasticsearch-compatible format**: Country info appended as text (e.g., "192.168.1.1 (Private)") for seamless ES indexing
-- **Intelligent IP handling**: Automatically detects and handles private IPs, invalid IPs, and lookup failures
-- **Performance optimized**: Built-in LRU cache for repeated IP lookups with configurable cache size
-- **Non-blocking processing**: GeoIP enrichment happens after LLM analysis, ensuring zero impact on analysis performancelysis
 
-LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
-
-## 📊 Dashboard Example
-
-![Kibana Dashboard](img/ex-dashboard.png)
-
-## 📋 JSON Output Example
-
-![JSON Output](img/ex-json.png)
+LogSentinelAI is a modern Python package that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
 
 ## 🚀 Key Features
 
@@ -79,85 +66,74 @@ LogSentinelAI is a system that leverages LLM (Large Language Model) to analyze v
                                               └─────────────────┘
 ```
 
-## 🚀 QuickStart: OpenAI API Installation & Setup
+## � Dashboard Example
 
-### Demo Environment Verification
+![Kibana Dashboard](img/ex-dashboard.png)
 
-LogSentinelAI has been successfully tested and validated on the following configuration:
+## 📋 JSON Output Example
 
-```bash
-# Test Environment Specifications
-- Host OS: Windows 11
-- WSL2: v2.5.9 running RockyLinux 8
-- Docker Desktop: v4.39.0
-- GPU Support: NVIDIA GeForce GTX 1660 with CUDA 12.9
+![JSON Output](img/ex-json.png)
 
-# GPU Verification (RockyLinux8 Distro on WSL2)
-$ nvidia-smi
-Tue Jul 22 22:39:22 2025
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 575.64.01              Driver Version: 576.88         CUDA Version: 12.9     |
-|-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA GeForce GTX 1660 ...    On  |   00000000:01:00.0  On |                  N/A |
-| 45%   63C    P2            120W /  125W |    5891MiB /   6144MiB |    100%      Default |
-|                                         |                        |                  N/A |
-+-----------------------------------------+------------------------+----------------------+
+## �🚀 Quick Start: Installation & Setup
 
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|    0   N/A  N/A              45      C   /python3.12                           N/A      |
-+-----------------------------------------------------------------------------------------+
-```
+### 📦 Package Installation
 
-✅ **Validation Status**: All core features including OpenAI API, local Ollama, and GPU-accelerated vLLM deployments have been thoroughly tested and verified working on this configuration.
-
-### 1. Prerequisites
-
-- **Operating Systems**: Linux, Windows, Mac all supported
-- **Python**: 3.11 or higher
-- **Elasticsearch/Kibana**: 9.0.3 or higher (Docker-based installation recommended)
-
-### 2. Project Installation
+LogSentinelAI is available on PyPI and can be installed with a single command:
 
 ```bash
-# 1. Clone repository and navigate to directory
-git clone https://github.com/call518/LogSentinelAI.git
-cd LogSentinelAI
+# Create and activate a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# 2. Create and activate Python virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# .venv\Scripts\activate   # Windows
-
-# 3. Install packages
-pip install -r requirements.txt
-
-# 4. Setup configuration file
-cp config.template config
-# Edit config file and set OPENAI_API_KEY value (obtained from OpenAI account)
-
-# 5. GeoIP Database Setup (Optional but Recommended)
-# Download MaxMind GeoLite2-Country database for IP geolocation
-python download_geoip_database.py
-# This will download GeoLite2-Country.mmdb to current directory
-# Enable GeoIP in config file:
-#   GEOIP_ENABLED=true  (default)
-#   GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb  (default)
-
-# 6. LLM Configuration (set in config file)
-# For OpenAI API usage, configure in config file as follows:
-#   LLM_PROVIDER=openai  (default)
-#   LLM_MODEL_OPENAI=gpt-4o-mini  (default)
+# Install LogSentinelAI
+pip install logsentinelai
 ```
 
-### 3. Elasticsearch & Kibana Installation (Docker)
+### ⚙️ Configuration Setup
+
+```bash
+# 1. Setup basic configuration (choose one)
+curl -o config https://raw.githubusercontent.com/call518/LogSentinelAI/main/config.template
+
+# 2. Edit config file and set your OPENAI_API_KEY
+# Get your API key from: https://platform.openai.com/api-keys
+nano config  # or vim config
+```
+
+### 🌍 GeoIP Database Setup (Automatic)
+
+GeoIP database will be automatically downloaded when first needed:
+
+```bash
+# The GeoIP database is automatically downloaded to ~/.logsentinelai/ 
+# when you run any analysis command for the first time
+
+# Optional: Pre-download GeoIP database
+logsentinelai-geoip-download
+```
+
+### 🚀 Quick Usage Examples
+
+```bash
+# View available commands
+logsentinelai --help
+
+# HTTP Access Log Analysis
+logsentinelai-httpd-access --log-path /var/log/apache2/access.log
+
+# Real-time monitoring  
+logsentinelai-linux-system --mode realtime
+
+# Remote SSH analysis
+logsentinelai-tcpdump --remote --ssh admin@server.com --ssh-key ~/.ssh/id_rsa
+
+# Download GeoIP database
+logsentinelai-geoip-download
+```
+
+### 🚀 Elasticsearch & Kibana Setup (Optional)
+
+For advanced visualization and analytics, you can set up Elasticsearch and Kibana:
 
 > [!IMPORTANT]
 > [Platinum features](https://www.elastic.co/subscriptions) are enabled by default for a [trial](https://www.elastic.co/docs/deploy-manage/license/manage-your-license-in-self-managed-cluster) duration of 30 days. After this evaluation period, you will retain access to all the free features included in the Open Basic license seamlessly, without manual intervention required, and without losing any data. Refer to the [How to disable paid features](https://github.com/deviantony/docker-elk#how-to-disable-paid-features) section to opt out of this behaviour.
@@ -181,7 +157,9 @@ docker compose up -d
 # Default credentials: elastic / changeme
 ```
 
-### 4. Elasticsearch Index/Policy/Template Setup
+### 📊 Elasticsearch Index/Policy Setup
+
+If using Elasticsearch integration:
 
 ```bash
 # 1. Create ILM policy (7-day retention, 10GB/1-day rollover)
@@ -246,16 +224,16 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 }'
 ```
 
-### 5. Run Log Analysis
+### 📈 Advanced Usage Examples
 
 #### Universal Command-Line Interface
-All analysis scripts support the same simplified command-line arguments:
+All analysis commands support the same simplified command-line arguments:
 
 ```bash
-# View available options for any script
-python analysis-httpd-access-log.py --help
-python analysis-linux-system-log.py --help
-python analysis-tcpdump-packet.py --help
+# View available options for any command
+logsentinelai-httpd-access --help
+logsentinelai-linux-system --help
+logsentinelai-tcpdump --help
 
 # Core options: --mode, --chunk-size, --log-path, --remote, --ssh, --ssh-key
 ```
@@ -263,27 +241,27 @@ python analysis-tcpdump-packet.py --help
 #### Local File Analysis (Default Mode)
 ```bash
 # Batch analysis with default config settings
-python analysis-linux-system-log.py
+logsentinelai-linux-system
 
 # Override log path and chunk size
-python analysis-linux-system-log.py --log-path /var/log/messages --chunk-size 15
+logsentinelai-linux-system --log-path /var/log/messages --chunk-size 15
 
 # Real-time monitoring
-python analysis-linux-system-log.py --mode realtime
-python analysis-httpd-access-log.py --mode realtime --processing-mode sampling
+logsentinelai-linux-system --mode realtime
+logsentinelai-httpd-access --mode realtime --processing-mode sampling
 ```
 
 #### SSH Remote Access (Simplified Syntax)
 ```bash
 # SSH key authentication (recommended)
-python analysis-linux-system-log.py \
+logsentinelai-linux-system \
   --remote \
   --ssh admin@192.168.1.100 \
   --ssh-key ~/.ssh/id_rsa \
   --log-path /var/log/messages
 
 # SSH with custom port
-python analysis-httpd-access-log.py \
+logsentinelai-httpd-access \
   --remote \
   --ssh webuser@web.company.com:8022 \
   --ssh-key ~/.ssh/web_key \
@@ -293,10 +271,10 @@ python analysis-httpd-access-log.py \
 #### Multi-Server Monitoring
 ```bash
 # Terminal 1: Web server logs
-python analysis-httpd-access-log.py --remote --ssh web@web1.com --ssh-key ~/.ssh/web1 --log-path /var/log/apache2/access.log
+logsentinelai-httpd-access --remote --ssh web@web1.com --ssh-key ~/.ssh/web1 --log-path /var/log/apache2/access.log
 
 # Terminal 2: Database server logs  
-python analysis-linux-system-log.py --remote --ssh db@db1.com --ssh-key ~/.ssh/db1 --log-path /var/log/messages
+logsentinelai-linux-system --remote --ssh db@db1.com --ssh-key ~/.ssh/db1 --log-path /var/log/messages
 ```
 
 **CLI Options Override Config Settings:**
@@ -305,7 +283,9 @@ python analysis-linux-system-log.py --remote --ssh db@db1.com --ssh-key ~/.ssh/d
 - `--processing-mode`: Overrides `REALTIME_PROCESSING_MODE` setting
 - `--sampling-threshold`: Overrides `REALTIME_SAMPLING_THRESHOLD` setting
 
-### 6. Import Kibana Dashboard/Settings
+### 📊 Import Kibana Dashboard/Settings
+
+If using Kibana visualization:
 
 ```bash
 # 1. Access Kibana: http://localhost:5601
@@ -460,7 +440,7 @@ REALTIME_SAMPLING_THRESHOLD=100   # When exceeded, triggers sampling in 'full' m
 ### Verify Configuration Changes
 ```bash
 # Run analysis after configuration changes to verify operation
-python analysis-httpd-access-log.py
+logsentinelai-httpd-access
 ```
 
 ---
@@ -468,24 +448,23 @@ python analysis-httpd-access-log.py
 
 LogSentinelAI automatically enriches IP addresses in analysis results with country information using MaxMind GeoLite2 database.
 
-### 🚀 Quick Setup
+### 🚀 Automatic Setup
 
 ```bash
-# 1. Download GeoIP database
-python download_geoip_database.py
+# GeoIP database is automatically downloaded to ~/.logsentinelai/ 
+# when first needed - no manual setup required!
 
-# 2. Enable in configuration
-# In config file:
-GEOIP_ENABLED=true
-GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb
+# Optional: Pre-download manually
+logsentinelai-geoip-download
 
-# 3. Test functionality
-python test_geoip.py
+# Verify GeoIP status
+logsentinelai-httpd-access --help  # Will show if GeoIP is enabled
 ```
 
 ### 📊 Feature Overview
 
-- **Country identification**: Automatically appends country information to IP addresses
+- **Automatic download**: Database downloads to `~/.logsentinelai/` when first needed
+- **Country identification**: Automatically appends country information to IP addresses  
 - **Text-based format**: Uses format like "192.168.1.1 (US - United States)" for Elasticsearch compatibility
 - **Private IP handling**: Marks internal IPs as "(Private)" without database lookup
 - **Statistics enrichment**: Enhances IP counts and frequency data with geographic context
@@ -493,11 +472,11 @@ python test_geoip.py
 ### ⚙️ Configuration Options
 
 ```bash
-# Enable/disable GeoIP enrichment
+# Enable/disable GeoIP enrichment  
 GEOIP_ENABLED=true
 
-# Path to MaxMind database file
-GEOIP_DATABASE_PATH=./GeoLite2-Country.mmdb
+# Path to MaxMind database file (automatically set to ~/.logsentinelai/)
+GEOIP_DATABASE_PATH=~/.logsentinelai/GeoLite2-Country.mmdb
 
 # Fallback country for unknown IPs
 GEOIP_FALLBACK_COUNTRY=Unknown
@@ -509,9 +488,19 @@ GEOIP_INCLUDE_PRIVATE_IPS=false
 GEOIP_CACHE_SIZE=1000
 ```
 
-### 🔧 Manual Database Download
+### 🔧 Manual Database Download (If Needed)
 
-If automatic download fails, manually download from MaxMind:
+The database downloads automatically, but if needed you can download manually:
+
+```bash
+# Download to default location
+logsentinelai-geoip-download
+
+# Download to custom location  
+logsentinelai-geoip-download --output-dir /custom/path
+```
+
+If automatic download fails completely, manually download from MaxMind:
 
 1. Visit: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
 2. Download "GeoLite2 Country" in MaxMind DB format (.mmdb)

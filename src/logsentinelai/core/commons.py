@@ -97,7 +97,7 @@ LOG_CHUNK_SIZES = {
 # GeoIP Configuration - Read from config file
 GEOIP_CONFIG = {
     "enabled": os.getenv("GEOIP_ENABLED", "true").lower() == "true",
-    "database_path": os.getenv("GEOIP_DATABASE_PATH", "./GeoLite2-Country.mmdb"),
+    "database_path": os.getenv("GEOIP_DATABASE_PATH", "~/.logsentinelai/GeoLite2-Country.mmdb"),
     "fallback_country": os.getenv("GEOIP_FALLBACK_COUNTRY", "Unknown"),
     "cache_size": int(os.getenv("GEOIP_CACHE_SIZE", "1000")),
     "include_private_ips": os.getenv("GEOIP_INCLUDE_PRIVATE_IPS", "false").lower() == "true"
@@ -565,7 +565,7 @@ class GeoIPLookup:
     def __init__(self):
         """Initialize GeoIP lookup with MaxMind database"""
         self.enabled = GEOIP_CONFIG["enabled"] and GEOIP_AVAILABLE
-        self.database_path = GEOIP_CONFIG["database_path"]
+        self.database_path = os.path.expanduser(GEOIP_CONFIG["database_path"])  # Expand ~ to home directory
         self.fallback_country = GEOIP_CONFIG["fallback_country"]
         self.include_private_ips = GEOIP_CONFIG["include_private_ips"]
         self.cache_size = GEOIP_CONFIG["cache_size"]
@@ -583,12 +583,21 @@ class GeoIPLookup:
     def _initialize_database(self):
         """Initialize GeoIP database reader"""
         try:
+            # Check if database file exists
             if not os.path.exists(self.database_path):
-                print(f"WARNING: GeoIP database not found at {self.database_path}")
-                print("NOTE: You can download GeoLite2-Country.mmdb from MaxMind")
-                print("NOTE: GeoIP enrichment will be disabled")
-                self.enabled = False
-                return
+                print(f"⚠️  GeoIP database not found at {self.database_path}")
+                print("🔄 Attempting to download GeoIP database automatically...")
+                
+                # Try to download automatically
+                if self._auto_download_database():
+                    print("✅ GeoIP database downloaded successfully!")
+                else:
+                    print("❌ Failed to download GeoIP database automatically")
+                    print("💡 You can manually download using: logsentinelai-geoip-download")
+                    print("💡 Or download from: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data")
+                    print("NOTE: GeoIP enrichment will be disabled")
+                    self.enabled = False
+                    return
             
             self._reader = geoip2.database.Reader(self.database_path)
             print(f"✓ GeoIP database loaded: {self.database_path}")
@@ -597,6 +606,25 @@ class GeoIPLookup:
             print(f"WARNING: Failed to initialize GeoIP database: {e}")
             print("NOTE: GeoIP enrichment will be disabled")
             self.enabled = False
+    
+    def _auto_download_database(self) -> bool:
+        """Automatically download GeoIP database to the configured path"""
+        try:
+            from ..utils.geoip_downloader import download_geoip_database
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(self.database_path), exist_ok=True)
+            
+            # Download to the configured directory
+            output_dir = os.path.dirname(self.database_path)
+            return download_geoip_database(output_dir)
+            
+        except ImportError:
+            print("WARNING: GeoIP downloader module not available")
+            return False
+        except Exception as e:
+            print(f"WARNING: Auto-download failed: {e}")
+            return False
     
     def _is_private_ip(self, ip_str: str) -> bool:
         """Check if IP address is private/internal"""

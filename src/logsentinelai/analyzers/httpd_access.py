@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Optional
 
-from prompts import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
-from commons import (
+from ..core.prompts import PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
+from ..core.commons import (
     run_generic_batch_analysis, 
     run_generic_realtime_analysis,
     create_argument_parser,
@@ -22,13 +22,12 @@ class SeverityLevel(str, Enum):
     INFO = "INFO"
 
 class AttackType(str, Enum):
-    DIRECTORY_TRAVERSAL = "DIRECTORY_TRAVERSAL"
-    COMMAND_INJECTION = "COMMAND_INJECTION"
+    BRUTE_FORCE = "BRUTE_FORCE"
+    SQL_INJECTION = "SQL_INJECTION"
+    XSS = "XSS"
     FILE_INCLUSION = "FILE_INCLUSION"
-    INVALID_HTTP_METHOD = "INVALID_HTTP_METHOD"
-    UNAUTHORIZED_ACCESS = "UNAUTHORIZED_ACCESS"
-    CONFIGURATION_ERROR = "CONFIGURATION_ERROR"
-    MODULE_ERROR = "MODULE_ERROR"
+    COMMAND_INJECTION = "COMMAND_INJECTION"
+    PRIVILEGE_ESCALATION = "PRIVILEGE_ESCALATION"
     UNKNOWN = "UNKNOWN"
 
 class SecurityEvent(BaseModel):
@@ -36,20 +35,21 @@ class SecurityEvent(BaseModel):
     severity: SeverityLevel
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    log_level: str = Field(description="Apache log level")
-    event_message: str = Field(description="Event message")
-    file_path: Optional[str] = Field(description="Related file path")
+    url_pattern: str = Field(description="Related URL pattern")
+    http_method: str = Field(description="HTTP method")
     source_ips: list[str] = Field(description="Source IP list")
+    response_codes: list[str] = Field(description="Response code list")
     attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
     recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
     related_log_ids: list[str] = Field(description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
-    total_event: int = Field(description="Total number of errors")
-    event_by_level: dict[str, int] = Field(default_factory=dict, description="Errors by level")
-    event_by_type: dict[str, int] = Field(default_factory=dict, description="Errors by type")
-    top_event_ips: dict[str, int] = Field(default_factory=dict, description="Top error IPs")
+    total_requests: int = Field(description="Total number of requests")
+    unique_ips: int = Field(description="Number of unique IPs")
+    error_rate: float = Field(description="Error rate (0.0-1.0)")
+    top_source_ips: dict[str, int] = Field(default_factory=dict, description="Top requesting IPs")
+    response_code_dist: dict[str, int] = Field(default_factory=dict, description="Response code distribution")
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
@@ -64,21 +64,21 @@ class LogAnalysis(BaseModel):
 
 def main():
     """Main function with argument parsing"""
-    parser = create_argument_parser('HTTPD Apache Error Log Analysis')
+    parser = create_argument_parser('HTTPD Access Log Analysis')
     args = parser.parse_args()
     
     # SSH 설정 파싱
     ssh_config = handle_ssh_arguments(args)
     remote_mode = "ssh" if ssh_config else "local"
     
-    log_type = "httpd_apache_error"
-    analysis_title = "HTTPD Apache Error Log Analysis"
+    log_type = "httpd_access"
+    analysis_title = "HTTPD Access Log Analysis"
     
     if args.mode == 'realtime':
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
-            prompt_template=PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG,
+            prompt_template=PROMPT_TEMPLATE_HTTPD_ACCESS_LOG,
             analysis_title=analysis_title,
             chunk_size=args.chunk_size,
             log_path=args.log_path,
@@ -91,7 +91,7 @@ def main():
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
-            prompt_template=PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG,
+            prompt_template=PROMPT_TEMPLATE_HTTPD_ACCESS_LOG,
             analysis_title=analysis_title,
             log_path=args.log_path,
             remote_mode=remote_mode,

@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Optional
 
-from prompts import PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
-from commons import (
+from ..core.prompts import PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
+from ..core.commons import (
     run_generic_batch_analysis, 
     run_generic_realtime_analysis,
     create_argument_parser,

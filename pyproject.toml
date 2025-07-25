@@ -1,0 +1,107 @@
+[project]
+name = "logsentinelai"
+version = "0.1.1"
+description = "AI-Powered Log Analyzer - Leverages LLM to analyze log files and detect security events"
+readme = "README.md"
+authors = [
+    { name = "JungJungIn", email = "call518@gmail.com" }
+]
+license = { text = "MIT" }
+keywords = ["security", "log-analysis", "ai", "llm", "cybersecurity", "elasticsearch", "threat-detection"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: System :: Logging",
+    "Topic :: System :: Monitoring",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.12.14",
+    "anyio>=4.9.0",
+    "distro>=1.9.0",
+    "elastic-transport>=8.17.1",
+    "elasticsearch>=9.0.2",
+    "geoip2>=5.1.0",
+    "httpx>=0.28.1",
+    "interegular>=0.3.3",
+    "iso3166>=2.1.1",
+    "jinja2>=3.1.6",
+    "jiter>=0.10.0",
+    "jsonpath-ng>=1.7.0",
+    "maxminddb>=2.7.0",
+    "numpy>=2.3.2",
+    "ollama>=0.5.1",
+    "openai>=1.97.1",
+    "outlines>=1.1.1",
+    "outlines-core>=0.1.26",
+    "paramiko>=3.5.1",
+    "pydantic>=2.11.7",
+    "pydantic-core>=2.33.2",
+    "python-dateutil>=2.9.0.post0",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.4",
+    "sniffio>=1.3.1",
+    "tqdm>=4.67.1",
+    "typing-extensions>=4.14.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "isort>=5.12",
+    "flake8>=6.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/call518/LogSentinelAI"
+Repository = "https://github.com/call518/LogSentinelAI.git"
+Issues = "https://github.com/call518/LogSentinelAI/issues"
+Documentation = "https://github.com/call518/LogSentinelAI#readme"
+
+[project.scripts]
+logsentinelai = "logsentinelai.cli:main"
+logsentinelai-httpd-access = "logsentinelai.analyzers.httpd_access:main"
+logsentinelai-httpd-apache = "logsentinelai.analyzers.httpd_apache:main" 
+logsentinelai-linux-system = "logsentinelai.analyzers.linux_system:main"
+logsentinelai-tcpdump = "logsentinelai.analyzers.tcpdump_packet:main"
+logsentinelai-geoip-download = "logsentinelai.utils.geoip_downloader:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/logsentinelai"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=logsentinelai --cov-report=term-missing"

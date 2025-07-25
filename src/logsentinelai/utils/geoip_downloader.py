@@ -28,16 +28,18 @@ except ImportError:
     sys.exit(1)
 
 
-def download_geoip_database(output_dir: str = ".") -> bool:
+def download_geoip_database(output_dir: str = None) -> bool:
     """
     Download MaxMind GeoLite2-Country database
     
     Args:
-        output_dir: Directory to save the database file
+        output_dir: Directory to save the database file (default: ~/.logsentinelai)
     
     Returns:
         bool: True if successful, False otherwise
     """
+    if output_dir is None:
+        output_dir = os.path.expanduser('~/.logsentinelai')
     # MaxMind GeoLite2-Country database URL (compressed)
     # Alternative sources for GeoLite2 database
     database_urls = [
@@ -171,8 +173,8 @@ Note:
     parser.add_argument(
         '--output-dir',
         type=str,
-        default='.',
-        help='Directory to save the database file (default: current directory)'
+        default=os.path.expanduser('~/.logsentinelai'),
+        help='Directory to save the database file (default: ~/.logsentinelai)'
     )
     
     args = parser.parse_args()
