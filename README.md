@@ -1,6 +1,6 @@
 # LogSentinelAI - AI-Powered Log Analyzer
 
-LogSentinelAI is a modern Python package that leverages LLM (Large Language Model) to analyze various log files and detect security events. It automatically analyzes Apache HTTP logs, Linux system logs, and other log types to identify security threats and stores them as structured data in Elasticsearch for visualization and analysis.
+LogSentinelAI uses LLMs to analyze Apache, Linux, and other logs for security events, anomalies, and errors, transforming them into structured data for visualization in Elasticsearch.
 
 ## 🚀 Key Features
 
