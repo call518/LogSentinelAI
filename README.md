@@ -118,6 +118,7 @@ Tue Jul 22 22:39:22 2025
 - **Operating Systems**: Linux, Windows, Mac all supported
 - **Python**: 3.11 or higher
 - **Elasticsearch/Kibana**: 9.0.3 or higher (Docker-based installation recommended)
+- **Ollama**: 0.9.5 or higher
 
 ### 📦 Package Installation
 
