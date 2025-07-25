@@ -700,23 +700,32 @@ python analysis-httpd-access-log.py --chunk-size 25
 
 To add support for new log types, create a new Python script with a Pydantic class and custom prompt:
 
+#### 📁 Create Analysis Script
+
 ```python
-# Example: analysis-custom-app-log.py
+# File: analysis-custom-app-log.py
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from logsentinelai.core.commons import run_generic_batch_analysis
 
 class CustomAppLogAnalysis(BaseModel):
+    """Define the structure of analysis results"""
     events: List[dict]
     statistics: dict
     summary: str
+    highest_severity: Optional[str] = "LOW"
+    requires_immediate_attention: bool = False
 
 CUSTOM_PROMPT = """
 Analyze these custom application logs and identify:
 - Application errors and exceptions
-- Performance issues
-- User behavior patterns
-- Security-related events
+- Performance issues and slow queries
+- User behavior patterns and anomalies
+- Security-related events and threats
+- Database connection issues
+- Memory/CPU resource problems
+
+Focus on extracting actionable insights with severity levels.
 
 Logs to analyze:
 {logs}
@@ -734,12 +743,92 @@ if __name__ == "__main__":
     )
 ```
 
+#### ⚙️ Update Configuration
+
+```bash
+# File: config (add these lines)
+
+# Custom app log configuration
+LOG_PATH_CUSTOM_APP=sample-logs/custom-app.log
+LOG_PATH_REALTIME_CUSTOM_APP=/var/log/myapp/application.log
+CHUNK_SIZE_CUSTOM_APP=15
+
+# Optional: Custom response settings
+# RESPONSE_LANGUAGE=english
+```
+
+#### 🚀 Usage Examples
+
+```bash
+# Make script executable
+chmod +x analysis-custom-app-log.py
+
+# Run batch analysis with default config
+python analysis-custom-app-log.py
+
+# Override log path and chunk size
+python analysis-custom-app-log.py --log-path /var/log/myapp/app.log --chunk-size 20
+
+# Real-time monitoring
+python analysis-custom-app-log.py --mode realtime
+
+# Remote analysis via SSH
+python analysis-custom-app-log.py --remote --ssh user@server.com --ssh-key ~/.ssh/key
+```
+
+#### 🔧 Customization Options
+
+**1. Modify Pydantic Schema:**
+```python
+class CustomAppLogAnalysis(BaseModel):
+    # Add custom fields for your specific needs
+    performance_metrics: Optional[dict] = None
+    error_patterns: List[str] = []
+    user_sessions: Optional[dict] = None
+    # Keep standard fields
+    events: List[dict]
+    statistics: dict
+    summary: str
+```
+
+**2. Enhance Prompt Template:**
+```python
+CUSTOM_PROMPT = """
+You are analyzing logs from a {application_type} application.
+Pay special attention to:
+- {specific_threats}
+- {performance_indicators}
+
+Instructions:
+- Assign severity: CRITICAL, HIGH, MEDIUM, LOW
+- Include confidence scores (0.0-1.0)
+- Suggest specific remediation actions
+
+Logs to analyze:
+{logs}
+...
+"""
+```
+
+**3. Add CLI Arguments:**
+```python
+import argparse
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--app-type', default='generic', help='Application type for specialized analysis')
+    args = parser.parse_args()
+    
+    # Use args.app_type in your analysis logic
+    run_generic_batch_analysis(...)
+```
+
 **Steps to add custom analyzer:**
-1. Create new Python script (e.g., `analysis-custom-app-log.py`)
-2. Define Pydantic class with your desired output schema
-3. Write custom prompt template for your log type
-4. Use `run_generic_batch_analysis()` function
-5. Add log path configuration in `config` file if needed
+1. **Create Script**: Copy template to `analysis-{your-log-type}.py`
+2. **Define Schema**: Customize Pydantic class for your output structure
+3. **Write Prompt**: Tailor prompt template for your specific log format and requirements
+4. **Configure Paths**: Add log paths to `config` file with appropriate prefixes
+5. **Test & Iterate**: Run analysis and refine prompt based on results
 
 ## 📊 Output Data Schema
 
