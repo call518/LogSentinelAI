@@ -318,65 +318,37 @@ OPENAI_API_KEY=your_openai_api_key_here
 #### Ollama (Local LLM) Configuration
 ```bash
 # 1. Install Ollama and download model
-ollama pull qwen2.5-coder:3b
+ollama pull qwen3:1.7b
 ollama serve
 ```
 
 ```bash
 # Change configuration in config file
 LLM_PROVIDER=ollama
-LLM_MODEL_OLLAMA=qwen2.5-coder:3b
+LLM_MODEL_OLLAMA=qwen3:1.7b
 ```
 
 #### vLLM (Local GPU) Configuration
 ```bash
-# Option A: Clone and use vLLM-Tutorial (recommended)
-git clone https://github.com/call518/vLLM-Tutorial.git
-cd vLLM-Tutorial
+# Clone and use vLLM-Workspace (recommended)
+git clone https://github.com/call518/vLLM-Workspace.git
+cd vLLM-Workspace
 
-# Install Hugging Face CLI for model download
-pip install huggingface_hub
-
-# Download model (Default)
-huggingface-cli download lmstudio-community/Qwen2.5-3B-Instruct-GGUF Qwen2.5-3B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-3B-Instruct/
-huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local-dir ./config/Qwen2.5-3B-Instruct
-
-# Download model (Optional)
-huggingface-cli download lmstudio-community/Qwen2.5-1.5B-Instruct-GGUF Qwen2.5-1.5B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-1.5B-Instruct/
-huggingface-cli download Qwen/Qwen2.5-1.5B-Instruct generation_config.json --local-dir ./config/Qwen2.5-1.5B-Instruct
-
-# It is recommended to set the temperature to 0.1 and top_p to 0.5.
-cat config/Qwen2.5-3B-Instruct/generation_config.json
-{
-  "bos_token_id": 151643,
-  "pad_token_id": 151643,
-  "do_sample": true,
-  "eos_token_id": [
-    151645,
-    151643
-  ],
-  "repetition_penalty": 1.05,
-  "temperature": 0.1,
-  "top_p": 0.5,
-  "top_k": 20,
-  "transformers_version": "4.37.0"
-}
-
-# Run vLLM with Docker
-./run-docker-vllm---Qwen2.5-3B-Instruct.sh
+# Run vLLM with Docker (Qwen/Qwen3-1.7B is the default model)
+./run_vllm.sh
 
 # Verify API is working
 curl -s -X GET http://localhost:5000/v1/models | jq
 
 # Option B: Simple vLLM setup (without Docker)
 pip install vllm
-python -m vllm.entrypoints.openai.api_server --model qwen2.5-coder:3b
+python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen3-1.7B
 ```
 
 ```bash
 # Change configuration in config file
 LLM_PROVIDER=vllm
-LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
+LLM_MODEL_VLLM=Qwen/Qwen3-1.7B
 ```
 
 ### Additional Configuration Options (`config` file)
@@ -528,7 +500,7 @@ LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 ```
 
 Available providers:
-- **Ollama**: Local model execution with models like `qwen2.5-coder:3b`
+- **Ollama**: Local model execution with models like `qwen3:1.7b`
 - **vLLM**: GPU-accelerated local inference with OpenAI-compatible API
 - **OpenAI**: Cloud-based API using models like `gpt-4o-mini`
 

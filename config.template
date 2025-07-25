@@ -15,8 +15,8 @@ OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
 LLM_PROVIDER=openai
 
 # LLM Model Names by Provider
-LLM_MODEL_OLLAMA=qwen2.5-coder:1.5b
-LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
+LLM_MODEL_OLLAMA=qwen3:1.7b
+LLM_MODEL_VLLM=Qwen/Qwen3-1.7B
 LLM_MODEL_OPENAI=gpt-4o-mini
 
 # LLM Generation Parameters
