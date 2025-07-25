@@ -9,6 +9,7 @@ LogSentinelAI uses LLMs to analyze Apache, Linux, and other logs for security ev
 - **Log Types**: HTTP Access, Apache Error, Linux System, TCPDump
 - **Threat Detection**: SQL Injection, XSS, Brute Force, Network Anomalies
 - **Output**: Structured JSON with Pydantic validation
+- **Adaptive Sensitivity**: Detection sensitivity varies by LLM model capability and log-type-specific prompts
 
 ### Processing Modes
 - **Batch**: Historical log analysis
