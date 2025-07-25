@@ -696,6 +696,51 @@ python analysis-httpd-access-log.py --chunk-size 25
 
 **Recommended values**: 5-50 depending on log complexity and LLM capacity
 
+### Add Custom Log Analyzer
+
+To add support for new log types, create a new Python script with a Pydantic class and custom prompt:
+
+```python
+# Example: analysis-custom-app-log.py
+from pydantic import BaseModel
+from typing import List
+from logsentinelai.core.commons import run_generic_batch_analysis
+
+class CustomAppLogAnalysis(BaseModel):
+    events: List[dict]
+    statistics: dict
+    summary: str
+
+CUSTOM_PROMPT = """
+Analyze these custom application logs and identify:
+- Application errors and exceptions
+- Performance issues
+- User behavior patterns
+- Security-related events
+
+Logs to analyze:
+{logs}
+
+Return analysis in this JSON schema: {model_schema}
+Response language: {response_language}
+"""
+
+if __name__ == "__main__":
+    run_generic_batch_analysis(
+        log_type="custom_app",
+        analysis_schema_class=CustomAppLogAnalysis,
+        prompt_template=CUSTOM_PROMPT,
+        analysis_title="Custom Application Log Analysis"
+    )
+```
+
+**Steps to add custom analyzer:**
+1. Create new Python script (e.g., `analysis-custom-app-log.py`)
+2. Define Pydantic class with your desired output schema
+3. Write custom prompt template for your log type
+4. Use `run_generic_batch_analysis()` function
+5. Add log path configuration in `config` file if needed
+
 ## 📊 Output Data Schema
 
 ### Elasticsearch Document Structure
