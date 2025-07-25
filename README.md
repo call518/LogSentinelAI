@@ -732,3 +732,16 @@ We would like to express our sincere gratitude to the following projects and com
 
 ### 🌟 Open Source Community
 We are deeply grateful to the broader open source community and the countless projects that have contributed to making AI-powered log analysis accessible and practical. This project stands on the shoulders of many innovative open source initiatives that continue to push the boundaries of what's possible.
+
+---
+
+## 🤝 Contributing
+
+LogSentinelAI is just getting started and there's much room for improvement. Contributions, bug reports, feature requests, and feedback are all welcome! Whether you're fixing a typo, adding a feature, or sharing ideas - every contribution helps make this project better for everyone.
+
+Feel free to:
+- 🐛 Report bugs or issues
+- 💡 Suggest new features or improvements  
+- 🔧 Submit pull requests
+- 📖 Improve documentation
+- ⭐ Star the project if you find it useful!
