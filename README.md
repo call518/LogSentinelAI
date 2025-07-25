@@ -4,37 +4,26 @@ LogSentinelAI is a modern Python package that leverages LLM (Large Language Mode
 
 ## 🚀 Key Features
 
-### 🧠 AI-Powered Log Analysis
-- **Multi-provider LLM support**: OpenAI API, local Ollama, or GPU-accelerated vLLM
-- **Comprehensive log types**: HTTP access, Apache error, Linux system, and TCPDump packet analysis
-- **Intelligent threat detection**: SQL injection, XSS, brute force, system intrusions, and network anomalies
-- **Structured validation**: Pydantic schemas ensure consistent, reliable analysis results
+### 🧠 AI-Powered Analysis
+- **LLM Providers**: OpenAI API, Ollama, vLLM
+- **Log Types**: HTTP Access, Apache Error, Linux System, TCPDump
+- **Threat Detection**: SQL Injection, XSS, Brute Force, Network Anomalies
+- **Output**: Structured JSON with Pydantic validation
 
-### 🔄 Flexible Processing Modes
-- **Batch analysis**: Complete historical log file processing for forensics and compliance
-- **Real-time monitoring**: Live log analysis with intelligent sampling for high-volume environments
-- **Dual access methods**: Local file processing or secure SSH remote monitoring
+### 🔄 Processing Modes
+- **Batch**: Historical log analysis
+- **Real-time**: Live monitoring with sampling
+- **Access**: Local files, SSH remote
 
-### 🏗️ Enhanced Data Enrichment
-- **GeoIP integration**: Automatic IP geolocation with MaxMind GeoLite2 database
-- **Statistics calculation**: Complete IP counts, response codes, and security metrics
-- **Multi-language output**: Analysis results in English or Korean
+### � Data Enrichment
+- **GeoIP**: MaxMind GeoLite2 country lookup
+- **Statistics**: IP counts, response codes, metrics
+- **Languages**: English, Korean output
 
 ### 🏗️ Enterprise Integration
-- **Elasticsearch/Kibana**: Automatic indexing, dashboards, and visualization
-- **Docker deployment**: Consistent, scalable infrastructure with ILM policies
-- **Unified CLI**: Simplified command-line interface with SSH remote access support
-
-### 🏗️ GeoIP Enrichment
-- **Automatic IP geolocation**: Enriches source IPs with country information using MaxMind GeoLite2 database
-- **Intelligent IP handling**: Automatically detects and handles private IPs, invalid IPs, and lookup failures
-- **Performance optimized**: Built-in LRU cache for repeated IP lookups with configurable cache size
-- **Non-blocking processing**: GeoIP enrichment happens after LLM analysis, ensuring zero impact on analysis performance
-
-### 🏗️ Enterprise-Ready Architecture
-- **Elasticsearch integration** with automatic indexing, ILM policies, and data lifecycle management
-- **Kibana dashboards** for visualization, alerting, and security analytics
-- **Docker-based deployment** for consistent, scalable infrastructure
+- **Storage**: Elasticsearch with ILM policies
+- **Visualization**: Kibana dashboards
+- **Deployment**: Docker containers
 
 
 
