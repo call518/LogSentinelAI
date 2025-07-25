@@ -698,34 +698,32 @@ python analysis-httpd-access-log.py --chunk-size 25
 
 ### Add Custom Log Analyzer
 
-To add support for new log types, create a new Python script with a Pydantic class and custom prompt:
+To add support for new log types, follow the established LogSentinelAI code structure with proper separation of concerns:
 
-#### 📁 Create Analysis Script
+#### 📁 1. Add Prompt Template to Core
 
 ```python
-# File: analysis-custom-app-log.py
-from pydantic import BaseModel
-from typing import List, Optional
-from logsentinelai.core.commons import run_generic_batch_analysis
+# File: src/logsentinelai/core/prompts.py (add at the end)
 
-class CustomAppLogAnalysis(BaseModel):
-    """Define the structure of analysis results"""
-    events: List[dict]
-    statistics: dict
-    summary: str
-    highest_severity: Optional[str] = "LOW"
-    requires_immediate_attention: bool = False
+PROMPT_TEMPLATE_CUSTOM_APP_LOG = """
+Expert application log analyst reviewing custom application logs.
 
-CUSTOM_PROMPT = """
-Analyze these custom application logs and identify:
+Each log line starts with LOGID-XXXXXX followed by the actual log content.
+IMPORTANT: You MUST extract these LOGID values and include them in related_log_ids for each security event.
+
+Analysis Focus:
 - Application errors and exceptions
 - Performance issues and slow queries
-- User behavior patterns and anomalies
-- Security-related events and threats
+- Security-related events and authentication failures
 - Database connection issues
 - Memory/CPU resource problems
 
-Focus on extracting actionable insights with severity levels.
+SEVERITY ESCALATION:
+- CRITICAL: Application crashes, data corruption, security breaches
+- HIGH: Multiple authentication failures, system resource exhaustion
+- MEDIUM: Performance degradation, unusual patterns
+- LOW: Minor warnings, configuration issues
+- INFO: Normal operations, successful transactions
 
 Logs to analyze:
 {logs}
@@ -733,17 +731,101 @@ Logs to analyze:
 Return analysis in this JSON schema: {model_schema}
 Response language: {response_language}
 """
-
-if __name__ == "__main__":
-    run_generic_batch_analysis(
-        log_type="custom_app",
-        analysis_schema_class=CustomAppLogAnalysis,
-        prompt_template=CUSTOM_PROMPT,
-        analysis_title="Custom Application Log Analysis"
-    )
 ```
 
-#### ⚙️ Update Configuration
+#### 📁 2. Create Analyzer Module
+
+```python
+# File: src/logsentinelai/analyzers/custom_app.py
+from pydantic import BaseModel, Field
+from enum import Enum
+from typing import Optional
+
+from ..core.prompts import PROMPT_TEMPLATE_CUSTOM_APP_LOG
+from ..core.commons import (
+    run_generic_batch_analysis, 
+    run_generic_realtime_analysis,
+    create_argument_parser,
+    handle_ssh_arguments
+)
+
+#---------------------- Custom App Log용 Enums 및 Models ----------------------
+class SeverityLevel(str, Enum):
+    CRITICAL = "CRITICAL"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    INFO = "INFO"
+
+class EventType(str, Enum):
+    APPLICATION_ERROR = "APPLICATION_ERROR"
+    PERFORMANCE_ISSUE = "PERFORMANCE_ISSUE"
+    AUTHENTICATION_EVENT = "AUTHENTICATION_EVENT"
+    DATABASE_EVENT = "DATABASE_EVENT"
+    SECURITY_EVENT = "SECURITY_EVENT"
+    UNKNOWN = "UNKNOWN"
+
+class SecurityEvent(BaseModel):
+    event_type: EventType
+    severity: SeverityLevel
+    description: str = Field(description="Detailed event description")
+    confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
+    username: Optional[str] = Field(description="Related username/user ID")
+    error_code: Optional[str] = Field(description="Application error code")
+    recommended_actions: list[str] = Field(description="Recommended actions")
+    requires_human_review: bool = Field(description="Whether human review is required")
+    related_log_ids: list[str] = Field(description="Related LOGID list")
+
+class Statistics(BaseModel):
+    total_events: int = Field(description="Total number of events")
+    unique_users: int = Field(description="Number of unique users")
+    error_rate: float = Field(description="Error rate (0.0-1.0)")
+    top_error_types: dict[str, int] = Field(default_factory=dict, description="Top error types")
+
+class LogAnalysis(BaseModel):
+    summary: str = Field(description="Analysis summary")
+    events: list[SecurityEvent] = Field(min_items=1, description="List of security events")
+    statistics: Statistics
+    highest_severity: SeverityLevel
+    requires_immediate_attention: bool = Field(description="Requires immediate attention")
+
+def main():
+    """Main function with argument parsing"""
+    parser = create_argument_parser('Custom Application Log Analysis')
+    args = parser.parse_args()
+    
+    ssh_config = handle_ssh_arguments(args)
+    remote_mode = "ssh" if ssh_config else "local"
+    
+    if args.mode == 'realtime':
+        run_generic_realtime_analysis(
+            log_type="custom_app",
+            analysis_schema_class=LogAnalysis,
+            prompt_template=PROMPT_TEMPLATE_CUSTOM_APP_LOG,
+            analysis_title="Custom Application Log Analysis",
+            chunk_size=args.chunk_size,
+            log_path=args.log_path,
+            processing_mode=args.processing_mode,
+            sampling_threshold=args.sampling_threshold,
+            remote_mode=remote_mode,
+            ssh_config=ssh_config
+        )
+    else:
+        run_generic_batch_analysis(
+            log_type="custom_app",
+            analysis_schema_class=LogAnalysis,
+            prompt_template=PROMPT_TEMPLATE_CUSTOM_APP_LOG,
+            analysis_title="Custom Application Log Analysis",
+            log_path=args.log_path,
+            remote_mode=remote_mode,
+            ssh_config=ssh_config
+        )
+
+if __name__ == "__main__":
+    main()
+```
+
+#### ⚙️ 3. Update Configuration
 
 ```bash
 # File: config (add these lines)
@@ -757,78 +839,66 @@ CHUNK_SIZE_CUSTOM_APP=15
 # RESPONSE_LANGUAGE=english
 ```
 
-#### 🚀 Usage Examples
+#### 🚀 4. Usage Examples
 
 ```bash
-# Make script executable
-chmod +x analysis-custom-app-log.py
-
-# Run batch analysis with default config
-python analysis-custom-app-log.py
+# Run the analyzer directly (following existing pattern)
+python src/logsentinelai/analyzers/custom_app.py
 
 # Override log path and chunk size
-python analysis-custom-app-log.py --log-path /var/log/myapp/app.log --chunk-size 20
+python src/logsentinelai/analyzers/custom_app.py --log-path /var/log/myapp/app.log --chunk-size 20
 
 # Real-time monitoring
-python analysis-custom-app-log.py --mode realtime
+python src/logsentinelai/analyzers/custom_app.py --mode realtime
 
 # Remote analysis via SSH
-python analysis-custom-app-log.py --remote --ssh user@server.com --ssh-key ~/.ssh/key
+python src/logsentinelai/analyzers/custom_app.py --remote --ssh user@server.com --ssh-key ~/.ssh/key
+
+# Install as package and use CLI (after adding to pyproject.toml)
+logsentinelai-custom-app --log-path /var/log/myapp/app.log
 ```
 
-#### 🔧 Customization Options
+#### 🔧 5. Customization Options
 
-**1. Modify Pydantic Schema:**
+**Modify Event Types for your application:**
 ```python
-class CustomAppLogAnalysis(BaseModel):
-    # Add custom fields for your specific needs
-    performance_metrics: Optional[dict] = None
-    error_patterns: List[str] = []
-    user_sessions: Optional[dict] = None
-    # Keep standard fields
-    events: List[dict]
-    statistics: dict
-    summary: str
+class EventType(str, Enum):
+    PAYMENT_FAILURE = "PAYMENT_FAILURE"
+    API_RATE_LIMIT = "API_RATE_LIMIT"
+    # ... your custom types
 ```
 
-**2. Enhance Prompt Template:**
+**Add application-specific fields:**
 ```python
-CUSTOM_PROMPT = """
-You are analyzing logs from a {application_type} application.
-Pay special attention to:
-- {specific_threats}
-- {performance_indicators}
+class SecurityEvent(BaseModel):
+    transaction_id: Optional[str] = Field(description="Transaction ID")
+    api_endpoint: Optional[str] = Field(description="API endpoint")
+    # ... your custom fields
+```
 
-Instructions:
-- Assign severity: CRITICAL, HIGH, MEDIUM, LOW
-- Include confidence scores (0.0-1.0)
-- Suggest specific remediation actions
-
-Logs to analyze:
-{logs}
+**Customize prompt for your log format:**
+```python
+PROMPT_TEMPLATE_CUSTOM_APP_LOG = """
+Focus on {your_application_type} specific patterns:
+- Payment processing errors
+- API authentication failures
+- Data validation issues
 ...
 """
 ```
 
-**3. Add CLI Arguments:**
-```python
-import argparse
+#### 📦 6. Package Integration (Optional)
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--app-type', default='generic', help='Application type for specialized analysis')
-    args = parser.parse_args()
-    
-    # Use args.app_type in your analysis logic
-    run_generic_batch_analysis(...)
+```toml
+# File: pyproject.toml (add to [project.scripts] section)
+logsentinelai-custom-app = "logsentinelai.analyzers.custom_app:main"
 ```
 
 **Steps to add custom analyzer:**
-1. **Create Script**: Copy template to `analysis-{your-log-type}.py`
-2. **Define Schema**: Customize Pydantic class for your output structure
-3. **Write Prompt**: Tailor prompt template for your specific log format and requirements
-4. **Configure Paths**: Add log paths to `config` file with appropriate prefixes
-5. **Test & Iterate**: Run analysis and refine prompt based on results
+1. **Add Prompt**: Add `PROMPT_TEMPLATE_*` to `src/logsentinelai/core/prompts.py`
+2. **Create Analyzer**: Create analyzer module in `src/logsentinelai/analyzers/`
+3. **Configure**: Add log paths to `config` file with appropriate prefixes
+4. **Test**: Run analyzer and refine prompt based on results
 
 ## 📊 Output Data Schema
 
