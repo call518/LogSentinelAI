@@ -200,7 +200,7 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
         analysis_mode="batch",
         remote_mode=remote_mode,
         ssh_config=ssh_config,
-        remote_log_path=remote_log_path
+        remote_log_path=log_path if remote_mode == "ssh" else remote_log_path
     )
     
     # Override log path if provided (for local files)
@@ -290,6 +290,10 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         import os
         os.environ["REALTIME_SAMPLING_THRESHOLD"] = str(sampling_threshold)
     
+    # Get LLM configuration  
+    llm_provider = LLM_PROVIDER
+    llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
+    
     # Get configuration
     config = get_analysis_config(
         log_type, 
@@ -297,7 +301,7 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         analysis_mode="realtime",
         remote_mode=remote_mode,
         ssh_config=ssh_config,
-        remote_log_path=remote_log_path
+        remote_log_path=log_path if remote_mode == "ssh" else None
     )
     
     # Override local log path if specified (for local mode only)
@@ -309,9 +313,12 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
     print(f"Chunk size:        {config['chunk_size']}")
     print(f"Response language: {config['response_language']}")
     print(f"Analysis mode:     {config['analysis_mode']}")
+    print(f"LLM Provider:      {llm_provider}")
+    print(f"LLM Model:         {llm_model_name}")
     if config["access_mode"] == "ssh":
         ssh_info = config["ssh_config"]
         print(f"SSH Target:        {ssh_info.get('user', 'unknown')}@{ssh_info.get('host', 'unknown')}:{ssh_info.get('port', 22)}")
+    print("=" * 70)
     
     # Initialize LLM model
     print("\nInitializing LLM model...")
@@ -325,8 +332,8 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         print("Please check your configuration settings")
         return
     
-    # Function to create analysis prompt
-    def create_analysis_prompt(chunk, response_language):
+    # Function to create analysis prompt and convert chunk to LOGID format
+    def prepare_chunk_for_analysis(chunk, response_language):
         # Add LOGID prefix to each line for consistency with batch mode
         lines_with_logid = []
         for line in chunk:
@@ -334,69 +341,88 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
                 # Generate LOGID for the line
                 logid = f"LOGID-{hashlib.md5(line.strip().encode()).hexdigest().upper()}"
                 # Add LOGID prefix to the line
-                lines_with_logid.append(f"{logid} {line.strip()}\n")
+                lines_with_logid.append(f"{logid} {line.strip()}")
         
-        logs = "".join(lines_with_logid)
+        # Create prompt
+        logs = "\n".join(lines_with_logid)
         model_schema = analysis_schema_class.model_json_schema()
-        return prompt_template.format(
+        prompt = prompt_template.format(
             logs=logs, 
             model_schema=model_schema, 
             response_language=response_language
         )
-    
-    # Default callback for processing results
-    def process_result_callback(result, chunk, chunk_id):
-        """Default callback to handle analysis results"""
-        print(f"✅ Analysis complete for chunk {chunk_id}")
         
-        if result and 'events' in result:
-            event_count = len(result['events'])
-            print(f"Found {event_count} security events")
-            
-            # Show high severity events
-            high_severity_events = [
-                event for event in result['events'] 
-                if event.get('severity') in ['HIGH', 'CRITICAL']
-            ]
-            
-            if high_severity_events:
-                print(f"WARNING: HIGH/CRITICAL events: {len(high_severity_events)}")
-                for event in high_severity_events:
-                    print(f"   {event.get('event_type', 'UNKNOWN')}: {event.get('description', 'No description')}")
-        
-        print("-" * 40)
+        return prompt, lines_with_logid
     
-    # Start real-time monitoring (simplified version for this commons module)
+    # Start real-time monitoring
     try:
-        print("Starting real-time monitoring...")
-        print("Note: This is a simplified version. Full monitoring requires additional implementation.")
+        print("\nStarting real-time monitoring... (Press Ctrl+C to stop)")
+        print("Waiting for new log entries...")
         
-        # Basic monitoring loop would go here
-        # For now, just demonstrate the monitor initialization
-        for chunk in monitor.get_new_log_chunks():
-            chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+        chunk_counter = 0
+        import time
+        
+        while True:
+            # Check for new chunks
+            for chunk in monitor.get_new_log_chunks():
+                chunk_counter += 1
+                chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+                
+                print(f"\n--- Chunk {chunk_counter} (Real-time) ---")
+                
+                # Show the chunk contents (this was missing!)
+                print_chunk_contents(chunk)
+                
+                # Prepare chunk for analysis 
+                prompt, lines_with_logid = prepare_chunk_for_analysis(chunk, config["response_language"])
+                
+                # Process chunk using common function
+                success, parsed_data = process_log_chunk(
+                    model=model,
+                    prompt=prompt,
+                    model_class=analysis_schema_class,
+                    chunk_start_time=chunk_start_time,
+                    chunk_end_time=None,
+                    elasticsearch_index=log_type,
+                    chunk_number=chunk_counter,
+                    chunk_data=lines_with_logid,  # Pass LOGID formatted data
+                    llm_provider=llm_provider,
+                    llm_model=llm_model_name,
+                    processing_mode="realtime",
+                    log_path=config["log_path"],
+                    access_mode=config["access_mode"]
+                )
+                
+                if success:
+                    print("✅ Real-time analysis completed successfully")
+                    
+                    # Show high severity events summary
+                    if parsed_data and 'events' in parsed_data:
+                        event_count = len(parsed_data['events'])
+                        print(f"Found {event_count} security events in this chunk")
+                        
+                        # Show high severity events
+                        high_severity_events = [
+                            event for event in parsed_data['events'] 
+                            if event.get('severity') in ['HIGH', 'CRITICAL']
+                        ]
+                        
+                        if high_severity_events:
+                            print(f"⚠️  WARNING: HIGH/CRITICAL events: {len(high_severity_events)}")
+                            for event in high_severity_events:
+                                print(f"   {event.get('event_type', 'UNKNOWN')}: {event.get('description', 'No description')}")
+                else:
+                    print("❌ Real-time analysis failed")
+                    wait_on_failure(30)  # Wait 30 seconds on failure
+                
+                print("-" * 50)
             
-            prompt = create_analysis_prompt(chunk, config["response_language"])
+            # Sleep for polling interval
+            time.sleep(config["realtime_config"]["polling_interval"])
             
-            success, parsed_data = process_log_chunk(
-                model=model,
-                prompt=prompt,
-                model_class=analysis_schema_class,
-                chunk_start_time=chunk_start_time,
-                chunk_end_time=None,
-                elasticsearch_index=log_type,
-                chunk_number=1,  # Would be incremented in real implementation
-                chunk_data=chunk,
-                llm_provider=LLM_PROVIDER,
-                llm_model=LLM_MODELS.get(LLM_PROVIDER, "unknown"),
-                processing_mode="realtime",
-                log_path=config["log_path"],
-                access_mode=config["access_mode"]
-            )
-            
-            if success:
-                process_result_callback(parsed_data, chunk, 1)
-            
+    except KeyboardInterrupt:
+        print("\n\n🛑 Real-time monitoring stopped by user")
+        print("Position saved. You can resume monitoring from where you left off.")
     except FileNotFoundError:
         print(f"ERROR: Log file not found: {config['log_path']}")
         print("NOTE: Make sure the log file exists and is readable")
@@ -405,6 +431,8 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         print("NOTE: You may need to run with sudo or adjust file permissions")
     except Exception as e:
         print(f"ERROR: Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
 
 def create_argument_parser(description: str):
     """
