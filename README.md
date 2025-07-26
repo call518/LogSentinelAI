@@ -77,11 +77,6 @@ src/logsentinelai/
 │   ├── linux_system.py          # Linux system log analyzer (syslog/messages)
 │   └── tcpdump_packet.py         # Network packet capture analyzer
 │
-├── config/                        # Configuration management
-│   ├── __init__.py               # Config package init
-│   ├── app_settings.py           # Application settings and validation
-│   └── settings.py               # Configuration file parser and loader
-│
 ├── core/                          # Core analysis engine
 │   ├── __init__.py               # Core package init
 │   ├── commons.py                # Shared analysis functions and utilities
