@@ -26,6 +26,14 @@ LogSentinelAI uses LLMs to analyze Apache, Linux, and other logs for security ev
 - **Visualization**: Kibana dashboards
 - **Deployment**: Docker containers
 
+## Dashboard Example
+
+![Kibana Dashboard](img/ex-dashboard.png)
+
+## 📋 JSON Output Example
+
+![JSON Output](img/ex-json.png)
+
 ## System Architecture
 
 ```
@@ -94,15 +102,6 @@ logsentinelai-linux-system   → analyzers/linux_system.py
 logsentinelai-tcpdump        → analyzers/tcpdump_packet.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
-
-## Dashboard Example
-
-![Kibana Dashboard](img/ex-dashboard.png)
-
-## 📋 JSON Output Example
-
-![JSON Output](img/ex-json.png)
-
 ## 🚀 Quick Start: Installation & Setup
 
 ### Demo Environment Verification
