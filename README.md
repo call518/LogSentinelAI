@@ -52,6 +52,49 @@ LogSentinelAI uses LLMs to analyze Apache, Linux, and other logs for security ev
                                               └─────────────────┘
 ```
 
+## 📁 Project Structure & Python Scripts
+
+### Core Python Components
+
+```
+src/logsentinelai/
+├── __init__.py                    # Package initialization
+├── cli.py                         # Main CLI entry point and command routing
+├── py.typed                       # Type hints marker for mypy
+│
+├── analyzers/                     # Log type-specific analyzers
+│   ├── __init__.py               # Analyzers package init
+│   ├── httpd_access.py           # HTTP access log analyzer (Apache/Nginx)
+│   ├── httpd_apache.py           # Apache error log analyzer
+│   ├── linux_system.py          # Linux system log analyzer (syslog/messages)
+│   └── tcpdump_packet.py         # Network packet capture analyzer
+│
+├── config/                        # Configuration management
+│   ├── __init__.py               # Config package init
+│   ├── app_settings.py           # Application settings and validation
+│   └── settings.py               # Configuration file parser and loader
+│
+├── core/                          # Core analysis engine
+│   ├── __init__.py               # Core package init
+│   ├── commons.py                # Shared analysis functions and utilities
+│   └── prompts.py                # LLM prompt templates for each log type
+│
+└── utils/                         # Utility functions
+    ├── __init__.py               # Utils package init
+    └── geoip_downloader.py       # MaxMind GeoIP database downloader
+```
+
+### CLI Command Mapping
+
+```bash
+# CLI commands map to analyzer scripts:
+logsentinelai-httpd-access   → analyzers/httpd_access.py
+logsentinelai-apache-error   → analyzers/httpd_apache.py  
+logsentinelai-linux-system   → analyzers/linux_system.py
+logsentinelai-tcpdump        → analyzers/tcpdump_packet.py
+logsentinelai-geoip-download → utils/geoip_downloader.py
+```
+
 ## Dashboard Example
 
 ![Kibana Dashboard](img/ex-dashboard.png)
