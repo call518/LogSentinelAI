@@ -77,9 +77,16 @@ src/logsentinelai/
 │   ├── linux_system.py          # Linux system log analyzer (syslog/messages)
 │   └── tcpdump_packet.py         # Network packet capture analyzer
 │
-├── core/                          # Core analysis engine
-│   ├── __init__.py               # Core package init
-│   ├── commons.py                # Shared analysis functions and utilities
+├── core/                          # Core analysis engine (modularized)
+│   ├── __init__.py               # Core package init with unified imports
+│   ├── commons.py                # Main analysis functions and interfaces
+│   ├── config.py                 # Configuration management and environment variables
+│   ├── llm.py                    # LLM model initialization and interaction
+│   ├── elasticsearch.py          # Elasticsearch integration and data transmission
+│   ├── geoip.py                  # GeoIP lookup and IP enrichment functionality
+│   ├── ssh.py                    # SSH remote log access functionality
+│   ├── monitoring.py             # Real-time log monitoring and processing
+│   ├── utils.py                  # Log processing utilities and helper functions
 │   └── prompts.py                # LLM prompt templates for each log type
 │
 └── utils/                         # Utility functions
@@ -97,6 +104,7 @@ logsentinelai-linux-system   → analyzers/linux_system.py
 logsentinelai-tcpdump        → analyzers/tcpdump_packet.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
+
 ## 🚀 Quick Start: Installation & Setup
 
 ### Demo Environment Verification
@@ -779,7 +787,7 @@ from enum import Enum
 from typing import Optional
 
 from ..core.prompts import PROMPT_TEMPLATE_CUSTOM_APP_LOG
-from ..core.commons import (
+from ..core import (
     run_generic_batch_analysis, 
     run_generic_realtime_analysis,
     create_argument_parser,
