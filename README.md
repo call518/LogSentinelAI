@@ -2,6 +2,8 @@
 
 LogSentinelAI uses LLMs to analyze Apache, Linux, and other logs for security events, anomalies, and errors, transforming them into structured data for visualization in Elasticsearch.
 
+[![Publish to PyPI on tag](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml/badge.svg)](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml)
+
 ## 🚀 Key Features
 
 ### AI-Powered Analysis
