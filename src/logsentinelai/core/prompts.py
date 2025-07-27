@@ -137,12 +137,17 @@ Analysis Focus:
 - Authentication (failures/success), sudo/privilege, cron jobs, systemd/kernel events, user management, FTP/SSH/SFTP, logrotate, patterns by IP/user/process
 - Brute force, unauthorized access, privilege escalation, system abuse, service failures
 
-MANDATORY EVENT CREATION GUIDELINES:
-- Focus on ACTUAL security threats and unusual patterns, not routine system operations
-- Always create at least one INFO event for normal system activity
+EVENT CONSOLIDATION GUIDELINES (CRITICAL):
+- CONSOLIDATE similar routine activities into SINGLE comprehensive events
+- GROUP multiple normal session activities (start/stop by same user) into ONE event
+- COMBINE related authentication events from same source into unified analysis
+- CREATE separate events ONLY for different threat types or distinct security concerns
+- FOCUS on security intelligence, not operational noise
 
 NORMAL vs SUSPICIOUS SYSTEM ACTIVITY:
 - NORMAL: Regular cron job execution, standard user logins, routine sudo usage, scheduled system tasks, logrotate operations, normal service starts/stops, expected user/group changes by admin
+- NORMAL SESSION ACTIVITY: Multiple session starts/stops by same legitimate user (consolidate into single event)
+- NORMAL SYSTEMD ACTIVITY: Multiple service operations, session management, logind activities (consolidate related operations)
 - SUSPICIOUS: Multiple failed logins from same source, unusual privilege escalation patterns, unexpected cron modifications, abnormal user/group creation/deletion, repeated failed sudo attempts, suspicious service restarts
 - SUSPICIOUS: Authentication failures to sensitive accounts (root, admin), unexpected system changes, scanner-like behavior
 
@@ -151,14 +156,18 @@ SEVERITY LEVELS (BE CONSERVATIVE):
 - HIGH: Sustained brute force attacks (10+ failures), clear privilege escalation with success, obvious malicious activity, repeated suspicious user/group changes
 - MEDIUM: Multiple suspicious authentication attempts (5-9 failures), potential reconnaissance, unusual system changes, repeated failed sudo attempts
 - LOW: Few failed logins (2-4), routine privilege usage, minor system anomalies, single suspicious events
-- INFO: Standard cron jobs, normal user activities, typical service operations, single failed login attempts, logrotate, expected user/group changes
+- INFO: Standard cron jobs, normal user activities, typical service operations, single failed login attempts, logrotate, expected user/group changes, CONSOLIDATED normal session activities
 
 RULES:
 - NEVER empty events array - MANDATORY
+- PRIORITIZE EVENT CONSOLIDATION: Combine similar activities into comprehensive single events
+- SECURITY-FOCUSED ANALYSIS: Only create separate events for distinct security threats
+- Example Consolidation: "Multiple normal root session activities (4 sessions started/stopped)" instead of 8 separate events
 - BE CONSERVATIVE with severity assessment - avoid over-flagging routine operations
-- Always create at least one INFO event for normal system activity
+- Always create at least one INFO event for normal consolidated system activity
 - Consider normal system administration activities vs actual threats
 - Multiple events from same source are more significant than isolated incidents
+- BALANCE noise vs intelligence: Focus on actionable security insights, not operational details
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)

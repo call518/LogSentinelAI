@@ -319,7 +319,8 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
       "number_of_shards": 1,
       "number_of_replicas": 1,
       "index.lifecycle.name": "logsentinelai-analysis-policy",
-      "index.lifecycle.rollover_alias": "logsentinelai-analysis"
+      "index.lifecycle.rollover_alias": "logsentinelai-analysis",
+      "index.mapping.total_fields.limit": "10000"
     },
     "mappings": {
       "properties": {
