@@ -72,37 +72,63 @@ Return JSON schema: {model_schema}
 """
 
 PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG = """
-Expert security analyst reviewing Apache error logs for real-world web environments.
+Expert Apache error log security analyst with deep understanding of normal vs malicious web server behavior.
 
 Each log line starts with LOGID-XXXXXX followed by the actual log content.
 IMPORTANT: Extract these LOGID values and include them in related_log_ids for each security event.
 
-Analysis Focus:
-- Log levels (error/warn/notice/info), client IPs, file paths, HTTP methods, modules, repeated patterns
-- Directory traversal (../, %252e), command injection, path traversal, scanning, malformed requests
+CRITICAL SEVERITY CALIBRATION (APACHE-SPECIFIC):
+- CRITICAL: Active exploitation attempts with success indicators, server compromise evidence
+- HIGH: Clear attack patterns with high exploitation potential, obvious malicious sequences
+- MEDIUM: Suspicious patterns requiring investigation, potential reconnaissance 
+- LOW: Routine scanning blocked by security controls, isolated unusual requests
+- INFO: Normal server operations, security controls working correctly, routine errors
 
-MANDATORY EVENT CREATION (minimum INFO):
-- Error patterns, module status, file permissions, config issues, repeated error patterns
-- Always create at least one INFO event for normal error traffic
+APACHE ERROR LOG CONTEXT AWARENESS:
+- "Directory index forbidden": NORMAL security control operation (INFO/LOW severity, NOT HIGH)
+- "File does not exist" for common paths: Usually automated scanning (LOW severity, not MEDIUM/HIGH)
+- "_vti_bin" requests: Legacy Microsoft FrontPage scanning, common scanner behavior (LOW severity)
+- "robots.txt" not found: Normal browser/crawler behavior (INFO severity)
+- "favicon.ico" missing: Normal browser behavior (INFO severity)
+- Single occurrence errors: Often legitimate missing resources (INFO/LOW severity)
+
+EVENT CONSOLIDATION RULES:
+- GROUP similar scanner activities from same IP into SINGLE comprehensive event
+- DISTINGUISH between security controls working vs actual threats
+- AVOID creating separate events for same underlying scanning activity
+- FOCUS on actionable security intelligence, not routine server operations
+- CONSOLIDATE normal "file not found" errors into summary events
 
 NORMAL vs SUSPICIOUS ERROR PATTERNS:
 - NORMAL: Single file not found errors (404, favicon.ico, robots.txt, missing images), routine module notices, permission errors for legitimate files, standard configuration warnings, logrotate, cron, service restarts
-- SUSPICIOUS: Multiple directory traversal attempts, repeated path traversal patterns, unusual file access attempts, malformed request sequences, repeated errors to sensitive files (/etc/passwd, /.env, /config)
-- SUSPICIOUS: Command injection patterns, scanner-like behavior, errors with suspicious payloads
+- NORMAL SECURITY CONTROLS: "Directory index forbidden" messages (Apache working as intended)
+- NORMAL SCANNER BEHAVIOR: Common path probing (_vti_bin, admin, config) from automated tools
+- SUSPICIOUS: Multiple directory traversal attempts with ../../../ patterns, repeated errors to sensitive system files (/etc/passwd, /.env, /config)
+- SUSPICIOUS: Command injection patterns in URLs, scanner-like behavior targeting multiple sensitive endpoints, errors with obvious attack payloads
 
-SEVERITY LEVELS (BE BALANCED):
+SEVERITY ESCALATION GUIDELINES:
+- INFO: Directory listing blocked, missing favicon/robots.txt, single file not found errors
+- LOW: Common automated scanning (_vti_bin, admin paths), isolated permission errors
+- MEDIUM: Repeated access attempts to sensitive files, potential reconnaissance patterns
+- HIGH: Clear attack patterns (multiple traversal attempts, obvious command injection)
 - CRITICAL: Confirmed exploitation with success indicators, clear system compromise evidence
-- HIGH: Clear attack patterns (multiple directory traversal attempts, obvious command injection, repeated errors to sensitive files)
-- MEDIUM: Suspicious error sequences, potential reconnaissance, repeated unusual requests
-- LOW: Isolated permission errors, minor module issues, single unusual requests
-- INFO: Standard file not found errors, favicon/robots.txt missing, routine operations, normal module notices, logrotate, cron, service restarts
+
+Analysis Focus:
+- Actual exploitation attempts and successful attacks
+- Configuration errors exposing sensitive information  
+- Unusual patterns indicating targeted attacks (not routine scanning)
+- Performance issues indicating DoS attempts
 
 RULES:
 - NEVER empty events array - MANDATORY
-- Balanced assessment based on error patterns and frequency
-- Single errors (404, favicon, robots.txt, permission) are typically LOW/INFO, repeated patterns or sensitive file errors are MEDIUM+
-- Always create at least one INFO event for normal error traffic
-- Focus on patterns indicating actual security threats, not routine errors
+- PRIORITIZE EVENT CONSOLIDATION: Combine similar scanning activities into comprehensive single events
+- SECURITY CONTEXT AWARENESS: "Directory index forbidden" = security working correctly (INFO/LOW)
+- SCANNER ACTIVITY GROUPING: Multiple requests for common paths (_vti_bin, admin, config) = single scanning event
+- Balanced assessment based on actual threat indicators, not routine server operations
+- Single errors (404, favicon, robots.txt, permission) are typically INFO/LOW, repeated attack patterns are MEDIUM+
+- Always create at least one INFO event for normal consolidated error activity
+- Focus on patterns indicating actual security threats, not routine web server errors
+- DISTINGUISH automation/scanning from genuine exploitation attempts
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
