@@ -347,17 +347,25 @@ class RealtimeLogMonitor:
         # Add to pending buffer
         self.pending_lines.extend(new_lines)
         
-        # Status update
+        # Determine effective processing mode and apply auto-sampling logic
+        effective_mode = self.processing_mode
+        should_sample = False
+        
+        if self.processing_mode == "sampling":
+            should_sample = True
+            effective_mode = "sampling"
+        elif self.processing_mode == "full" and len(self.pending_lines) > self.sampling_threshold:
+            print(f"AUTO-SWITCH: Pending lines ({len(self.pending_lines)}) exceed threshold ({self.sampling_threshold})")
+            print("SWITCHING TO SAMPLING MODE")
+            should_sample = True
+            effective_mode = "sampling"
+        
+        # Status update with correct effective mode
         if len(new_lines) > 0:
-            status_msg = f"[{self.processing_mode.upper()}] Pending: {len(self.pending_lines)} lines (+{len(new_lines)} new)"
+            status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines (+{len(new_lines)} new)"
             print(f"STATUS: {status_msg}")
         
         # Apply sampling if needed
-        should_sample = (
-            self.processing_mode == "sampling" or 
-            (self.processing_mode == "full" and len(self.pending_lines) > self.sampling_threshold)
-        )
-        
         if should_sample and len(self.pending_lines) > self.chunk_size:
             discarded_count = len(self.pending_lines) - self.chunk_size
             self.pending_lines = self.pending_lines[-self.chunk_size:]
