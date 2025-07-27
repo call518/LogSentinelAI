@@ -50,7 +50,9 @@ class RemoteSSHLogMonitor:
             raise ImportError("paramiko library is required for SSH functionality. Install with: pip install paramiko")
         
         ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) ### 보안상 위험할 수 있으므로 사용하지 않음
+        ssh.load_system_host_keys()
+        ssh.set_missing_host_key_policy(paramiko.RejectPolicy())
         
         try:
             if self.ssh_key_path:
