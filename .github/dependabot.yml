@@ -1,0 +1,60 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+# Dependabot configuration for LogSentinelAI
+
+version: 2
+updates:
+  # Python dependencies (pyproject.toml)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "call518"
+    assignees:
+      - "call518"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    allow:
+      # Allow all dependency types
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore major version updates for stable dependencies
+      - dependency-name: "elasticsearch"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "paramiko"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "call518"
+    assignees:
+      - "call518"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci/cd"
