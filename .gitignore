@@ -3,7 +3,7 @@
 dist/
 build/
 *.egg-info
-*.log
+/*.log
 *.swp
 __pycache__
 config
