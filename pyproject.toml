@@ -1,6 +1,6 @@
 [project]
 name = "logsentinelai"
-version = "0.2.2"
+version = "0.2.3"
 description = "AI-Powered Log Analyzer - Leverages LLM to analyze log files and detect security events"
 readme = "README.md"
 authors = [
