@@ -11,12 +11,14 @@ SEVERITY (threat-focused):
 - HIGH: Clear attack campaigns with exploitation potential  
 - MEDIUM: Suspicious patterns requiring investigation
 - LOW: Minor anomalies in normal traffic
-- INFO: Noteworthy operational changes (volume/geographic anomalies, config updates)
+- INFO: Normal operations with monitoring value (search engine bots, routine browsing, static resources, single 404s, expected traffic patterns)
 
 KEY RULES:
 - Create events ONLY for genuine security concerns, not routine operations
-- Multiple static resource requests from same User-Agent = NORMAL
-- Rapid static requests = normal, slow admin panel requests = suspicious
+- Search engine bots (Googlebot, Bingbot, AhrefsBot) = INFO level
+- Normal user browsing patterns = INFO level
+- Multiple static resource requests from same User-Agent = INFO level
+- Single 404 errors = INFO level  
 - Extract actual LOGID values for related_log_ids (NEVER empty)
 - DETAILED recommended_actions with specific commands/procedures/timelines
 - Summary/events in {response_language}
@@ -40,7 +42,7 @@ SEVERITY (Apache-specific):
 - HIGH: Clear attack patterns with high exploitation potential
 - MEDIUM: Suspicious patterns requiring investigation
 - LOW: Routine scanning blocked by controls, isolated unusual requests
-- INFO: Security controls working correctly, noteworthy operational patterns (new IP ranges, config changes, admin access, volume anomalies 50+/hour)
+- INFO: Normal server operations (startup/shutdown notices, module loading, config messages, single file not found errors, routine maintenance)
 
 CONTEXT AWARENESS:
 - "Directory index forbidden" = NORMAL security control (LOW, not HIGH)
@@ -59,6 +61,10 @@ NORMAL vs SUSPICIOUS:
 
 KEY RULES:
 - MANDATORY: Never empty events array
+- Server startup/shutdown notices = INFO level
+- Module loading/initialization messages = INFO level  
+- Configuration notices = INFO level
+- Single file not found errors = INFO level
 - Consolidate scanning activities into comprehensive single events
 - DETAILED recommended_actions with specific commands/procedures/timelines
 - Summary/events in {response_language}
