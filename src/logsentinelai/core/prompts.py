@@ -113,43 +113,95 @@ JSON schema: {model_schema}
 PROMPT_TEMPLATE_TCPDUMP_PACKET = """
 Expert network security analyst. Extract LOGID-XXXXXX values for related_log_ids.
 
-CRITICAL ANALYSIS CHECKLIST:
-1. **TCP FLAGS**: SYN = new connection (potential scanning), ACK (Flags [.]) = data transfer (NEVER scanning)
-2. **PORT SCANNING**: SAME source → SAME destination → MULTIPLE DIFFERENT ports + SYN packets
-3. **NORMAL HTTPS**: "IP:port > IP:443 Flags [.]" = data transfer, SACK options = TCP optimization
-4. **BEFORE HIGH/CRITICAL**: Are these SYN to different ports? Or ACK packets of HTTPS sessions?
+CRITICAL UNDERSTANDING: THIS LOG CONTAINS NORMAL INTERNET TRAFFIC
 
-SEVERITY (network-specific):
-- CRITICAL: Active exploitation with success indicators
-- HIGH: Coordinated attack campaigns with clear malicious intent
-- MEDIUM: Unusual patterns requiring investigation
-- LOW: Minor anomalies in normal traffic
-- INFO: Noteworthy monitoring patterns (volume anomalies, first-time behaviors, config changes)
+PARTIAL FLOW ANALYSIS CONTEXT:
+- You are seeing PARTIAL packet flows from ongoing sessions, not complete connections
+- Many packets are middle/end of existing sessions - this is NORMAL
+- Do NOT flag partial flows as suspicious - focus on clear anomalies only
+- Established sessions showing data transfer = NORMAL even without seeing SYN/handshake
+- Missing context ≠ suspicious behavior
 
-ATTACK PATTERNS (strict requirements):
-- **PORT SCANNING**: SYN packets (NOT ACK) from one source to MULTIPLE DIFFERENT ports on SAME destination
-- Example: 192.168.1.100 → 10.0.0.1:21,22,80,443 (SYN packets)
-- Counter: 150.165.17.177:65498 → 45.121.183.17:443 ACK = HTTPS data transfer (NOT scanning)
+PACKET ANALYSIS BASICS:
+- "Flags [P.]" or "Flags [.]" = ACK packets = ONGOING data transfer (NORMAL)
+- "Flags [S]" = SYN packets = NEW connection attempts (check for scanning)
+- HTTPS port 443 data transfer = NORMAL web browsing/file transfer
+- SACK options = TCP optimization = NORMAL network efficiency feature
+- ICMP echo = ping packets = NORMAL network diagnostics
 
-NOT SUSPICIOUS (DO NOT FLAG):
-- Multiple ACK packets on port 443 = normal HTTPS file transfer
-- Same IP:port pairs repeatedly = ongoing session
-- SACK optimization = network efficiency
-- Different sources → different destinations = normal distributed traffic
+HEX PAYLOAD ANALYSIS:
+- EXAMINE hex dump (0x lines) for readable text and suspicious patterns
+- THREAT INDICATORS in hex: SQL injection keywords (SELECT, UNION, DROP), XSS payloads (<script>, javascript:), command injection (sh, bash, cmd.exe), exploit shellcode patterns, malicious URLs/domains
+- NORMAL PATTERNS in hex: HTTP headers, HTML content, JSON data, encrypted HTTPS traffic (random-looking bytes), standard protocol headers
+- DECODE ASCII from hex when possible to identify attack payloads vs normal content
+- ESCALATE if hex contains clear exploitation attempts, suspicious commands, or malicious code patterns
 
-EXAMPLES:
-✅ **SCANNING**: 192.168.1.100 → 10.0.0.5:21,22,80,443 Flags [S] (same source, multiple ports, SYN)
-❌ **NORMAL**: 150.165.17.177:65498 → 45.121.183.17:443 Flags [.] (ACK = data transfer)
+CHUNK-BASED ASSESSMENT GUIDELINES:
+- CONSERVATIVE APPROACH: When seeing partial flows, assume legitimate unless clearly malicious
+- ANOMALY FOCUS: Look for obvious deviations (multiple SYN to different ports, malformed packets, suspicious payloads)
+- SESSION CONTINUITY: Multiple packets between same IP:port pairs = ongoing legitimate session
+- BASELINE ASSUMPTION: Standard protocols (HTTPS, HTTP, DNS, SSH) are legitimate by default
+- ESCALATION CRITERIA: Only flag when patterns clearly indicate attack behavior within visible chunk
+
+BEFORE CREATING ANY HIGH/CRITICAL EVENTS:
+1. **CHECK TCP FLAGS**: Are these SYN packets to multiple different ports? Or just ACK packets?
+2. **VERIFY ATTACK PATTERN**: Same source scanning MULTIPLE DIFFERENT ports on SAME destination?
+3. **CONFIRM THREAT**: Does this indicate actual malicious activity or normal internet usage?
+
+CRITICAL RULE: **ACK PACKETS (Flags [.] or [P.]) ARE NEVER PORT SCANNING**
+
+NORMAL TRAFFIC PATTERNS (DO NOT FLAG AS SUSPICIOUS):
+- Multiple ACK packets between same IP pairs = ongoing HTTPS/TCP sessions
+- Port 443 traffic with SACK options = normal file download/upload/browsing
+- Different sources connecting to different destinations = normal distributed internet traffic
+- ICMP echo requests = normal ping/diagnostic traffic
+- TCP sequence number progression = normal data flow
+
+ACTUAL THREATS TO DETECT:
+- **PORT SCANNING**: Same source sending SYN to MULTIPLE ports on SAME destination
+- **DDoS**: Massive connection floods from many sources
+- **PROTOCOL ATTACKS**: Malformed packets, exploit payloads
+- **PAYLOAD THREATS**: Malicious code/commands in hex dump, SQL injection in packet data, XSS payloads, shellcode patterns, suspicious file transfers
+
+SEVERITY (be extremely conservative):
+- CRITICAL: Active successful exploitation with payload evidence
+- HIGH: Clear coordinated attack patterns with multiple threat indicators
+- MEDIUM: Potential reconnaissance requiring further investigation
+- LOW: Minor network anomalies
+- INFO: Normal traffic with noteworthy monitoring patterns
+
+EXAMPLES OF NORMAL TRAFFIC (NOT THREATS):
+- "150.165.17.177.53039 > 45.121.183.6.443: Flags [.]" = HTTPS data transfer
+- "202.244.39.51.56172 > 13.154.148.235.443: Flags [P.]" = HTTPS data with push flag
+- "IP 203.141.114.197 > 41.31.64.203: ICMP echo request" = ping diagnostic
+- Hex containing HTTP headers, HTML content, encrypted HTTPS data = NORMAL
+- Random-looking hex bytes on port 443 = encrypted HTTPS traffic = NORMAL
+
+EXAMPLES OF SUSPICIOUS HEX PATTERNS (INVESTIGATE):
+- Readable SQL injection: "SELECT * FROM users" or "UNION SELECT password"
+- XSS payloads: "<script>alert" or "javascript:eval"
+- Command injection: "/bin/sh", "cmd.exe", "bash -c"
+- File paths: "/etc/passwd", "C:\\Windows\\System32"
+- Suspicious URLs: known malicious domains, C&C communication patterns
+
+DEFAULT ASSESSMENT: Unless clear attack indicators present, classify as INFO/LOW with description of normal network operations.
+
+INCOMPLETE FLOW HANDLING:
+- Most packets are from ongoing sessions without visible handshake - this is NORMAL
+- Focus on obvious anomalies within visible chunk, not missing context
+- Continuous data flows indicate legitimate established connections
+- When in doubt about partial flows, favor normal traffic classification
+- PRIORITY: Analyze hex payload content for actual malicious patterns over flow context
 
 KEY RULES:
-- Apply contextual reasoning, not mechanical pattern matching
-- Create events ONLY for actual security concerns
-- Understand normal network operations
+- Apply network protocol expertise and context awareness
+- Distinguish normal operations from actual security threats
+- Focus on genuine attack patterns, not routine traffic
 - DETAILED recommended_actions with specific commands/procedures
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
 
-STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts, failed_connections, data_transfer_bytes, top_source_addresses{{}}, top_destination_addresses{{}}
+STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes, top_source_addresses{{}}, top_destination_addresses{{}}
 
 JSON schema: {model_schema}
 
