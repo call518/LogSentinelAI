@@ -221,75 +221,85 @@ Return JSON schema: {model_schema}
 """
 
 PROMPT_TEMPLATE_TCPDUMP_PACKET = """
-Expert packet security analyst for comprehensive tcpdump analysis across all protocols and real-world network environments.
+Expert network security analyst with deep understanding of normal vs malicious network traffic patterns.
 
-Each packet line starts with LOGID-XXXXXX followed by the actual packet content.
+Each log line starts with LOGID-XXXXXX followed by the actual tcpdump packet data.
 IMPORTANT: Extract these LOGID values and include them in related_log_ids for each security event.
 
+CRITICAL SEVERITY CALIBRATION (NETWORK-SPECIFIC):
+- CRITICAL: Active exploitation in progress, malware command & control, confirmed data breaches
+- HIGH: Clear attack patterns (DDoS campaigns, coordinated port scanning, exploit attempts)
+- MEDIUM: Suspicious patterns requiring investigation (unusual protocols, repeated failed connections)
+- LOW: Minor anomalies or isolated unusual traffic
+- INFO: Normal network operations, standard protocols, routine communications
+
+NORMAL NETWORK TRAFFIC PATTERNS:
+- HTTPS/HTTP traffic (ports 80, 443): Standard web communications, even large transfers
+- DNS queries (port 53): Normal name resolution, including IPv6
+- SSH (port 22): Administrative access, file transfers
+- ICMP: Ping, traceroute, network diagnostics
+- TCP handshakes: SYN, SYN-ACK, ACK sequences are normal connection establishment
+- Data transfers: Large HTTPS transfers (even 10KB+) are normal for web content, file downloads
+- Multiple packets per connection: Normal for sustained communications
+
+SUSPICIOUS PATTERNS (REQUIRE MULTIPLE INDICATORS):
+- Port scanning: Multiple connection attempts to DIFFERENT ports from same IP
+- DDoS indicators: Hundreds/thousands of packets from multiple sources to same target
+- Malformed packets: Invalid headers, unusual flags combinations
+- Covert channels: Unusual protocols or non-standard port usage patterns
+- Data exfiltration: Requires additional context (unusual destinations, timing patterns, protocol misuse)
+
+SIZE AND FREQUENCY CONTEXT:
+- Small data transfers (< 10KB): Usually normal web requests, API calls
+- Large transfers on HTTPS: Normal for file downloads, media streaming, software updates
+- Single connection attempts: Normal behavior, not reconnaissance
+- Multiple packets per connection: Expected for any substantial data transfer
+
+EVENT CONSOLIDATION RULES:
+- GROUP normal traffic by protocol/type into SINGLE comprehensive events
+- AVOID creating separate events for individual packets of same connection
+- FOCUS on actual attack patterns, not routine network operations
+- REQUIRE multiple indicators before escalating to MEDIUM+ severity
+- DISTINGUISH between individual packets and attack campaigns
+
+PACKET ANALYSIS CONTEXT:
+- TCP flags: SYN=new connection (normal), ACK=data transfer (normal), RST=connection reset (can be normal)
+- Sequence numbers: Continuous sequences indicate normal data flow
+- Window sizes: Normal TCP flow control, not suspicious
+- Timestamps: Close timestamps usually indicate burst data transfer (normal)
+
 Analysis Focus:
-- Protocol identification, IPs/ports, authentication, payload content, connection patterns, timing/frequency/size, protocol anomalies
-- Context: source reputation, payload content, timing patterns, protocol compliance
-
-PROTOCOL-SPECIFIC THREATS:
-- Web (HTTP/HTTPS): SQL injection, XSS, directory traversal, command injection, vulnerability scanning
-- Database: Authentication brute force, SQL injection, privilege escalation, unauthorized data access
-- SSH/FTP: Brute force attacks, unusual access patterns, data exfiltration, command execution
-- DNS: DNS tunneling, cache poisoning, suspicious queries, reconnaissance activities
-- Email: Phishing attempts, credential harvesting, spam/malware delivery
-- General: Port scanning, DoS/DDoS attacks, protocol anomalies, unusual traffic volumes
-
-MANDATORY EVENT CREATION GUIDELINES:
-- Focus on ACTUAL security threats, not normal operations
-- Always create at least one INFO event for normal traffic
-- Large data transfers from CDNs (AWS, Google, CloudFront, Cloudflare, Akamai, etc.) are typically NORMAL
-- Standard HTTPS/HTTP traffic, expected database queries, regular email delivery, legitimate DNS queries should be INFO/LOW unless suspicious patterns exist
-
-EVENT GROUPING AND EFFICIENCY:
-- CONSOLIDATE similar packets with the same severity and description into SINGLE events
-- For normal traffic patterns (same protocol, similar behavior), create ONE comprehensive INFO event covering multiple packets
-- Group packets by: same protocol + same behavior pattern + same severity level
-- Example: Multiple normal HTTP requests → ONE "Normal HTTP traffic" INFO event with all related LOGIDs
-- Only create separate events for genuinely different security concerns or threat types
-- Use related_log_ids to include ALL relevant packet LOGIDs in each consolidated event
-
-NORMAL vs SUSPICIOUS TRAFFIC:
-- NORMAL: CDN traffic (CloudFront, Cloudflare, Akamai, AWS, Google), standard web browsing, routine API calls, expected database queries, regular email delivery, legitimate DNS queries, normal service discovery
-- SUSPICIOUS: Unusual payload patterns, non-standard protocols, excessive connection attempts, abnormal data volumes from single sources, malformed packets, repeated failed authentications, scanner-like behavior
-- SUSPICIOUS: Data exfiltration attempts, protocol violations, suspicious DNS queries (tunneling, long/random domains), repeated suspicious connections
-
-SEVERITY LEVELS (BE CONSERVATIVE):
-- CRITICAL: Confirmed active exploitation, malware communication, data theft with clear evidence
-- HIGH: Clear attack patterns with multiple indicators, sustained malicious campaigns, repeated suspicious connections
-- MEDIUM: Suspicious patterns requiring investigation, potential reconnaissance activities, repeated failed authentications
-- LOW: Minor anomalies, single suspicious events, borderline activities
-- INFO: Normal traffic patterns, standard operations, routine connections, CDN traffic, expected database/DNS/email traffic
+- Actual attack patterns requiring multiple indicators
+- Clear anomalies departing from standard protocols
+- Coordinated activities suggesting malicious intent
+- Performance issues indicating potential DoS
 
 RULES:
 - NEVER empty events array - MANDATORY
-- BE CONSERVATIVE with severity assessment - avoid false positives
-- Always create at least one INFO event for normal traffic
-- Large data transfers from legitimate sources (CDNs) should NOT be flagged as data exfiltration
-- Consider source IP reputation and context
-- Focus on actionable security intelligence, not routine network activity
+- PRIORITIZE EVENT CONSOLIDATION: Group normal traffic into summary events
+- NETWORK CONTEXT AWARENESS: Understand normal TCP/IP, HTTPS, DNS behavior
+- BALANCED ASSESSMENT: Require multiple indicators for MEDIUM+ severity
+- SIZE-APPROPRIATE EVALUATION: Small/medium transfers on standard ports = usually normal
+- Always create at least one INFO event for normal consolidated network activity
+- Focus on coordinated attacks, not individual routine network packets
+- (NOTE) Summary, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
-- CONSOLIDATE similar packets into single events to reduce noise and improve efficiency
-- (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
 
 STATISTICS REQUIREMENT: You MUST provide complete and accurate statistics:
 - total_packets: Count ALL packet entries provided
-- unique_connections: Count UNIQUE source-destination IP:port pairs
-- protocols_detected: List all protocols found in the packets 
-- connection_attempts: Count connection initiation attempts
-- failed_connections: Count failed/rejected connections
-- data_transfer_bytes: Sum up data transfer volumes from packets
-- top_source_addresses: Create a dictionary mapping each source IP address to its packet count from the logs
-- top_destination_addresses: Create a dictionary mapping each destination IP address to its packet count from the logs
+- unique_connections: Count unique source-destination IP pairs
+- protocols_detected: List protocols seen (HTTPS, TCP, UDP, ICMP, etc.)
+- connection_attempts: Count new connection attempts (SYN packets)
+- failed_connections: Count failed connection attempts (RST, no response)
+- data_transfer_bytes: Sum total bytes transferred
+- top_source_addresses: Dictionary mapping source IPs to packet counts
+- top_destination_addresses: Dictionary mapping destination IPs to packet counts
 DO NOT leave these empty! Calculate them from the actual packet data provided.
 
 JSON RULES:
 - No empty string keys, use [] not null for lists
-- Required fields: payload_content ("" ok), attack_patterns[], recommended_actions[], related_log_ids[], protocols_detected[]
+- Required fields: source_ip, dest_ip, source_port, dest_port, protocol, payload_content, attack_patterns[], recommended_actions[], related_log_ids[]
 - confidence_score: MUST be decimal 0.0-1.0 (NOT percentage like 95, use 0.95)
 
 Return JSON schema: {model_schema}
