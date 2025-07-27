@@ -10,3 +10,4 @@ config
 #sample-logs/
 .positions/
 *.mmdb
+.github/CODE_OF_CONDUCT.md
