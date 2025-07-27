@@ -48,8 +48,8 @@ ANALYSIS_MODE=batch
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-single-line.log
-#LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-multi-line.log
+#LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-single-line.log
+LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-multi-line.log
 
 # Real-time Mode: Live log files to monitor
 # CLI Override: Use --log-path argument to override these paths
@@ -70,10 +70,10 @@ LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 # - These values are used for both batch and real-time modes
 # CLI Override: Use --chunk-size argument to override these values
 # Example: python analysis-linux-system-log.py --chunk-size 20
-CHUNK_SIZE_HTTPD_ACCESS=20
-CHUNK_SIZE_HTTPD_APACHE_ERROR=20
-CHUNK_SIZE_LINUX_SYSTEM=20
-CHUNK_SIZE_TCPDUMP_PACKET=20
+CHUNK_SIZE_HTTPD_ACCESS=5
+CHUNK_SIZE_HTTPD_APACHE_ERROR=5
+CHUNK_SIZE_LINUX_SYSTEM=5
+CHUNK_SIZE_TCPDUMP_PACKET=5
 
 # =============================================================================
 # Elasticsearch Configuration
