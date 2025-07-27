@@ -7,6 +7,6 @@ build/
 *.swp
 __pycache__
 config
-sample-logs/*.pcap*
+#sample-logs/
 .positions/
 *.mmdb

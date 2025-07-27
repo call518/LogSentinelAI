@@ -207,7 +207,7 @@ logsentinelai-apache-error --log-path sample-logs/apache-10k.log
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
 
 # TCPDump Packet Analysis
-logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-2k-single-line.log
+logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-10k-single-line.log
 
 # Real-time monitoring  
 logsentinelai-linux-system --mode realtime
