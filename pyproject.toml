@@ -1,6 +1,7 @@
 [project]
 name = "logsentinelai"
-version = "0.2.3"
+#version = "0.0.0"
+dynamic = ["version"]
 description = "AI-Powered Log Analyzer - Leverages LLM to analyze log files and detect security events"
 readme = "README.md"
 authors = [
@@ -105,3 +106,6 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --cov=logsentinelai --cov-report=term-missing"
+
+[tool.setuptools-scm]
+enabled = true
