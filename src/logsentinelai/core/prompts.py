@@ -27,7 +27,7 @@ SEVERITY ESCALATION (BE BALANCED):
 - HIGH: Sustained attack patterns with clear malicious intent, successful SQLi/XSS attempts, directory traversal with multiple attack vectors
 - MEDIUM: Multiple suspicious requests to sensitive paths, scanner-like behavior, POST with unusual params indicating attacks
 - LOW: Few 404s (2-9) from IP, known bots with errors, minor anomalies, multiple requests for normal web resources
-- INFO: Single 404s, favicon/robots.txt missing, legitimate bot traffic, standard HTTP errors, routine operations, normal web page loading patterns
+- INFO: Noteworthy patterns requiring awareness but not immediate action - unusual traffic volumes from single source (50+ requests/minute), access to sensitive but legitimate endpoints (/admin, /api) with valid authentication, first-time access patterns from new geographic regions, configuration changes or system updates detected in logs. Exclude routine operations like single 404s, favicon/robots.txt missing, standard bot traffic.
 
 WEB BROWSING CONTEXT:
 - Normal web page visit can generate 10-100+ requests (HTML, CSS, JS, images, fonts, icons, robots.txt, favicon.ico, etc.)
@@ -52,7 +52,9 @@ RULES:
 - Multiple requests from same IP for web resources (HTML, images, CSS, JS, fonts, icons) = NORMAL BROWSING
 - Known bots = INFO/LOW, unknown IPs with multiple errors = MEDIUM
 - Focus on attack patterns, not normal web page loading behavior
-- Always create at least one INFO event for normal traffic
+- INFO level reserved for noteworthy but non-urgent patterns requiring monitoring awareness
+- Always create at least one event for consolidated analysis, but use appropriate severity levels
+- DETAILED recommended_actions: Provide specific, actionable guidance including tools to use, commands to run, log locations to check, timeframes for action, escalation procedures, and preventive measures. Example: "Monitor source IP 192.168.1.100 for next 24 hours using 'tail -f /var/log/apache2/access.log | grep 192.168.1.100', implement rate limiting rules via mod_evasive configuration, review firewall rules to block repeated offenders, escalate to security team if pattern continues beyond normal business hours"
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
@@ -107,11 +109,11 @@ NORMAL vs SUSPICIOUS ERROR PATTERNS:
 - SUSPICIOUS: Command injection patterns in URLs, scanner-like behavior targeting multiple sensitive endpoints, errors with obvious attack payloads
 
 SEVERITY ESCALATION GUIDELINES:
-- INFO: Directory listing blocked, missing favicon/robots.txt, single file not found errors
-- LOW: Common automated scanning (_vti_bin, admin paths), isolated permission errors
-- MEDIUM: Repeated access attempts to sensitive files, potential reconnaissance patterns
-- HIGH: Clear attack patterns (multiple traversal attempts, obvious command injection)
 - CRITICAL: Confirmed exploitation with success indicators, clear system compromise evidence
+- HIGH: Clear attack patterns (multiple traversal attempts, obvious command injection)
+- MEDIUM: Repeated access attempts to sensitive files, potential reconnaissance patterns
+- LOW: Common automated scanning (_vti_bin, admin paths), isolated permission errors, single file not found errors
+- INFO: Noteworthy security-relevant events requiring monitoring awareness - unusual error patterns from new IP ranges, configuration changes detected in error logs, first-time access attempts to administrative areas, volume anomalies (50+ errors/hour from single source). Exclude routine operations like directory listing blocked, missing favicon/robots.txt.
 
 Analysis Focus:
 - Actual exploitation attempts and successful attacks
@@ -122,13 +124,15 @@ Analysis Focus:
 RULES:
 - NEVER empty events array - MANDATORY
 - PRIORITIZE EVENT CONSOLIDATION: Combine similar scanning activities into comprehensive single events
-- SECURITY CONTEXT AWARENESS: "Directory index forbidden" = security working correctly (INFO/LOW)
+- SECURITY CONTEXT AWARENESS: "Directory index forbidden" = security working correctly (LOW severity, not INFO)
 - SCANNER ACTIVITY GROUPING: Multiple requests for common paths (_vti_bin, admin, config) = single scanning event
 - Balanced assessment based on actual threat indicators, not routine server operations
-- Single errors (404, favicon, robots.txt, permission) are typically INFO/LOW, repeated attack patterns are MEDIUM+
-- Always create at least one INFO event for normal consolidated error activity
+- Single errors (404, favicon, robots.txt, permission) are typically LOW, repeated attack patterns are MEDIUM+
+- INFO level reserved for noteworthy security-relevant patterns requiring monitoring awareness
+- Always create at least one event for consolidated analysis, but use appropriate severity levels
 - Focus on patterns indicating actual security threats, not routine web server errors
 - DISTINGUISH automation/scanning from genuine exploitation attempts
+- DETAILED recommended_actions: Provide comprehensive actionable guidance including specific log analysis commands (grep patterns, log file locations), configuration changes (Apache directives, security module settings), monitoring procedures (automated alerting setup, log rotation), investigation steps (IP reputation checks, geolocation analysis), containment measures (firewall rules, rate limiting), and escalation criteria with timeframes
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
@@ -182,7 +186,7 @@ SEVERITY LEVELS (BE CONSERVATIVE):
 - HIGH: Sustained brute force attacks (10+ failures), clear privilege escalation with success, obvious malicious activity, repeated suspicious user/group changes
 - MEDIUM: Multiple suspicious authentication attempts (5-9 failures), potential reconnaissance, unusual system changes, repeated failed sudo attempts
 - LOW: Few failed logins (2-4), routine privilege usage, minor system anomalies, single suspicious events
-- INFO: Standard cron jobs, normal user activities, typical service operations, single failed login attempts, logrotate, expected user/group changes, CONSOLIDATED normal session activities
+- INFO: Noteworthy patterns requiring monitoring awareness but not immediate action - unusual authentication volumes from single source (20+ logins/hour), first-time administrative access from new locations, configuration changes by legitimate administrators, scheduled maintenance activities with elevated privileges, service restart patterns indicating potential issues. Exclude routine operations like standard cron jobs, normal user activities, typical service operations, single failed login attempts, logrotate, expected user/group changes by administrators.
 
 RULES:
 - NEVER empty events array - MANDATORY
@@ -190,10 +194,12 @@ RULES:
 - SECURITY-FOCUSED ANALYSIS: Only create separate events for distinct security threats
 - Example Consolidation: "Multiple normal root session activities (4 sessions started/stopped)" instead of 8 separate events
 - BE CONSERVATIVE with severity assessment - avoid over-flagging routine operations
-- Always create at least one INFO event for normal consolidated system activity
+- INFO level reserved for noteworthy patterns requiring monitoring awareness but not immediate action
+- Always create at least one event for consolidated analysis, but use appropriate severity levels
 - Consider normal system administration activities vs actual threats
 - Multiple events from same source are more significant than isolated incidents
 - BALANCE noise vs intelligence: Focus on actionable security insights, not operational details
+- DETAILED recommended_actions: Provide comprehensive guidance including specific commands for log analysis (journalctl filters, grep patterns), system investigation procedures (user behavior analysis, login pattern review), security hardening steps (authentication policy changes, account lockout settings), monitoring enhancements (automated alerting rules, log aggregation setup), incident response procedures (isolation steps, evidence preservation), and preventive measures with implementation timelines
 - (NOTE) Summary, observations, planning, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
@@ -231,7 +237,7 @@ CRITICAL SEVERITY CALIBRATION (NETWORK-SPECIFIC):
 - HIGH: Clear attack patterns (DDoS campaigns, coordinated port scanning, exploit attempts)
 - MEDIUM: Suspicious patterns requiring investigation (unusual protocols, repeated failed connections)
 - LOW: Minor anomalies or isolated unusual traffic
-- INFO: Normal network operations, standard protocols, routine communications
+- INFO: Noteworthy network patterns requiring monitoring awareness - unusual traffic volumes from single source (100+ packets/minute to same destination), first-time connections to new external services, configuration changes in network behavior, protocol usage anomalies. Exclude routine operations like standard HTTPS/HTTP traffic, DNS queries, SSH sessions, ICMP diagnostics.
 
 NORMAL NETWORK TRAFFIC PATTERNS:
 - HTTPS/HTTP traffic (ports 80, 443): Standard web communications, even large transfers
@@ -280,8 +286,10 @@ RULES:
 - NETWORK CONTEXT AWARENESS: Understand normal TCP/IP, HTTPS, DNS behavior
 - BALANCED ASSESSMENT: Require multiple indicators for MEDIUM+ severity
 - SIZE-APPROPRIATE EVALUATION: Small/medium transfers on standard ports = usually normal
-- Always create at least one INFO event for normal consolidated network activity
+- INFO level reserved for noteworthy network patterns requiring monitoring awareness
+- Always create at least one event for consolidated analysis, but use appropriate severity levels
 - Focus on coordinated attacks, not individual routine network packets
+- DETAILED recommended_actions: Provide specific network security guidance including packet analysis commands (tcpdump filters, wireshark analysis), network monitoring setup (IDS/IPS rules, SIEM correlation), traffic investigation procedures (flow analysis, bandwidth monitoring), security configuration (firewall rules, network segmentation), incident response steps (traffic capture, forensic analysis), and preventive measures with monitoring thresholds
 - (NOTE) Summary, events.description and, events.recommended_actions sections must be written in {response_language}.
 - EXTRACT actual LOGID values from logs and include in related_log_ids
 - confidence_score: Return as decimal 0.0-1.0 (NEVER as percentage like 95)
