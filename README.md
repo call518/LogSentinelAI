@@ -314,7 +314,8 @@ curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
 curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
 -H "Content-Type: application/json" \
 -u elastic:changeme \
--d '{
+-d 'PUT _index_template/logsentinelai-analysis-template
+{
   "index_patterns": ["logsentinelai-analysis-*"],
   "template": {
     "settings": {
@@ -331,7 +332,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
           "dynamic": false
         },
         "events": {
-          "type": "nested",
+          "type": "object",
           "properties": {
             "source_ips": {
               "type": "nested",
@@ -341,7 +342,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
               }
             },
             "dest_ips": {
-              "type": "nested",
+              "type": "object",
               "properties": {
                 "ip": { "type": "ip" },
                 "location": { "type": "geo_point" }
@@ -353,7 +354,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
           "type": "object",
           "properties": {
             "top_source_ips": {
-              "type": "nested",
+              "type": "object",
               "properties": {
                 "ip": { "type": "ip" },
                 "location": { "type": "geo_point" },
@@ -361,7 +362,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
               }
             },
             "top_dest_ips": {
-              "type": "nested",
+              "type": "object",
               "properties": {
                 "ip": { "type": "ip" },
                 "location": { "type": "geo_point" },
@@ -369,7 +370,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
               }
             },
             "top_event_ips": {
-              "type": "nested",
+              "type": "object",
               "properties": {
                 "ip": { "type": "ip" },
                 "location": { "type": "geo_point" },
