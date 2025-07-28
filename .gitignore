@@ -10,5 +10,3 @@ config
 #sample-logs/
 .positions/
 *.mmdb
-.github/CODE_OF_CONDUCT.md
-.github/copilot-instructions.md
