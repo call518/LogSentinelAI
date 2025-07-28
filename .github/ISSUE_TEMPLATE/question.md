@@ -23,8 +23,8 @@ Provide context about what you're trying to accomplish:
 ## Configuration
 Share relevant parts of your configuration (remove sensitive information):
 
-```toml
-# Paste relevant config here
+```
+# Paste relevant configs here
 ```
 
 ## Additional Context
