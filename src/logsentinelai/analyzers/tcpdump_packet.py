@@ -85,8 +85,8 @@ class SecurityEvent(BaseModel):
     severity: SeverityLevel
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    source_ip: str = Field(description="Source IP address")
-    dest_ip: str = Field(description="Destination IP address")
+    source_ips: str = Field(description="Source IP address")
+    dest_ips: str = Field(description="Destination IP address")
     source_port: int = Field(description="Source port number")
     dest_port: int = Field(description="Destination port number")
     protocol: PacketProtocol
@@ -103,8 +103,8 @@ class Statistics(BaseModel):
     connection_attempts: int = Field(description="Number of connection attempts")
     failed_connections: int = Field(description="Number of failed connections")
     data_transfer_bytes: int = Field(description="Total data transfer in bytes")
-    top_source_addresses: dict[str, int] = Field(description="Top source IP addresses with packet counts", default_factory=dict)
-    top_destination_addresses: dict[str, int] = Field(description="Top destination IP addresses with packet counts", default_factory=dict)
+    top_source_ips: dict[str, int] = Field(description="Top source IP addresses with packet counts", default_factory=dict)
+    top_destination_ips: dict[str, int] = Field(description="Top destination IP addresses with packet counts", default_factory=dict)
 
 class PacketAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")

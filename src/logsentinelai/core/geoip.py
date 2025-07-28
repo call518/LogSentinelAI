@@ -204,10 +204,10 @@ def enrich_source_ips_with_geoip(analysis_data: Dict[str, Any]) -> Dict[str, Any
                     event["source_ips"] = enriched_ips
                 
                 # Handle individual IP fields (TCPDUMP)
-                if "source_ip" in event:
-                    event["source_ip"] = enrich_ip_text(event["source_ip"])
-                if "dest_ip" in event:
-                    event["dest_ip"] = enrich_ip_text(event["dest_ip"])
+                if "source_ips" in event:
+                    event["source_ips"] = enrich_ip_text(event["source_ips"])
+                if "dest_ips" in event:
+                    event["dest_ips"] = enrich_ip_text(event["dest_ips"])
     
     # Process statistics
     if "statistics" in enriched_data and isinstance(enriched_data["statistics"], dict):
@@ -222,7 +222,7 @@ def enrich_source_ips_with_geoip(analysis_data: Dict[str, Any]) -> Dict[str, Any
             stats["top_source_ips"] = enriched_top_ips
         
         # Handle TCPDUMP-specific statistics
-        for field in ["top_source_addresses", "top_destination_addresses"]:
+        for field in ["top_source_ips", "top_destination_ips"]:
             if field in stats and isinstance(stats[field], dict):
                 enriched_field = {}
                 for ip, count in stats[field].items():

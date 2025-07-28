@@ -207,7 +207,7 @@ KEY RULES:
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
 
-STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes, top_source_addresses{{}}, top_destination_addresses{{}}
+STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes, top_source_ips{{}}, top_destination_ips{{}}
 
 JSON schema: {model_schema}
 
