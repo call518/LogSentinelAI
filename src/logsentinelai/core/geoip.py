@@ -16,7 +16,7 @@ except ImportError:
 from .config import GEOIP_CONFIG
 
 class GeoIPLookup:
-    """GeoIP lookup utility for enriching IP addresses with country information"""
+    """GeoIP lookup utility for enriching IP addresses with city and geo_point information"""
     
     def __init__(self):
         """Initialize GeoIP lookup with MaxMind database"""
@@ -82,56 +82,51 @@ class GeoIPLookup:
             self._cache_order.remove(ip)
         self._cache_order.append(ip)
     
-    def lookup_country(self, ip_str: str) -> Dict[str, str]:
+    def lookup_city(self, ip_str: str) -> Dict[str, Any]:
         """
-        Lookup country information for an IP address
-        
+        Lookup city and geo_point information for an IP address
         Args:
             ip_str: IP address string
-        
         Returns:
-            Dict with country information: {"country_code": "US", "country_name": "United States"}
+            Dict with city, country, region, and geo_point (lat/lon) information
         """
         if not self.enabled:
-            return {"country_code": "N/A", "country_name": "GeoIP Disabled"}
-        
-        # Validate IP format
+            return {"ip": ip_str, "country_code": "N/A", "country_name": "GeoIP Disabled"}
         try:
             ipaddress.ip_address(ip_str)
         except ValueError:
-            return {"country_code": "INVALID", "country_name": "Invalid IP"}
-        
-        # Check for private IPs
+            return {"ip": ip_str, "country_code": "INVALID", "country_name": "Invalid IP"}
         if self._is_private_ip(ip_str) and not self.include_private_ips:
-            return {"country_code": "PRIVATE", "country_name": "Private IP"}
-        
-        # Check cache first
+            return {"ip": ip_str, "country_code": "PRIVATE", "country_name": "Private IP"}
         if ip_str in self._cache:
             self._cache_order.remove(ip_str)
             self._cache_order.append(ip_str)
             return self._cache[ip_str]
-        
-        # Lookup in database
         try:
-            response = self._reader.country(ip_str)
-            country_info = {
+            response = self._reader.city(ip_str)
+            city_info = {
+                "ip": ip_str,
                 "country_code": response.country.iso_code or "UNKNOWN",
-                "country_name": response.country.name or self.fallback_country
+                "country_name": response.country.name or self.fallback_country,
+                "city": response.city.name or None,
+                "region": response.subdivisions.most_specific.name or None,
+                "region_code": response.subdivisions.most_specific.iso_code or None,
+                "location": {
+                    "lat": response.location.latitude,
+                    "lon": response.location.longitude
+                } if response.location.latitude is not None and response.location.longitude is not None else None
             }
-            
             self._manage_cache(ip_str)
-            self._cache[ip_str] = country_info
-            return country_info
-            
+            self._cache[ip_str] = city_info
+            return city_info
         except geoip2.errors.AddressNotFoundError:
-            country_info = {"country_code": "UNKNOWN", "country_name": self.fallback_country}
+            city_info = {"ip": ip_str, "country_code": "UNKNOWN", "country_name": self.fallback_country}
             self._manage_cache(ip_str)
-            self._cache[ip_str] = country_info
-            return country_info
-            
+            self._cache[ip_str] = city_info
+            return city_info
         except Exception as e:
             print(f"WARNING: GeoIP lookup failed for {ip_str}: {e}")
-            return {"country_code": "ERROR", "country_name": "Lookup Failed"}
+            return {"ip": ip_str, "country_code": "ERROR", "country_name": "Lookup Failed"}
     
     def close(self):
         """Close GeoIP database reader"""
@@ -166,68 +161,75 @@ def enrich_source_ips_with_geoip(analysis_data: Dict[str, Any]) -> Dict[str, Any
     if not geoip.enabled:
         return analysis_data
     
-    def enrich_ip_text(ip_str):
-        """Convert IP string to enriched format"""
+    def enrich_ip_geo(ip_str):
+        """Convert IP string to enriched geo dict for Kibana geo_point. Only valid IPs will be mapped as {ip: ...}."""
         if not isinstance(ip_str, str):
             return ip_str
-        
         try:
-            country_info = geoip.lookup_country(ip_str)
-            if country_info["country_code"] in ["N/A", "ERROR", "INVALID"]:
-                return ip_str
-            elif country_info["country_code"] == "PRIVATE":
-                return f"{ip_str} (Private)"
-            elif country_info["country_code"] == "UNKNOWN":
-                return f"{ip_str} (Unknown)"
-            else:
-                return f"{ip_str} ({country_info['country_code']} - {country_info['country_name']})"
+            # Only enrich if valid IPv4/IPv6 string
+            ipaddress.ip_address(ip_str)
         except Exception:
-            return ip_str
+            # Not a valid IP, return None (will be filtered out in ES mapping)
+            return None
+        try:
+            city_info = geoip.lookup_city(ip_str)
+            if city_info.get("country_code") in ["N/A", "ERROR", "INVALID"]:
+                return None
+            elif city_info.get("country_code") == "PRIVATE":
+                return None
+            elif city_info.get("country_code") == "UNKNOWN":
+                return None
+            return city_info
+        except Exception:
+            return None
     
     # Deep copy to avoid modifying original data
     enriched_data = analysis_data.copy()
-    
+    # Fields to enrich in events and statistics
+    ip_list_fields = ["source_ips", "dest_ips"]
+    ip_dict_fields = ["top_source_ips", "top_dest_ips", "top_event_ips"]
     # Process events array
     if "events" in enriched_data and isinstance(enriched_data["events"], list):
         for event in enriched_data["events"]:
             if isinstance(event, dict):
-                # Handle source_ips arrays
-                if "source_ips" in event and isinstance(event["source_ips"], list):
-                    enriched_ips = []
-                    for ip_item in event["source_ips"]:
-                        if isinstance(ip_item, str):
-                            enriched_ips.append(enrich_ip_text(ip_item))
-                        elif isinstance(ip_item, dict) and "ip" in ip_item:
-                            enriched_ips.append(enrich_ip_text(ip_item["ip"]))
+                # Enrich all relevant IP fields in event
+                for field in ip_list_fields:
+                    if field in event:
+                        if isinstance(event[field], list):
+                            enriched_ips = []
+                            for ip_item in event[field]:
+                                if isinstance(ip_item, str):
+                                    enriched = enrich_ip_geo(ip_item)
+                                    if enriched:
+                                        enriched_ips.append(enriched)
+                                elif isinstance(ip_item, dict) and "ip" in ip_item:
+                                    enriched = enrich_ip_geo(ip_item["ip"])
+                                    if enriched:
+                                        enriched_ips.append(enriched)
+                            event[field] = enriched_ips
+                        elif isinstance(event[field], str):
+                            enriched = enrich_ip_geo(event[field])
+                            if enriched:
+                                event[field] = enriched
+                            else:
+                                event[field] = None
+                # Also handle any other direct IP fields (future-proof)
+                for key, value in event.items():
+                    if key.endswith("_ip") and isinstance(value, str):
+                        enriched = enrich_ip_geo(value)
+                        if enriched:
+                            event[key] = enriched
                         else:
-                            enriched_ips.append(ip_item)
-                    event["source_ips"] = enriched_ips
-                
-                # Handle individual IP fields (TCPDUMP)
-                if "source_ips" in event:
-                    event["source_ips"] = enrich_ip_text(event["source_ips"])
-                if "dest_ips" in event:
-                    event["dest_ips"] = enrich_ip_text(event["dest_ips"])
-    
+                            event[key] = None
     # Process statistics
     if "statistics" in enriched_data and isinstance(enriched_data["statistics"], dict):
         stats = enriched_data["statistics"]
-        
-        # Enrich top_source_ips
-        if "top_source_ips" in stats and isinstance(stats["top_source_ips"], dict):
-            enriched_top_ips = {}
-            for ip, count in stats["top_source_ips"].items():
-                enriched_key = enrich_ip_text(ip)
-                enriched_top_ips[enriched_key] = count
-            stats["top_source_ips"] = enriched_top_ips
-        
-        # Handle TCPDUMP-specific statistics
-        for field in ["top_source_ips", "top_destination_ips"]:
+        for field in ip_dict_fields:
             if field in stats and isinstance(stats[field], dict):
                 enriched_field = {}
                 for ip, count in stats[field].items():
-                    enriched_key = enrich_ip_text(ip)
-                    enriched_field[enriched_key] = count
+                    enriched_key = enrich_ip_geo(ip)
+                    if enriched_key:
+                        enriched_field[str(enriched_key)] = count
                 stats[field] = enriched_field
-    
     return enriched_data

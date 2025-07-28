@@ -19,7 +19,7 @@ LogSentinelAI uses LLMs to analyze Apache, Linux, and other logs for security ev
 - **Access**: Local files, SSH remote
 
 ### Data Enrichment
-- **GeoIP**: MaxMind GeoLite2 country lookup
+- **GeoIP**: MaxMind GeoLite2 City lookup (with coordinates for Kibana geo_point)
 - **Statistics**: IP counts, response codes, metrics
 - **Languages**: Output in any language (configurable)
 
@@ -179,13 +179,13 @@ nano config  # or vim config
 
 ### 🌍 GeoIP Database Setup (Automatic)
 
-GeoIP database will be automatically downloaded when first needed:
+GeoIP City database will be automatically downloaded when first needed:
 
 ```bash
-# The GeoIP database is automatically downloaded to ~/.logsentinelai/ 
-# when you run any analysis command for the first time
+# The GeoIP City database is automatically downloaded to ~/.logsentinelai/ 
+# when first needed - no manual setup required
 
-# Optional: Pre-download GeoIP database
+# Optional: Pre-download GeoIP City database
 logsentinelai-geoip-download
 ```
 
@@ -617,30 +617,59 @@ logsentinelai-httpd-access
 ```
 
 ---
-## 🌍 GeoIP Enrichment
+## 🌍 GeoIP Enrichment (City-level, with coordinates)
 
-LogSentinelAI automatically enriches IP addresses in analysis results with country information using MaxMind GeoLite2 database.
+LogSentinelAI automatically enriches IP addresses in analysis results with city/country/coordinates using MaxMind GeoLite2-City database. All major IP fields (source_ips, dest_ips, top_source_ips, top_dest_ips, top_event_ips 등) include a location (geo_point) for Kibana map visualization.
 
-### 🚀 Automatic Setup
+### 🚀 Automatic Setup (City DB)
 
 ```bash
-# GeoIP database is automatically downloaded to ~/.logsentinelai/ 
-# when first needed - no manual setup required!
+# GeoIP City database is automatically downloaded to ~/.logsentinelai/ 
+# when first needed - no manual setup required
 
-# Optional: Pre-download manually
+# Optional: Pre-download GeoIP City database
 logsentinelai-geoip-download
+```
 
-# Verify GeoIP status
-logsentinelai-httpd-access --help  # Will show if GeoIP is enabled
+### 🚀 Quick Usage Examples
+
+```bash
+# View available commands
+logsentinelai --help
+
+# Clone repository for sample log files
+git clone https://github.com/call518/LogSentinelAI.git
+cd LogSentinelAI
+
+# HTTP Access Log Analysis
+logsentinelai-httpd-access --log-path sample-logs/access-10k.log
+
+# Apache Error Log Analysis
+logsentinelai-apache-error --log-path sample-logs/apache-10k.log
+
+# Linux System Log Analysis
+logsentinelai-linux-system --log-path sample-logs/linux-2k.log
+
+# TCPDump Packet Analysis
+logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-10k-single-line.log
+
+# Real-time monitoring  
+logsentinelai-linux-system --mode realtime
+
+# Remote SSH analysis (requires host key in known_hosts)
+logsentinelai-tcpdump --remote --ssh admin@server.com --ssh-key ~/.ssh/id_rsa
+
+# Download GeoIP database
+logsentinelai-geoip-download
 ```
 
 ### 📊 Feature Overview
 
-- **Automatic download**: Database downloads to `~/.logsentinelai/` when first needed
-- **Country identification**: Automatically appends country information to IP addresses  
-- **Text-based format**: Uses format like "192.168.1.1 (US - United States)" for Elasticsearch compatibility
-- **Private IP handling**: Marks internal IPs as "(Private)" without database lookup
-- **Statistics enrichment**: Enhances IP counts and frequency data with geographic context
+- **Automatic download**: City DB downloads to `~/.logsentinelai/` when first needed
+- **City/country/coordinates**: All enriched IPs include city, country, and location (geo_point) for Kibana
+- **Kibana map ready**: All major IP fields are geo_point compatible for map visualization
+- **Private IP handling**: Internal IPs are excluded from geo_point enrichment
+- **Statistics enrichment**: All top IP stats include geo_point for map-based dashboards
 
 ### ⚙️ Configuration Options
 
@@ -648,8 +677,8 @@ logsentinelai-httpd-access --help  # Will show if GeoIP is enabled
 # Enable/disable GeoIP enrichment  
 GEOIP_ENABLED=true
 
-# Path to MaxMind database file (automatically set to ~/.logsentinelai/)
-GEOIP_DATABASE_PATH=~/.logsentinelai/GeoLite2-Country.mmdb
+# Path to MaxMind City DB file (automatically set to ~/.logsentinelai/)
+GEOIP_DATABASE_PATH=~/.logsentinelai/GeoLite2-City.mmdb
 
 # Fallback country for unknown IPs
 GEOIP_FALLBACK_COUNTRY=Unknown
@@ -658,7 +687,6 @@ GEOIP_FALLBACK_COUNTRY=Unknown
 GEOIP_INCLUDE_PRIVATE_IPS=false
 
 # Cache size for IP lookups (performance optimization)
-GEOIP_CACHE_SIZE=1000
 ```
 
 ### 🔧 Manual Database Download (If Needed)

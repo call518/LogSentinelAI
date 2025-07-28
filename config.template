@@ -71,10 +71,10 @@ LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 # - These values are used for both batch and real-time modes
 # CLI Override: Use --chunk-size argument to override these values
 # Example: python analysis-linux-system-log.py --chunk-size 20
-CHUNK_SIZE_HTTPD_ACCESS=5
-CHUNK_SIZE_HTTPD_APACHE_ERROR=5
-CHUNK_SIZE_LINUX_SYSTEM=5
-CHUNK_SIZE_TCPDUMP_PACKET=5
+CHUNK_SIZE_HTTPD_ACCESS=10
+CHUNK_SIZE_HTTPD_APACHE_ERROR=10
+CHUNK_SIZE_LINUX_SYSTEM=10
+CHUNK_SIZE_TCPDUMP_PACKET=10
 
 # =============================================================================
 # Elasticsearch Configuration
@@ -174,15 +174,15 @@ REALTIME_SAMPLING_THRESHOLD=100
 # =============================================================================
 # GeoIP Configuration
 # =============================================================================
-# Enable GeoIP enrichment of source IP addresses with country information
-# When enabled, source_ips in analysis results will include country data
+
+# Enable GeoIP enrichment of source IP addresses with city/location information
+# When enabled, source_ips and related fields in analysis results will include city, country, and coordinates (geo_point)
 GEOIP_ENABLED=true
 
-# Path to MaxMind GeoLite2-Country database file (.mmdb format)
-# Download from: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
-# Enriches IP addresses with country information in text format (e.g., "8.8.8.8 (US - United States)")
-# Default: ~/.logsentinelai/GeoLite2-Country.mmdb (automatically downloaded if missing)
-GEOIP_DATABASE_PATH=~/.logsentinelai/GeoLite2-Country.mmdb
+# Path to MaxMind GeoLite2-City database file (.mmdb format)
+# Download with: python -m logsentinelai.utils.geoip_downloader
+# Default: ~/.logsentinelai/GeoLite2-City.mmdb (automatically downloaded if missing)
+GEOIP_DATABASE_PATH=~/.logsentinelai/GeoLite2-City.mmdb
 
 # Fallback country name for unknown IP addresses
 GEOIP_FALLBACK_COUNTRY=Unknown

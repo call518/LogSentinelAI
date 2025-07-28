@@ -78,7 +78,7 @@ LOG_CHUNK_SIZES = {
 # GeoIP Configuration
 GEOIP_CONFIG = {
     "enabled": os.getenv("GEOIP_ENABLED", "true").lower() == "true",
-    "database_path": os.getenv("GEOIP_DATABASE_PATH", "~/.logsentinelai/GeoLite2-Country.mmdb"),
+    "database_path": os.getenv("GEOIP_DATABASE_PATH", "~/.logsentinelai/GeoLite2-City.mmdb"),
     "fallback_country": os.getenv("GEOIP_FALLBACK_COUNTRY", "Unknown"),
     "cache_size": int(os.getenv("GEOIP_CACHE_SIZE", "1000")),
     "include_private_ips": os.getenv("GEOIP_INCLUDE_PRIVATE_IPS", "false").lower() == "true"
