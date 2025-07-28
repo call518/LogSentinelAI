@@ -214,7 +214,7 @@ logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-10k-single-line.log
 # Real-time monitoring  
 logsentinelai-linux-system --mode realtime
 
-# Remote SSH analysis
+# Remote SSH analysis (requires host key in known_hosts)
 logsentinelai-tcpdump --remote --ssh admin@server.com --ssh-key ~/.ssh/id_rsa
 
 # Download GeoIP database
@@ -242,7 +242,7 @@ All analysis commands (`logsentinelai-httpd-access`, `logsentinelai-apache-error
 # Override config defaults
 logsentinelai-linux-system --chunk-size 20 --mode realtime
 
-# Remote analysis with SSH
+# Remote analysis with SSH (requires host key in known_hosts)
 logsentinelai-httpd-access --remote --ssh admin@server.com:2222 --ssh-key ~/.ssh/id_rsa
 
 # Real-time with sampling
@@ -364,6 +364,9 @@ logsentinelai-httpd-access --mode realtime --processing-mode sampling
 ```
 
 #### SSH Remote Access
+
+> **⚠️ Important**: For SSH connections, the target host must be added to your system's known_hosts file first. Run `ssh-keyscan -H <hostname> >> ~/.ssh/known_hosts` or manually connect once to accept the host key.
+
 ```bash
 # SSH key authentication (recommended)
 logsentinelai-linux-system \
