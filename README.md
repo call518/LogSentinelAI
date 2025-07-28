@@ -335,7 +335,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
           "type": "object",
           "properties": {
             "source_ips": {
-              "type": "nested",
+              "type": "object",
               "properties": {
                 "ip": { "type": "ip" },
                 "location": { "type": "geo_point" }
