@@ -329,6 +329,54 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
         "@log_raw_data": {
           "type": "object",
           "dynamic": false
+        },
+        "events": {
+          "type": "nested",
+          "properties": {
+            "source_ips": {
+              "type": "nested",
+              "properties": {
+                "ip": { "type": "ip" },
+                "location": { "type": "geo_point" }
+              }
+            },
+            "dest_ips": {
+              "type": "nested",
+              "properties": {
+                "ip": { "type": "ip" },
+                "location": { "type": "geo_point" }
+              }
+            }
+          }
+        },
+        "statistics": {
+          "type": "object",
+          "properties": {
+            "top_source_ips": {
+              "type": "nested",
+              "properties": {
+                "ip": { "type": "ip" },
+                "location": { "type": "geo_point" },
+                "count": { "type": "integer" }
+              }
+            },
+            "top_dest_ips": {
+              "type": "nested",
+              "properties": {
+                "ip": { "type": "ip" },
+                "location": { "type": "geo_point" },
+                "count": { "type": "integer" }
+              }
+            },
+            "top_event_ips": {
+              "type": "nested",
+              "properties": {
+                "ip": { "type": "ip" },
+                "location": { "type": "geo_point" },
+                "count": { "type": "integer" }
+              }
+            }
+          }
         }
       }
     }
