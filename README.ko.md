@@ -110,7 +110,7 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 
 ### 📑 샘플 로그 미리보기
 
-#### HTTP Access 로그 (access-100.log)
+#### HTTP Access 로그
 ```
 54.36.149.41 - - [22/Jan/2019:03:56:14 +0330] "GET /filter/27|13%20%D9%85%DA%AF%D8%A7%D9%BE%DB%8C%DA%A9%D8%B3%D9%84,27|%DA%A9%D9%85%D8%AA%D8%B1%20%D8%A7%D8%B2%205%20%D9%85%DA%AF%D8%A7%D9%BE%DB%8C%DA%A9%D8%B3%D9%84,p53 HTTP/1.1" 200 30577 "-" "Mozilla/5.0 (compatible; AhrefsBot/6.1; +http://ahrefs.com/robot/)" "-"
 31.56.96.51 - - [22/Jan/2019:03:56:16 +0330] "GET /image/60844/productModel/200x200 HTTP/1.1" 200 5667 "https://www.zanbil.ir/m/filter/b113" "Mozilla/5.0 (Linux; Android 6.0; ALE-L21 Build/HuaweiALE-L21) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.158 Mobile Safari/537.36" "-"
@@ -124,7 +124,7 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 40.77.167.129 - - [22/Jan/2019:03:56:18 +0330] "GET /image/57710/productModel/100x100 HTTP/1.1" 200 1695 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
 ```
 
-#### Apache Error 로그 (apache-100.log)
+#### Apache Error 로그
 ```
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: SSL support unavailable
@@ -138,7 +138,7 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 [Thu Jun 09 06:07:05 2005] [error] env.createBean2(): Factory error creating vm: ( vm, )
 ```
 
-#### Linux System 로그 (linux-100.log)
+#### Linux System 로그
 ```
 Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=218.188.2.4 
 Jun 14 15:16:02 combo sshd(pam_unix)[19937]: check pass; user unknown
@@ -152,7 +152,7 @@ Jun 15 02:04:59 combo sshd(pam_unix)[20892]: authentication failure; logname= ui
 Jun 15 02:04:59 combo sshd(pam_unix)[20893]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
 ```
 
-#### TCPDump 패킷 로그 (tcpdump-packet-10k-multi-line.log)
+#### TCPDump 패킷 로그
 ```
 2025-07-20 14:00:00.228603 IP 150.165.103.133.443 > 163.62.4.236.54372: Flags [P.], seq 2408409918:2408411378, ack 41863130, win 32850, length 1460
     0x0000:  6c6c d367 9a69 100e 7ecb 53f0 0800 4500  ll.g.i..~.S...E.
