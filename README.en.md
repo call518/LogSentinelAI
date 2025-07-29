@@ -13,6 +13,10 @@ LogSentinelAI leverages LLM to analyze security events, anomalies, and errors fr
 - **Output**: Structured JSON with Pydantic validation
 - **Adaptive Sensitivity**: Automatic detection sensitivity adjustment based on LLM models and log type-specific prompts
 
+> ⚡️ **Declarative Extraction**
+>
+> In each analyzer script, simply declare the desired result structure as a Pydantic class, and the LLM will automatically analyze logs and return results as JSON matching that schema. No complex parsing or post-processing—just declare what you want, and the AI handles the rest. This approach enables developers to focus on "what to extract" declaratively, while the LLM takes care of "how to extract"—a modern paradigm for information extraction.
+
 ### Processing Modes
 - **Batch**: Bulk analysis of historical logs
 - **Real-time**: Sampling-based live monitoring
