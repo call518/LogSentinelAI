@@ -59,6 +59,7 @@ LogSentinelAI uses LLMs to analyze Apache, Linux, and other logs for security ev
                        │ • Ollama        │    │ • Visualization │
                        │ • vLLM          │    │ • Alerts        │
                        │                 │    │ • Analytics     │
+                       │                 │    │ • Geo-Map       │
                        └─────────────────┘    └─────────────────┘
 ```
 
