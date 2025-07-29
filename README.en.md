@@ -7,6 +7,8 @@ LogSentinelAI leverages LLM to analyze security events, anomalies, and errors fr
 ## 🚀 Key Features
 
 > ⚡️ **Declarative Extraction**
+>
+> In each analyzer script, simply declare the desired result structure as a Pydantic class, and the LLM will automatically analyze logs and return results as JSON matching that schema. No complex parsing or post-processing—just declare what you want, and the AI handles the rest. This approach enables developers to focus on "what to extract" declaratively, while the LLM takes care of "how to extract"—a modern paradigm for information extraction.
 ```python
 # Example: Just declare the result structure you want in your HTTP Access log analyzer
 from pydantic import BaseModel
@@ -24,8 +26,6 @@ class MyAccessLogResult(BaseModel):
 #   "is_attack": true
 # }
 ```
->
-> In each analyzer script, simply declare the desired result structure as a Pydantic class, and the LLM will automatically analyze logs and return results as JSON matching that schema. No complex parsing or post-processing—just declare what you want, and the AI handles the rest. This approach enables developers to focus on "what to extract" declaratively, while the LLM takes care of "how to extract"—a modern paradigm for information extraction.
 
 ### AI-Based Analysis
 - **LLM Providers**: OpenAI API, Ollama, vLLM

@@ -7,6 +7,8 @@ LogSentinelAI는 LLM을 활용하여 Apache, Linux 등 다양한 로그에서 �
 ## 🚀 주요 특징
 
 > ⚡️ **Declarative Extraction (선언적 추출)**
+>
+> 각 분석기 스크립트에서 원하는 분석 결과 구조(Pydantic class)만 선언하면, LLM이 해당 구조에 맞춰 자동으로 로그를 분석하고 JSON으로 결과를 반환합니다. 복잡한 파싱/후처리 없이 원하는 필드만 선언하면 AI가 알아서 결과를 채워줍니다. 이 방식은 개발자가 "무엇을 뽑을지"만 선언적으로 정의하면, "어떻게 뽑을지"는 LLM이 자동으로 처리하는 최신 패러다임입니다.
 ```python
 # 예시: HTTP Access 로그 분석기에서 원하는 결과 구조만 선언하면,
 from pydantic import BaseModel
@@ -24,8 +26,6 @@ class MyAccessLogResult(BaseModel):
 #   "is_attack": true
 # }
 ```
->
-> 각 분석기 스크립트에서 원하는 분석 결과 구조(Pydantic class)만 선언하면, LLM이 해당 구조에 맞춰 자동으로 로그를 분석하고 JSON으로 결과를 반환합니다. 복잡한 파싱/후처리 없이 원하는 필드만 선언하면 AI가 알아서 결과를 채워줍니다. 이 방식은 개발자가 "무엇을 뽑을지"만 선언적으로 정의하면, "어떻게 뽑을지"는 LLM이 자동으로 처리하는 최신 패러다임입니다.
 
 ### AI 기반 분석
 - **LLM 제공자**: OpenAI API, Ollama, vLLM
