@@ -74,27 +74,27 @@ src/logsentinelai/
 ├── py.typed                       # mypy 타입 힌트 마커
 │
 ├── analyzers/                     # 로그 유형별 분석기
-│   ├── __init__.py               # 분석기 패키지 초기화
-│   ├── httpd_access.py           # HTTP access 로그 분석기(Apache/Nginx)
-│   ├── httpd_apache.py           # Apache error 로그 분석기
-│   ├── linux_system.py           # Linux system 로그 분석기(syslog/messages)
-│   └── tcpdump_packet.py         # 네트워크 패킷 캡처 분석기
+│   ├── __init__.py                # 분석기 패키지 초기화
+│   ├── httpd_access.py            # HTTP access 로그 분석기(Apache/Nginx)
+│   ├── httpd_apache.py            # Apache error 로그 분석기
+│   ├── linux_system.py            # Linux system 로그 분석기(syslog/messages)
+│   └── tcpdump_packet.py          # 네트워크 패킷 캡처 분석기
 │
 ├── core/                          # 핵심 분석 엔진(모듈화)
-│   ├── __init__.py               # Core 패키지 초기화 및 통합 import
-│   ├── commons.py                # 주요 분석 함수 및 인터페이스
-│   ├── config.py                 # 설정 관리 및 환경 변수
-│   ├── llm.py                    # LLM 모델 초기화 및 상호작용
-│   ├── elasticsearch.py          # Elasticsearch 연동 및 데이터 전송
-│   ├── geoip.py                  # GeoIP 조회 및 IP 부가정보
-│   ├── ssh.py                    # SSH 원격 로그 접근
-│   ├── monitoring.py             # 실시간 로그 모니터링 및 처리
-│   ├── utils.py                  # 로그 처리 유틸리티 및 헬퍼
-│   └── prompts.py                # 로그 유형별 LLM 프롬프트 템플릿
+│   ├── __init__.py                # Core 패키지 초기화 및 통합 import
+│   ├── commons.py                 # 배치/실시간 분석 공통 함수, 처리 흐름 정의
+│   ├── config.py                  # 환경변수 기반 설정 관리
+│   ├── llm.py                     # LLM 모델 초기화 및 상호작용
+│   ├── elasticsearch.py           # Elasticsearch 연동 및 데이터 전송
+│   ├── geoip.py                   # GeoIP 조회 및 IP 부가정보
+│   ├── ssh.py                     # SSH 원격 로그 접근
+│   ├── monitoring.py              # 실시간 로그 모니터링 및 처리
+│   ├── utils.py                   # 로그 처리 유틸리티 및 헬퍼
+│   └── prompts.py                 # 로그 유형별 LLM 프롬프트 템플릿
 │
 └── utils/                         # 유틸리티 함수
-    ├── __init__.py               # Utils 패키지 초기화
-    └── geoip_downloader.py       # MaxMind GeoIP DB 다운로더
+    ├── __init__.py                # Utils 패키지 초기화
+    └── geoip_downloader.py        # MaxMind GeoIP DB 다운로더
 ```
 
 ### CLI 명령 매핑
@@ -108,213 +108,11 @@ logsentinelai-tcpdump        → analyzers/tcpdump_packet.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
 
-## 🚀 빠른 시작: 설치 및 환경설정
 
-### 데모 환경 검증
+## 🚀 설치 가이드
 
-LogSentinelAI는 다음 환경에서 성공적으로 테스트 및 검증되었습니다:
+LogSentinelAI의 설치, 환경설정, CLI 사용법, Elasticsearch/Kibana 연동 등 모든 실전 가이드는 아래 설치 문서를 참고해 주세요.
 
-```bash
-# 테스트 환경 사양
-- Host OS: Windows 11
-- WSL2: v2.5.9 (RockyLinux 8)
-- Docker Desktop: v4.39.0
-- GPU: NVIDIA GeForce GTX 1660, CUDA 12.9
+� **[설치 및 사용 가이드 바로가기: INSTALL.ko.md](./INSTALL.ko.md)**
 
-# GPU 확인(RockyLinux8, WSL2)
-$ nvidia-smi
-Tue Jul 22 22:39:22 2025
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 575.64.01              Driver Version: 576.88         CUDA Version: 12.9     |
-|-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA GeForce GTX 1660 ...    On  |   00000000:01:00.0  On |                  N/A |
-| 45%   63C    P2            120W /  125W |    5891MiB /   6144MiB |    100%      Default |
-|                                         |                        |                  N/A |
-+-----------------------------------------+------------------------+----------------------+
-
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|    0   N/A  N/A              45      C   /python3.12                           N/A      |
-+-----------------------------------------------------------------------------------------+
-```
-
-✅ **검증 상태**: OpenAI API, Ollama(로컬), vLLM(GPU) 등 모든 주요 기능 정상 동작 확인
-
-### 1. 사전 준비
-
-- **운영체제**: Linux, Windows, Mac 지원
-- **Python**: 3.11 이상
-- **Elasticsearch/Kibana**: 9.0.3 이상(Docker 권장)
-- **Ollama**: 0.9.5 이상
-
-### 📦 패키지 설치
-
-LogSentinelAI는 PyPI에서 설치할 수 있습니다:
-
-```bash
-# 가상환경 생성 및 활성화(권장)
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# LogSentinelAI 설치
-pip install logsentinelai
-```
-
-### ⚙️ 설정 파일 준비
-
-```bash
-# 1. 기본 설정 파일 다운로드(택1)
-curl -o config https://raw.githubusercontent.com/call518/LogSentinelAI/main/config.template
-
-# 2. config 파일에서 OPENAI_API_KEY 입력
-# API 키 발급: https://platform.openai.com/api-keys
-nano config  # 또는 vim config
-```
-
-### 🌍 GeoIP DB 자동설정
-
-GeoIP City DB는 최초 사용 시 자동 다운로드됩니다:
-
-```bash
-# 최초 필요 시 ~/.logsentinelai/에 자동 다운로드
-# 수동 다운로드도 가능
-logsentinelai-geoip-download
-```
-
-### 🚀 빠른 사용 예시
-
-```bash
-# 사용 가능한 명령 확인
-logsentinelai --help
-
-# 샘플 로그 파일용 저장소 클론
-git clone https://github.com/call518/LogSentinelAI.git
-cd LogSentinelAI
-
-# HTTP Access 로그 분석
-logsentinelai-httpd-access --log-path sample-logs/access-10k.log
-
-# Apache Error 로그 분석
-logsentinelai-apache-error --log-path sample-logs/apache-10k.log
-
-# Linux System 로그 분석
-logsentinelai-linux-system --log-path sample-logs/linux-2k.log
-
-# TCPDump 패킷 분석
-logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-10k-single-line.log
-
-# 실시간 모니터링  
-logsentinelai-linux-system --mode realtime
-
-# 원격 SSH 분석(known_hosts 필요)
-logsentinelai-tcpdump --remote --ssh admin@server.com --ssh-key ~/.ssh/id_rsa
-
-# GeoIP DB 다운로드
-logsentinelai-geoip-download
-```
-
-### ⚙️ CLI 옵션 요약
-
-모든 분석 명령(`logsentinelai-httpd-access`, `logsentinelai-apache-error`, `logsentinelai-linux-system`, `logsentinelai-tcpdump`)은 동일한 CLI 옵션을 지원합니다:
-
-| 옵션 | 설명 | config 기본값 | CLI로 덮어쓰기 |
-|------|------|---------------|---------------|
-| `--log-path <경로>` | 분석할 로그 파일 경로 | `LOG_PATH_*` | ✅ 가능 |
-| `--mode <모드>` | 분석 모드: `batch` 또는 `realtime` | `ANALYSIS_MODE=batch` | ✅ 가능 |
-| `--chunk-size <숫자>` | 분석 단위(로그 라인 수) | `CHUNK_SIZE_*=10` | ✅ 가능 |
-| `--processing-mode <모드>` | 실시간 처리: `full` 또는 `sampling` | `REALTIME_PROCESSING_MODE=full` | ✅ 가능 |
-| `--sampling-threshold <숫자>` | 실시간 샘플링 임계값 | `REALTIME_SAMPLING_THRESHOLD=100` | ✅ 가능 |
-| `--remote` | 원격 SSH 로그 접근 활성화 | `REMOTE_LOG_MODE=local` | ✅ 가능 |
-| `--ssh <user@host:port>` | SSH 접속 문자열 | `REMOTE_SSH_*` | ✅ 가능 |
-| `--ssh-key <경로>` | SSH 개인키 경로 | `REMOTE_SSH_KEY_PATH` | ✅ 가능 |
-| `--help` | 도움말 표시 | N/A | N/A |
-
-**주요 사용 패턴:**
-```bash
-# config 기본값 덮어쓰기
-logsentinelai-linux-system --chunk-size 20 --mode realtime
-
-# SSH 원격 분석(known_hosts 필요)
-logsentinelai-httpd-access --remote --ssh admin@server.com:2222 --ssh-key ~/.ssh/id_rsa
-
-# 실시간 샘플링 모드
-logsentinelai-tcpdump --mode realtime --processing-mode sampling --sampling-threshold 50
-```
-
-**참고:**
-- CLI 옵션이 항상 config 파일 설정보다 우선
-- config 값은 옵션 미지정 시 기본값으로 사용
-- 모든 명령에 `--help` 사용 가능
-
-## 🚀 Elasticsearch & Kibana 설정(선택)
-
-고급 시각화 및 분석을 위해 Elasticsearch와 Kibana를 설정할 수 있습니다:
-
-> [!IMPORTANT]
-> [Platinum 기능](https://www.elastic.co/subscriptions)은 기본적으로 30일 평가판으로 활성화됩니다. 이후 Open Basic 라이선스의 무료 기능만 자동 전환되어 데이터 손실 없이 사용 가능합니다. 유료 기능 비활성화는 [공식 가이드](https://github.com/deviantony/docker-elk#how-to-disable-paid-features) 참고.
-
-```bash
-# 1. ELK 스택 저장소 클론 및 이동
-# (원본) https://github.com/deviantony/docker-elk
-git clone https://github.com/call518/Docker-ELK.git
-cd Docker-ELK
-
-# 2. 초기화 및 실행
-# 1회 초기화
-docker compose up setup
-# Kibana 암호화 키 생성(권장)
-docker compose up kibana-genkeys
-# 생성된 키를 kibana/config/kibana.yml에 복사
-# ELK 스택 실행
-docker compose up -d
-
-# 3. Kibana 접속: http://localhost:5601
-# 기본 계정: elastic / changeme
-```
-
-### 📊 Elasticsearch 인덱스/정책 설정
-
-Elasticsearch 연동 시:
-
-```bash
-# 1. ILM 정책 생성(7일 보관, 10GB/1일 롤오버)
-curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
--H "Content-Type: application/json" \
--u elastic:changeme \
--d '{
-  "policy": {
-    "phases": {
-      "hot": {
-        "actions": {
-          "rollover": {
-            "max_size": "10gb",
-            "max_age": "1d"
-          }
-        }
-      },
-      "delete": {
-        "min_age": "7d",
-        "actions": {
-          "delete": {}
-        }
-      }
-    }
-  }
-}'
-
-# 2. 인덱스 템플릿 생성
-curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
--H "Content-Type: application/json" \
--u elastic:changeme \
--d 'PUT _index_template/logsentinelai-analysis-template
-{
-  "index_patterns": ["logsentinelai-analysis-*"]...
-```
-(이하 원본 README와 동일하게 번역 및 작성)
+> ⚡️ 추가 문의는 GitHub Issue/Discussion을 이용해 주세요!
