@@ -1,6 +1,6 @@
 [![PyPI에 태그로 배포](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml/badge.svg)](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml)
 
-# LogSentinelAI - AI 기반 로그 분석기
+# LogSentinelAI - LLM 기반 로그 분석기로 보안 이벤트·에러·이상 탐지
 
 LogSentinelAI는 LLM을 활용하여 Apache, Linux 등 다양한 로그에서 보안 이벤트, 이상 징후, 오류를 분석하고, 이를 Elasticsearch/Kibana로 시각화 가능한 구조화 데이터로 변환합니다.
 
