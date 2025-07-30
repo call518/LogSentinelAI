@@ -5,8 +5,35 @@
 Welcome to the LogSentinelAI Wiki! This comprehensive guide covers everything you need to know about using LogSentinelAI for intelligent log analysis.
 
 ## 📚 Table of Contents
+
 ### Core Concepts
 - [Declarative Extraction](#declarative-extraction-schema-driven-ai-log-structuring)
+
+### User Guides
+- [Analyzing Different Log Types](#analyzing-different-log-types)
+- [LLM Provider Setup](#llm-provider-setup)
+- [Elasticsearch Integration](#elasticsearch-integration)
+- [Kibana Dashboard Setup](#kibana-dashboard-setup)
+
+### Advanced Usage
+- [Remote Log Analysis via SSH](#remote-log-analysis-via-ssh)
+- [Real-time Monitoring](#real-time-monitoring)
+- [Custom Prompts](#custom-prompts)
+- [Performance Optimization](#performance-optimization)
+
+### Reference
+- [CLI Commands Reference](#cli-commands-reference)
+- [Configuration Options](#configuration-options)
+- [Output Format](#output-format)
+- [Troubleshooting](#troubleshooting)
+
+### Development
+- [Contributing](#contributing)
+- [API Reference](#api-reference)
+- [Architecture](#architecture)
+
+---
+
 ## Declarative Extraction: Schema-Driven AI Log Structuring
 
 LogSentinelAI's core feature is **Declarative Extraction**. In each analyzer, you simply declare the result structure (Pydantic class) you want, and the LLM automatically analyzes logs and returns results in that structure as JSON. No complex parsing or post-processing—just declare the fields you want, and the AI fills them in.
@@ -65,30 +92,6 @@ class MyPacketResult(BaseModel):
 ```
 
 By declaring only the result structure you want in each analyzer, the LLM automatically returns results in that structure—no manual parsing required.
-
-
-### User Guides
-- [Analyzing Different Log Types](#analyzing-different-log-types)
-- [LLM Provider Setup](#llm-provider-setup)
-- [Elasticsearch Integration](#elasticsearch-integration)
-- [Kibana Dashboard Setup](#kibana-dashboard-setup)
-
-### Advanced Usage
-- [Remote Log Analysis via SSH](#remote-log-analysis-via-ssh)
-- [Real-time Monitoring](#real-time-monitoring)
-- [Custom Prompts](#custom-prompts)
-- [Performance Optimization](#performance-optimization)
-
-### Reference
-- [CLI Commands Reference](#cli-commands-reference)
-- [Configuration Options](#configuration-options)
-- [Output Format](#output-format)
-- [Troubleshooting](#troubleshooting)
-
-### Development
-- [Contributing](#contributing)
-- [API Reference](#api-reference)
-- [Architecture](#architecture)
 
 ---
 
