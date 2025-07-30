@@ -391,7 +391,69 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 ---
 
-## 11. Advanced Usage Examples
+
+## 11. Declarative Extraction Usage
+
+The core feature of LogSentinelAI is **Declarative Extraction**. In each analyzer, you simply declare the result structure (Pydantic class) you want, and the LLM automatically analyzes the logs and returns results in that structure as JSON. No complex parsing or post-processing is needed—just declare the fields you want, and the AI fills them in.
+
+### 11.1 Basic Usage
+
+1. In your analyzer script, declare the result structure (Pydantic class) you want to receive.
+2. When you run the analysis command, the LLM automatically generates JSON matching that structure.
+
+#### Example: Customizing HTTP Access Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyAccessLogResult(BaseModel):
+    ip: str
+    url: str
+    is_attack: bool
+```
+Just define the fields you want, and the LLM will generate results like:
+```json
+{
+  "ip": "192.168.0.1",
+  "url": "/admin.php",
+  "is_attack": true
+}
+```
+
+#### Example: Customizing Apache Error Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyApacheErrorResult(BaseModel):
+    log_level: str
+    event_message: str
+    is_critical: bool
+```
+
+#### Example: Customizing Linux System Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyLinuxLogResult(BaseModel):
+    event_type: str
+    user: str
+    is_anomaly: bool
+```
+
+#### Example: Customizing TCPDump Packet Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyPacketResult(BaseModel):
+    src_ip: str
+    dst_ip: str
+    is_attack: bool
+```
+
+By declaring only the result structure you want in each analyzer, the LLM automatically returns results in that structure—no manual parsing required.
+
+---
+
+## 12. Advanced Usage Examples
 
 ### 11.1 Set Defaults in config & Override with CLI
 ```bash

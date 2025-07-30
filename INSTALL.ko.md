@@ -398,7 +398,69 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 ---
 
-## 11. 고급 사용 예시
+
+## 11. Declarative Extraction(선언적 추출) 사용법
+
+LogSentinelAI의 가장 큰 특징은 **Declarative Extraction**입니다. 각 분석기에서 원하는 결과 구조(Pydantic class)만 선언하면, LLM이 해당 구조에 맞춰 자동으로 로그를 분석하고 JSON으로 결과를 반환합니다. 복잡한 파싱/후처리 없이 원하는 필드만 선언하면 AI가 알아서 결과를 채워줍니다.
+
+### 11.1 기본 사용법
+
+1. 분석기 스크립트에서 결과로 받고 싶은 구조(Pydantic class)를 선언합니다.
+2. 분석 명령을 실행하면, LLM이 해당 구조에 맞는 JSON을 자동 생성합니다.
+
+#### 예시: HTTP Access 로그 분석기 커스터마이징
+```python
+from pydantic import BaseModel
+
+class MyAccessLogResult(BaseModel):
+    ip: str
+    url: str
+    is_attack: bool
+```
+이렇게 원하는 필드만 정의하면, LLM이 아래와 같은 결과를 자동 생성합니다:
+```json
+{
+  "ip": "192.168.0.1",
+  "url": "/admin.php",
+  "is_attack": true
+}
+```
+
+#### 예시: Apache Error 로그 분석기 커스터마이징
+```python
+from pydantic import BaseModel
+
+class MyApacheErrorResult(BaseModel):
+    log_level: str
+    event_message: str
+    is_critical: bool
+```
+
+#### 예시: Linux System 로그 분석기 커스터마이징
+```python
+from pydantic import BaseModel
+
+class MyLinuxLogResult(BaseModel):
+    event_type: str
+    user: str
+    is_anomaly: bool
+```
+
+#### 예시: TCPDump 패킷 로그 분석기 커스터마이징
+```python
+from pydantic import BaseModel
+
+class MyPacketResult(BaseModel):
+    src_ip: str
+    dst_ip: str
+    is_attack: bool
+```
+
+이처럼 각 분석기에서 원하는 결과 구조만 선언하면, 복잡한 파싱 없이 LLM이 자동으로 해당 구조에 맞는 결과를 반환합니다.
+
+---
+
+## 12. 고급 사용 예시
 
 ### 11.1 config 파일로 기본값 설정 & CLI로 덮어쓰기
 ```bash
