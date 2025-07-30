@@ -1,8 +1,71 @@
+
 # LogSentinelAI Wiki
+
 
 Welcome to the LogSentinelAI Wiki! This comprehensive guide covers everything you need to know about using LogSentinelAI for intelligent log analysis.
 
 ## 📚 Table of Contents
+### Core Concepts
+- [Declarative Extraction](#declarative-extraction-schema-driven-ai-log-structuring)
+## Declarative Extraction: Schema-Driven AI Log Structuring
+
+LogSentinelAI's core feature is **Declarative Extraction**. In each analyzer, you simply declare the result structure (Pydantic class) you want, and the LLM automatically analyzes logs and returns results in that structure as JSON. No complex parsing or post-processing—just declare the fields you want, and the AI fills them in.
+
+### Basic Usage
+
+1. In your analyzer script, declare the result structure (Pydantic class) you want to receive.
+2. When you run the analysis command, the LLM automatically generates JSON matching that structure.
+
+#### Example: Customizing HTTP Access Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyAccessLogResult(BaseModel):
+    ip: str
+    url: str
+    is_attack: bool
+```
+Just define the fields you want, and the LLM will generate results like:
+```json
+{
+  "ip": "192.168.0.1",
+  "url": "/admin.php",
+  "is_attack": true
+}
+```
+
+#### Example: Customizing Apache Error Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyApacheErrorResult(BaseModel):
+    log_level: str
+    event_message: str
+    is_critical: bool
+```
+
+#### Example: Customizing Linux System Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyLinuxLogResult(BaseModel):
+    event_type: str
+    user: str
+    is_anomaly: bool
+```
+
+#### Example: Customizing TCPDump Packet Log Analyzer
+```python
+from pydantic import BaseModel
+
+class MyPacketResult(BaseModel):
+    src_ip: str
+    dst_ip: str
+    is_attack: bool
+```
+
+By declaring only the result structure you want in each analyzer, the LLM automatically returns results in that structure—no manual parsing required.
+
 
 ### User Guides
 - [Analyzing Different Log Types](#analyzing-different-log-types)
@@ -743,4 +806,3 @@ This wiki provides comprehensive documentation for LogSentinelAI. For specific q
 - 📧 [Email Support](mailto:call518@gmail.com)
 
 **Happy Log Analyzing!** 🚀
-
