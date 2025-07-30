@@ -28,6 +28,7 @@ class MyAccessLogResult(BaseModel):
 ```
 
 ### AI 기반 분석
+- **Declarative Extraction 지원**: 원하는 결과 구조(Pydantic class)만 선언하면 LLM이 자동 분석
 - **LLM 제공자**: OpenAI API, Ollama, vLLM
 - **지원 로그 유형**: HTTP Access, Apache Error, Linux System, TCPDump
 - **위협 탐지**: SQL Injection, XSS, Brute Force, 네트워크 이상 탐지

@@ -27,12 +27,14 @@ class MyAccessLogResult(BaseModel):
 # }
 ```
 
-### AI-Based Analysis
+### AI-powered Analysis
+- **Declarative Extraction**: Just declare your desired result structure (Pydantic class) and the LLM analyzes logs automatically
 - **LLM Providers**: OpenAI API, Ollama, vLLM
 - **Supported Log Types**: HTTP Access, Apache Error, Linux System, TCPDump
 - **Threat Detection**: SQL Injection, XSS, Brute Force, Network Anomaly Detection
-- **Output**: Structured JSON with Pydantic validation
-- **Adaptive Sensitivity**: Automatic detection sensitivity adjustment based on LLM models and log type-specific prompts
+- **Output**: Structured JSON validated by Pydantic
+- **Just define a Pydantic class and the LLM generates results in that structure automatically**
+- **Adaptive Sensitivity**: Detection sensitivity auto-adjusted by LLM model and log type prompt
 
 ### Processing Modes
 - **Batch**: Bulk analysis of historical logs
