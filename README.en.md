@@ -2,7 +2,7 @@
 
 # LogSentinelAI - LLM-Powered Log Analyzer for Security Events and Anomalies
 
-LogSentinelAI leverages LLM to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana.
+LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema—no complex parsing required.
 
 ## 🚀 Key Features
 
