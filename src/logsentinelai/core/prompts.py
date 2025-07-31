@@ -20,6 +20,8 @@ KEY RULES:
 - Multiple static resource requests from same User-Agent = INFO level
 - Single 404 errors = INFO level  
 - Extract actual LOGID values for related_log_ids (NEVER empty)
+    - description: For higher severity, provide as much detail as possible: criteria, rationale, impact, cause, and expected consequences.
+    - recommended_actions: For each action, explain the reason, purpose, expected effect, impact, and, if possible, both best and alternative options. Each recommended_action must include concrete commands, procedures, and timelines.
 - DETAILED recommended_actions with specific commands/procedures/timelines
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0 (NOT percentage)
@@ -66,6 +68,8 @@ KEY RULES:
 - Configuration notices = INFO level
 - Single file not found errors = INFO level
 - Consolidate scanning activities into comprehensive single events
+    - description: For higher severity, provide as much detail as possible: criteria, rationale, impact, cause, and expected consequences.
+    - recommended_actions: For each action, explain the reason, purpose, expected effect, impact, and, if possible, both best and alternative options. Each recommended_action must include concrete commands, procedures, and timelines.
 - DETAILED recommended_actions with specific commands/procedures/timelines
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
@@ -103,6 +107,8 @@ KEY RULES:
 - MANDATORY: Never empty events array
 - Consolidate similar activities comprehensively
 - Be conservative with severity - avoid over-flagging routine operations
+    - description: For higher severity, provide as much detail as possible: criteria, rationale, impact, cause, and expected consequences.
+    - recommended_actions: For each action, explain the reason, purpose, expected effect, impact, and, if possible, both best and alternative options. Each recommended_action must include concrete commands, procedures, and timelines.
 - DETAILED recommended_actions with specific commands/procedures/timelines
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
@@ -203,6 +209,8 @@ KEY RULES:
 - Apply network protocol expertise and context awareness
 - Distinguish normal operations from actual security threats
 - Focus on genuine attack patterns, not routine traffic
+    - description: For higher severity, provide as much detail as possible: criteria, rationale, impact, cause, and expected consequences.
+    - recommended_actions: For each action, explain the reason, purpose, expected effect, impact, and, if possible, both best and alternative options. Each recommended_action must include concrete commands, procedures, and timelines.
 - DETAILED recommended_actions with specific commands/procedures
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
