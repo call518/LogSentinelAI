@@ -189,26 +189,26 @@ Jun 15 02:04:59 combo sshd(pam_unix)[20893]: authentication failure; logname= ui
     0x0030:  0800 b76e 0000 0101 080a 409a bcdb 0058  ...n......@....X
 ```
 
-## 🚀 설치 가이드
+## 설치 가이드
 
 LogSentinelAI의 설치, 환경설정, CLI 사용법, Elasticsearch/Kibana 연동 등 모든 실전 가이드는 아래 설치 문서를 참고해 주세요.
 
-� **[설치 및 사용 가이드 바로가기: INSTALL.ko.md](./INSTALL.ko.md)**
+**[설치 및 사용 가이드 바로가기: INSTALL.ko.md](./INSTALL.ko.md)**
 
 > ⚡️ 추가 문의는 GitHub Issue/Discussion을 이용해 주세요!
 
-## 🙏 감사의 말씀
+## 감사의 말씀
 
 LogSentinelAI에 영감과 지침, 그리고 기반 기술을 제공해주신 다음 프로젝트 및 커뮤니티에 진심으로 감사드립니다.
 
-### 🔧 핵심 기술 및 프레임워크
+### 핵심 기술 및 프레임워크
 - **[Outlines](https://dottxt-ai.github.io/outlines/latest/)** - 신뢰성 높은 AI 분석을 가능하게 하는 구조화 LLM 출력 생성 프레임워크
 - **[dottxt-ai Demos](https://github.com/dottxt-ai/demos/tree/main/logs)** - 훌륭한 로그 분석 예제와 구현 패턴
 - **[Docker ELK Stack](https://github.com/deviantony/docker-elk)** - 완전한 Elasticsearch, Logstash, Kibana Docker 구성
 
-### 🤖 LLM 인프라 및 배포
+### LLM 인프라 및 배포
 - **[vLLM](https://github.com/vllm-project/vllm)** - GPU 가속 로컬 배포를 위한 고성능 LLM 추론 엔진
 - **[Ollama](https://ollama.com/)** - 간편한 로컬 LLM 배포 및 관리 플랫폼
 
-### 🌟 오픈소스 커뮤니티
+### 오픈소스 커뮤니티
 AI 기반 로그 분석을 실용적으로 만들 수 있도록 기여해주신 오픈소스 커뮤니티와 수많은 프로젝트에 깊이 감사드립니다.

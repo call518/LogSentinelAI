@@ -189,26 +189,26 @@ Jun 15 02:04:59 combo sshd(pam_unix)[20893]: authentication failure; logname= ui
     0x0030:  0800 b76e 0000 0101 080a 409a bcdb 0058  ...n......@....X
 ```
 
-## 🚀 Installation Guide
+## Installation Guide
 
 For installation, environment setup, CLI usage, Elasticsearch/Kibana integration, and all practical guides for LogSentinelAI, please refer to the installation documentation below.
 
-📖 **[Go to Installation and Usage Guide: INSTALL.en.md](./INSTALL.en.md)**
+**[Go to Installation and Usage Guide: INSTALL.en.md](./INSTALL.en.md)**
 
 > ⚡️ For additional inquiries, please use GitHub Issues/Discussions!
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 We would like to express our sincere gratitude to the following projects and communities that provided inspiration, guidance, and foundational technologies for LogSentinelAI:
 
-### 🔧 Core Technologies & Frameworks
+### Core Technologies & Frameworks
 - **[Outlines](https://dottxt-ai.github.io/outlines/latest/)** - Structured LLM output generation framework that powers our reliable AI analysis
 - **[dottxt-ai Demos](https://github.com/dottxt-ai/demos/tree/main/logs)** - Excellent log analysis examples and implementation patterns
 - **[Docker ELK Stack](https://github.com/deviantony/docker-elk)** - Comprehensive Elasticsearch, Logstash, and Kibana Docker setup
 
-### 🤖 LLM Infrastructure & Deployment
+### LLM Infrastructure & Deployment
 - **[vLLM](https://github.com/vllm-project/vllm)** - High-performance LLM inference engine for GPU-accelerated local deployment
 - **[Ollama](https://ollama.com/)** - Simplified local LLM deployment and management platform
 
-### 🌟 Open Source Community
+### Open Source Community
 We are deeply grateful to the broader open source community and the countless projects that have contributed to making AI-powered log analysis accessible and practical. This project stands on the shoulders of many innovative open source initiatives that continue to push the boundaries of what's possible.
