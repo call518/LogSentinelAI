@@ -1,3 +1,7 @@
+"""
+NOTE: This script prints IP geolocation info to stdout for user query only.
+It does NOT log or persist sensitive data to any file or system log.
+"""
 import sys
 import json
 from logsentinelai.core.geoip import get_geoip_lookup
