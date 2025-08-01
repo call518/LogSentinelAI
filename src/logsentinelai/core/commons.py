@@ -6,6 +6,7 @@ This module provides the core functionality for log analysis,
 including batch and real-time processing capabilities.
 """
 import json
+from rich import print_json
 import datetime
 import hashlib
 from typing import Dict, Any, Optional, List
@@ -76,7 +77,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # Print raw LLM response JSON (before any post-processing)
         print("\n✅ [LLM Raw Response JSON]")
         try:
-            print(json.dumps(parsed, ensure_ascii=False, indent=4))
+            print_json(json.dumps(parsed, ensure_ascii=False, indent=4))
         except Exception as e:
             print(f"(Failed to pretty-print LLM response: {e})\nRaw: {review}")
         
@@ -117,7 +118,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # Enrich with GeoIP and print final data before ES input
         enriched_data = enrich_source_ips_with_geoip(parsed)
         print("\n✅ [Final ES Input JSON]")
-        print(json.dumps(enriched_data, ensure_ascii=False, indent=4))
+        print_json(json.dumps(enriched_data, ensure_ascii=False, indent=4))
 
         # Send to Elasticsearch
         print(f"\nSending data to Elasticsearch...")
