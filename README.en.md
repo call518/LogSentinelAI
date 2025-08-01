@@ -1,6 +1,6 @@
 [![Deploy to PyPI with tag](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml/badge.svg)](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml)
 
-# LogSentinelAI - LLM-Powered Log Analyzer for Security Events and Anomalies
+# LogSentinelAI — LLM-Powered Log Analyzer with Declarative Extraction for Security Events and Anomalies
 
 LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing is required.
 
