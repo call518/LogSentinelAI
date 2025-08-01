@@ -14,12 +14,14 @@ OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
 #LLM_PROVIDER=vllm
 LLM_PROVIDER=openai
 
-# LLM Model Names by Provider
+# LLM Model - Ollama
 #LLM_MODEL_OLLAMA=qwen2.5:1.5b
 LLM_MODEL_OLLAMA=qwen3:1.7b
 
+# LLM Model - vLLM
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 
+# LLM Model - OpenAI
 #LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OPENAI=gpt-4.1-nano
 
