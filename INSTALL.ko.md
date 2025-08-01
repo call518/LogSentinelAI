@@ -72,9 +72,11 @@ pip install .
 
 ### 5.2 (선택) Ollama 설치 (로컬 LLM)
 - [Ollama 공식 설치](https://ollama.com/download)
-- Ubuntu: `curl -fsSL https://ollama.com/install.sh | sh`
-- RHEL: 공식 지원 없음, Ubuntu 컨테이너/WSL2 권장
-
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+systemctl start ollama
+ollama pull qwen3:1.7b
+```
 
 ### 5.3 (선택) vLLM 설치 (로컬 GPU LLM)
 ```bash

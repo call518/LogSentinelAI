@@ -71,8 +71,11 @@ pip install .
 
 ### 5.2 (Optional) Install Ollama (Local LLM)
 - [Ollama Official Install](https://ollama.com/download)
-- Ubuntu: `curl -fsSL https://ollama.com/install.sh | sh`
-- RHEL: Not officially supported, use Ubuntu container/WSL2 recommended
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+systemctl start ollama
+ollama pull qwen3:1.7b
+```
 
 ### 5.3 (Optional) Install vLLM (Local GPU LLM)
 ```bash
