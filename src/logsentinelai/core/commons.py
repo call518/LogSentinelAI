@@ -72,6 +72,13 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         
         # Parse JSON response
         parsed = json.loads(review)
+
+        # Print raw LLM response JSON (before any post-processing)
+        print("\n✅ [LLM Raw Response JSON]")
+        try:
+            print(json.dumps(parsed, ensure_ascii=False, indent=4))
+        except Exception as e:
+            print(f"(Failed to pretty-print LLM response: {e})\nRaw: {review}")
         
         # Create log ID mapping
         log_raw_data = {}
@@ -104,20 +111,23 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         if log_path:
             parsed["@log_path"] = log_path
         
-        print(json.dumps(parsed, ensure_ascii=False, indent=4))
-        
         # Validate with Pydantic model
         model_class.model_validate(parsed)
-        
+
+        # Enrich with GeoIP and print final data before ES input
+        enriched_data = enrich_source_ips_with_geoip(parsed)
+        print("\n✅ [Final ES Input JSON]")
+        print(json.dumps(enriched_data, ensure_ascii=False, indent=4))
+
         # Send to Elasticsearch
         print(f"\nSending data to Elasticsearch...")
-        success = send_to_elasticsearch(parsed, elasticsearch_index, chunk_number, chunk_data)
+        success = send_to_elasticsearch(enriched_data, elasticsearch_index, chunk_number, chunk_data)
         if success:
             print(f"✅ Chunk {chunk_number} data sent to Elasticsearch successfully")
         else:
             print(f"❌ Chunk {chunk_number} data failed to send to Elasticsearch")
-        
-        return True, parsed
+
+        return True, enriched_data
         
     except json.JSONDecodeError as e:
         return _handle_processing_error(e, "json_parse_error", chunk_start_time, chunk_end_time,

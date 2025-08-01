@@ -47,7 +47,8 @@ class GeoIPLookup:
                     return
             
             self._reader = geoip2.database.Reader(self.database_path)
-            print(f"✓ GeoIP database loaded: {self.database_path}")
+            print()
+            print(f"💡 GeoIP database loaded: {self.database_path}")
             
         except Exception as e:
             print(f"WARNING: Failed to initialize GeoIP database: {e}")
