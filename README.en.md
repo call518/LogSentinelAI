@@ -4,6 +4,10 @@
 
 LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing is required.
 
+## System Architecture
+
+![System Architecture](img/system-architecture.png)
+
 ## 🚀 Key Features
 
 > ⚡️ **Declarative Extraction**
@@ -58,10 +62,6 @@ class MyAccessLogResult(BaseModel):
 ## 📋 JSON Output Example
 
 ![JSON Output](img/ex-json.png)
-
-## System Architecture
-
-![System Architecture](img/system-architecture.png)
 
 ## 📁 Project Structure and Main Python Scripts
 
