@@ -61,7 +61,7 @@ class MyAccessLogResult(BaseModel):
 
 ## System Architecture
 
-![JSON Output](img/ex-json.png)
+![System Architecture](img/system-architecture.png)
 
 ## 📁 Project Structure and Main Python Scripts
 
