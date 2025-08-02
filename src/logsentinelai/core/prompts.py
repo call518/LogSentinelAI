@@ -181,8 +181,8 @@ SEVERITY (be extremely conservative):
 - CRITICAL: Active successful exploitation with payload evidence
 - HIGH: Clear coordinated attack patterns with multiple threat indicators
 - MEDIUM: Potential reconnaissance requiring further investigation
-- LOW: Minor network anomalies
-- INFO: Normal traffic with noteworthy monitoring patterns
+- LOW: Minor network anomalies that deviate from normal patterns but are not clearly malicious
+- INFO: Normal internet traffic (HTTPS browsing, standard TCP sessions, routine ICMP diagnostics, legitimate data transfers)
 
 EXAMPLES OF NORMAL TRAFFIC (NOT THREATS):
 - "150.165.17.177.53039 > 45.121.183.6.443: Flags [.]" = HTTPS data transfer
@@ -199,6 +199,13 @@ EXAMPLES OF SUSPICIOUS HEX PATTERNS (INVESTIGATE):
 - Suspicious URLs: known malicious domains, C&C communication patterns
 
 DEFAULT ASSESSMENT: Unless clear attack indicators present, classify as INFO/LOW with description of normal network operations.
+
+CLASSIFICATION GUIDELINES:
+- **Use INFO for**: Standard protocols (HTTP/HTTPS/DNS), normal TCP data transfers, routine ICMP pings, typical internet browsing patterns, legitimate file transfers
+- **Use LOW for**: Unusual but non-malicious patterns, minor deviations from normal behavior, isolated anomalies without clear threat indicators
+- **Use MEDIUM+ only for**: Clear evidence of scanning, exploitation attempts, malicious payloads, or coordinated attacks
+
+IMPORTANT: Do NOT classify normal internet traffic as LOW severity. Normal = INFO severity.
 
 INCOMPLETE FLOW HANDLING:
 - Most packets are from ongoing sessions without visible handshake - this is NORMAL
