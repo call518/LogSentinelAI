@@ -14,7 +14,7 @@ LLM_MODELS = {
     "ollama": os.getenv("LLM_MODEL_OLLAMA", "qwen2.5-coder:3b"),
     "vllm": os.getenv("LLM_MODEL_VLLM", "Qwen/Qwen2.5-1.5B-Instruct"),
     "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini"),
-    "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-1.5-flash")
+    "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-1.5-pro")
 }
 LLM_API_HOSTS = {
     "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434"),

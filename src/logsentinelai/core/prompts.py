@@ -130,97 +130,51 @@ JSON schema: {model_schema}
 PROMPT_TEMPLATE_TCPDUMP_PACKET = """
 Expert network security analyst. Extract LOGID-XXXXXX values for related_log_ids.
 
-CRITICAL UNDERSTANDING: THIS LOG CONTAINS NORMAL INTERNET TRAFFIC
+CONTEXT: Analyzing PARTIAL packet flows from ongoing sessions - missing handshakes is NORMAL.
 
-PARTIAL FLOW ANALYSIS CONTEXT:
-- You are seeing PARTIAL packet flows from ongoing sessions, not complete connections
-- Many packets are middle/end of existing sessions - this is NORMAL
-- Do NOT flag partial flows as suspicious - focus on clear anomalies only
-- Established sessions showing data transfer = NORMAL even without seeing SYN/handshake
-- Missing context ≠ suspicious behavior
-
-PACKET ANALYSIS BASICS:
-- "Flags [P.]" or "Flags [.]" = ACK packets = ONGOING data transfer (NORMAL)
-- "Flags [S]" = SYN packets = NEW connection attempts (check for scanning)
-- HTTPS port 443 data transfer = NORMAL web browsing/file transfer
-- SACK options = TCP optimization = NORMAL network efficiency feature
-- ICMP echo = ping packets = NORMAL network diagnostics
+PACKET BASICS:
+- Flags [.]/[P.] = ACK packets = ongoing data transfer (NORMAL)
+- Flags [S] = SYN packets = new connections (check for scanning)
+- Port 443/HTTPS = normal web traffic; ICMP echo = ping diagnostics
+- SACK options = TCP optimization (NORMAL)
 
 HEX PAYLOAD ANALYSIS:
-- EXAMINE hex dump (0x lines) for readable text and suspicious patterns
-- THREAT INDICATORS in hex: SQL injection keywords (SELECT, UNION, DROP), XSS payloads (<script>, javascript:), command injection (sh, bash, cmd.exe), exploit shellcode patterns, malicious URLs/domains
-- NORMAL PATTERNS in hex: HTTP headers, HTML content, JSON data, encrypted HTTPS traffic (random-looking bytes), standard protocol headers
-- DECODE ASCII from hex when possible to identify attack payloads vs normal content
-- ESCALATE if hex contains clear exploitation attempts, suspicious commands, or malicious code patterns
+- Check hex dump (0x lines) for attack patterns vs normal content
+- THREATS: SQL injection (SELECT, UNION), XSS (<script>), command injection (/bin/sh, cmd.exe), exploit shellcode
+- NORMAL: HTTP headers, HTML, JSON, encrypted HTTPS (random bytes), protocol headers
 
-CHUNK-BASED ASSESSMENT GUIDELINES:
-- CONSERVATIVE APPROACH: When seeing partial flows, assume legitimate unless clearly malicious
-- ANOMALY FOCUS: Look for obvious deviations (multiple SYN to different ports, malformed packets, suspicious payloads)
-- SESSION CONTINUITY: Multiple packets between same IP:port pairs = ongoing legitimate session
-- BASELINE ASSUMPTION: Standard protocols (HTTPS, HTTP, DNS, SSH) are legitimate by default
-- ESCALATION CRITERIA: Only flag when patterns clearly indicate attack behavior within visible chunk
+DATA TRANSFER CALCULATION:
+- Sum all packet sizes to get total bytes transferred
+- Example: packets of 1460 + 31 + 1382 + 7300 + 5840 = 16013 bytes
+- Output in JSON: "data_transfer_bytes": 16013 (calculated integer, not expression)
 
-BEFORE CREATING ANY HIGH/CRITICAL EVENTS:
-1. **CHECK TCP FLAGS**: Are these SYN packets to multiple different ports? Or just ACK packets?
-2. **VERIFY ATTACK PATTERN**: Same source scanning MULTIPLE DIFFERENT ports on SAME destination?
-3. **CONFIRM THREAT**: Does this indicate actual malicious activity or normal internet usage?
+SEVERITY (conservative):
+- CRITICAL: Active exploitation with payload evidence
+- HIGH: Clear coordinated attack patterns
+- MEDIUM: Potential reconnaissance requiring investigation
+- LOW: Minor anomalies, non-malicious deviations
+- INFO: Normal internet traffic (HTTPS browsing, TCP sessions, ICMP diagnostics)
 
-CRITICAL RULE: **ACK PACKETS (Flags [.] or [P.]) ARE NEVER PORT SCANNING**
+THREAT DETECTION:
+- PORT SCANNING: Same source, multiple SYN to different ports on same destination
+- DDoS: Massive connection floods
+- PAYLOAD ATTACKS: Malicious code in hex dump
 
-NORMAL TRAFFIC PATTERNS (DO NOT FLAG AS SUSPICIOUS):
-- Multiple ACK packets between same IP pairs = ongoing HTTPS/TCP sessions
-- Port 443 traffic with SACK options = normal file download/upload/browsing
-- Different sources connecting to different destinations = normal distributed internet traffic
-- ICMP echo requests = normal ping/diagnostic traffic
-- TCP sequence number progression = normal data flow
+EVENT CONSOLIDATION GUIDELINES:
+- **MERGE SIMILAR NORMAL TRAFFIC**: Combine multiple HTTPS sessions into ONE "Normal HTTPS Traffic" event
+- **AGGREGATE IP RANGES**: Use representative IP or "Multiple IPs" in source_ips/dest_ips fields
+- **COMPREHENSIVE DESCRIPTIONS**: Single event describing all normal traffic patterns observed
+- **AVOID EVENT MULTIPLICATION**: Create maximum 1-2 INFO events for normal operations
+- **CHOOSE REPRESENTATIVE VALUES**: Pick most common port/protocol for consolidated events
 
-ACTUAL THREATS TO DETECT:
-- **PORT SCANNING**: Same source sending SYN to MULTIPLE ports on SAME destination
-- **DDoS**: Massive connection floods from many sources
-- **PROTOCOL ATTACKS**: Malformed packets, exploit payloads
-- **PAYLOAD THREATS**: Malicious code/commands in hex dump, SQL injection in packet data, XSS payloads, shellcode patterns, suspicious file transfers
-
-SEVERITY (be extremely conservative):
-- CRITICAL: Active successful exploitation with payload evidence
-- HIGH: Clear coordinated attack patterns with multiple threat indicators
-- MEDIUM: Potential reconnaissance requiring further investigation
-- LOW: Minor network anomalies that deviate from normal patterns but are not clearly malicious
-- INFO: Normal internet traffic (HTTPS browsing, standard TCP sessions, routine ICMP diagnostics, legitimate data transfers)
-
-EXAMPLES OF NORMAL TRAFFIC (NOT THREATS):
-- "150.165.17.177.53039 > 45.121.183.6.443: Flags [.]" = HTTPS data transfer
-- "202.244.39.51.56172 > 13.154.148.235.443: Flags [P.]" = HTTPS data with push flag
-- "IP 203.141.114.197 > 41.31.64.203: ICMP echo request" = ping diagnostic
-- Hex containing HTTP headers, HTML content, encrypted HTTPS data = NORMAL
-- Random-looking hex bytes on port 443 = encrypted HTTPS traffic = NORMAL
-
-EXAMPLES OF SUSPICIOUS HEX PATTERNS (INVESTIGATE):
-- Readable SQL injection: "SELECT * FROM users" or "UNION SELECT password"
-- XSS payloads: "<script>alert" or "javascript:eval"
-- Command injection: "/bin/sh", "cmd.exe", "bash -c"
-- File paths: "/etc/passwd", "C:\\Windows\\System32"
-- Suspicious URLs: known malicious domains, C&C communication patterns
-
-DEFAULT ASSESSMENT: Unless clear attack indicators present, classify as INFO/LOW with description of normal network operations.
-
-CLASSIFICATION GUIDELINES:
-- **Use INFO for**: Standard protocols (HTTP/HTTPS/DNS), normal TCP data transfers, routine ICMP pings, typical internet browsing patterns, legitimate file transfers
-- **Use LOW for**: Unusual but non-malicious patterns, minor deviations from normal behavior, isolated anomalies without clear threat indicators
-- **Use MEDIUM+ only for**: Clear evidence of scanning, exploitation attempts, malicious payloads, or coordinated attacks
-
-IMPORTANT: Do NOT classify normal internet traffic as LOW severity. Normal = INFO severity.
-
-INCOMPLETE FLOW HANDLING:
-- Most packets are from ongoing sessions without visible handshake - this is NORMAL
-- Focus on obvious anomalies within visible chunk, not missing context
-- Continuous data flows indicate legitimate established connections
-- When in doubt about partial flows, favor normal traffic classification
-- PRIORITY: Analyze hex payload content for actual malicious patterns over flow context
-
-KEY RULES:
-- Apply network protocol expertise and context awareness
-- Distinguish normal operations from actual security threats
+CRITICAL RULES:
+- ACK packets (Flags [.]/[P.]) are NEVER port scanning
+- Assume legitimate unless clearly malicious
+- Normal protocols (HTTPS/HTTP/DNS/SSH) = INFO by default
 - Focus on genuine attack patterns, not routine traffic
+- **CONSOLIDATE SIMILAR EVENTS**: Group similar normal traffic into SINGLE comprehensive event
+- **AVOID DUPLICATE INFO EVENTS**: Don't create multiple INFO events for same traffic type
+- **TOKEN EFFICIENCY**: Minimize redundant events to prevent JSON truncation
 - If no notable events found, create at least 1 INFO event summarizing normal operations
     - description: For higher severity, provide as much detail as possible: criteria, rationale, impact, cause, and expected consequences.
     - recommended_actions: For each action, explain the reason, purpose, expected effect, impact, and, if possible, both best and alternative options. Each recommended_action must include concrete commands, procedures, and timelines.
@@ -228,13 +182,23 @@ KEY RULES:
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
 
-STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes (calculate total as integer), top_source_ips{{}}, top_dest_ips{{}}
+FIELD REQUIREMENTS:
+- source_port, dest_port: INTEGER values (e.g., 443, 80, 22) NOT strings like "다양한 포트"
+- protocol: SINGLE enum value from [HTTP, HTTPS, FTP, SSH, TELNET, DNS, SMTP, POP3, IMAP, SNMP, LDAP, MYSQL, POSTGRESQL, REDIS, MONGODB, TCP, UDP, ICMP, OTHER]
+- source_ips, dest_ips: SINGLE IP string (e.g., "192.168.1.1") NOT "다양한 IP 주소"
+- For events covering multiple IPs/ports, choose the most representative single value
+- If unclear, use the first/primary IP and port from the packet data
 
-JSON OUTPUT REQUIREMENTS:
-- ALL numeric fields must be INTEGER or DECIMAL values, NEVER mathematical expressions
-- data_transfer_bytes: must be calculated integer (e.g., 16013), NOT expression (e.g., 1460 + 31 + ...)
-- Ensure valid JSON structure with proper quotes, commas, brackets
-- No comments or explanations outside JSON structure
+STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes (calculated integer sum), top_source_ips{{}}, top_dest_ips{{}}
+
+JSON OUTPUT CRITICAL: 
+- data_transfer_bytes must be calculated INTEGER (e.g., 16013), NEVER mathematical expression (e.g., 1460 + 31 + ...)
+- source_port, dest_port must be INTEGER (e.g., 443, 80, 22), NOT strings like "다양한 포트"
+- protocol must be SINGLE enum string (e.g., "TCP", "HTTPS", "UDP"), NOT array like ["HTTPS", "TCP"]
+- source_ips, dest_ips must be SINGLE IP string (e.g., "192.168.1.1"), NOT descriptions like "다양한 IP 주소"
+- ALL numeric fields must be INTEGER/DECIMAL values, never expressions
+- Valid JSON structure required with proper quotes, commas, brackets
+- For aggregated events, select the most representative single values for required fields
 
 JSON schema: {model_schema}
 

@@ -181,9 +181,15 @@ def assign_logid_to_packets(packets):
 
 def run_batch_analysis(ssh_config=None, log_path=None):
     """Run batch analysis on static log file"""
+    from ..core.config import LLM_PROVIDER, LLM_MODELS
+    
     print("=" * 70)
     print("LogSentinelAI - TCPDump Packet Analysis (Batch Mode)")
     print("=" * 70)
+    
+    # Get LLM configuration
+    llm_provider = LLM_PROVIDER
+    llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
     
     # Get analysis configuration (can override chunk_size if needed)
     # config = get_analysis_config("tcpdump_packet", chunk_size=3)  # Override chunk_size
@@ -193,12 +199,18 @@ def run_batch_analysis(ssh_config=None, log_path=None):
     if log_path:
         config['log_path'] = log_path
     
+    # Determine access mode
+    access_mode = "SSH (Remote)" if ssh_config else "LOCAL"
+    
+    print(f"Access mode:       {access_mode}")
     print(f"Log file:          {config['log_path']}")
     print(f"Chunk size:        {config['chunk_size']}")
     print(f"Response language: {config['response_language']}")
-    print(f"Analysis mode:     {config['analysis_mode']}")
+    print(f"LLM Provider:      {llm_provider}")
+    print(f"LLM Model:         {llm_model_name}")
     if ssh_config:
-        print("Access mode:       SSH (Remote)")
+        print(f"SSH Target:        {ssh_config.get('user', 'unknown')}@{ssh_config.get('host', 'unknown')}:{ssh_config.get('port', 22)}")
+    print("=" * 70)
     
     log_path = config["log_path"]
     chunk_size = config["chunk_size"]
@@ -225,6 +237,12 @@ def run_batch_analysis(ssh_config=None, log_path=None):
             logs = "".join(chunk).replace('\\n', '\n')  # Convert escaped newlines back
             model_schema = PacketAnalysis.model_json_schema()
             prompt = get_tcpdump_packet_prompt().format(logs=logs, model_schema=model_schema, response_language=response_language)
+            prompt = prompt.strip()
+            if i == 0:
+                print("\n[LLM Prompt Submitted]")
+                print("-" * 50)
+                print(prompt)
+                print("-" * 50)
             print(f"\n--- Chunk {i+1} ---")
             print_chunk_contents(chunk)
             

@@ -123,7 +123,7 @@ LLM_PROVIDER=openai   # openai/ollama/vllm/gemini
 LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OLLAMA=gemma3:1b
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
-LLM_MODEL_GEMINI=gemini-1.5-flash
+LLM_MODEL_GEMINI=gemini-1.5-pro
 
 # OpenAI API Key
 OPENAI_API_KEY=sk-...
