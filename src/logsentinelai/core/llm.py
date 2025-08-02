@@ -26,7 +26,9 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
         llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
     
     if llm_provider == "ollama":
-        client = ollama.Client()
+        client = ollama.Client(
+            host='http://127.0.0.1:11434',
+        )
         model = outlines.from_ollama(client, llm_model_name)
     elif llm_provider == "vllm":
         client = openai.OpenAI(
