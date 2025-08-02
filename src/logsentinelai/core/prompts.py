@@ -224,7 +224,13 @@ KEY RULES:
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
 
-STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes, top_source_ips{{}}, top_dest_ips{{}}
+STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes (calculate total as integer), top_source_ips{{}}, top_dest_ips{{}}
+
+JSON OUTPUT REQUIREMENTS:
+- ALL numeric fields must be INTEGER or DECIMAL values, NEVER mathematical expressions
+- data_transfer_bytes: must be calculated integer (e.g., 16013), NOT expression (e.g., 1460 + 31 + ...)
+- Ensure valid JSON structure with proper quotes, commas, brackets
+- No comments or explanations outside JSON structure
 
 JSON schema: {model_schema}
 

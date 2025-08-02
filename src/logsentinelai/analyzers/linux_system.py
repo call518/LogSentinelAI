@@ -57,11 +57,10 @@ class Statistics(BaseModel):
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
     events: list[SecurityEvent] = Field(
-        min_items=1,
-        description="List of security events - must include at least one"
+        description="List of security events - may be empty if no security concerns detected"
     )
     statistics: Statistics
-    highest_severity: SeverityLevel
+    highest_severity: Optional[SeverityLevel] = Field(description="Highest severity level of detected events (null if no events)")
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
 #--------------------------------------------------------------------------------------
 
