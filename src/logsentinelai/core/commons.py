@@ -258,7 +258,7 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
         for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
             # Record analysis start time
             chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
-            logs = "".join(chunk)
+            logs = "".join(chunk).rstrip("\n")
             model_schema = analysis_schema_class.model_json_schema()
             prompt = prompt_template.format(logs=logs, model_schema=model_schema, response_language=response_language)
             print(f"\n--- Chunk {i+1} ---")
