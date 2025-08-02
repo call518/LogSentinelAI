@@ -17,6 +17,7 @@ LLM_MODELS = {
 }
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
+LLM_NO_THINK = os.getenv("LLM_NO_THINK", "false").lower() == "true"
 
 # Common Analysis Configuration
 RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")

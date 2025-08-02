@@ -1,3 +1,5 @@
+from .config import LLM_NO_THINK
+
 PROMPT_TEMPLATE_HTTPD_ACCESS_LOG = """
 Expert HTTP access log security analyst. Extract LOGID-XXXXXX values for related_log_ids.
 
@@ -223,3 +225,33 @@ JSON schema: {model_schema}
 {logs}
 <LOGS END>
 """
+
+def add_no_think_directive(prompt_template):
+    """
+    Add /no_think directive to prompt template if LLM_NO_THINK is enabled
+    
+    Args:
+        prompt_template: Original prompt template string
+        
+    Returns:
+        Modified prompt template with /no_think directive if enabled
+    """
+    if LLM_NO_THINK:
+        return prompt_template.rstrip() + "\n\n/no_think"
+    return prompt_template
+
+def get_httpd_access_prompt():
+    """Get HTTP access log analysis prompt with optional /no_think directive"""
+    return add_no_think_directive(PROMPT_TEMPLATE_HTTPD_ACCESS_LOG)
+
+def get_httpd_apache_error_prompt():
+    """Get Apache error log analysis prompt with optional /no_think directive"""
+    return add_no_think_directive(PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG)
+
+def get_linux_system_prompt():
+    """Get Linux system log analysis prompt with optional /no_think directive"""
+    return add_no_think_directive(PROMPT_TEMPLATE_LINUX_SYSTEM_LOG)
+
+def get_tcpdump_packet_prompt():
+    """Get tcpdump packet analysis prompt with optional /no_think directive"""
+    return add_no_think_directive(PROMPT_TEMPLATE_TCPDUMP_PACKET)

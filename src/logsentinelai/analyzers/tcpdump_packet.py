@@ -11,7 +11,7 @@ from ..core.commons import (
     create_argument_parser, chunked_iterable, print_chunk_contents,
     handle_ssh_arguments, read_file_content
 )
-from ..core.prompts import PROMPT_TEMPLATE_TCPDUMP_PACKET
+from ..core.prompts import get_tcpdump_packet_prompt
 
 ### Install the required packages
 # uv add outlines ollama openai python-dotenv numpy elasticsearch
@@ -225,7 +225,7 @@ def run_batch_analysis(ssh_config=None, log_path=None):
             chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
             logs = "".join(chunk).replace('\\n', '\n')  # Convert escaped newlines back
             model_schema = PacketAnalysis.model_json_schema()
-            prompt = PROMPT_TEMPLATE_TCPDUMP_PACKET.format(logs=logs, model_schema=model_schema, response_language=response_language)
+            prompt = get_tcpdump_packet_prompt().format(logs=logs, model_schema=model_schema, response_language=response_language)
             print(f"\n--- Chunk {i+1} ---")
             print_chunk_contents(chunk)
             
@@ -269,7 +269,7 @@ def main():
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=PacketAnalysis,
-            prompt_template=PROMPT_TEMPLATE_TCPDUMP_PACKET,
+            prompt_template=get_tcpdump_packet_prompt(),
             analysis_title=analysis_title,
             chunk_size=args.chunk_size,
             log_path=args.log_path,

@@ -34,10 +34,15 @@ LLM_TEMPERATURE=0.1
 # Lower values = more focused, Higher values = more diverse
 LLM_TOP_P=0.5
 
+# No Think: Disable reasoning process for models that support it (true/false)
+# Set to true to skip intermediate reasoning steps and reduce token usage
+# Useful for models like o1, Claude-3.5-sonnet, etc. that have built-in reasoning
+LLM_NO_THINK=true
+
 # =============================================================================
 # Analysis Configuration
 # =============================================================================
-# Response Language - Choose from "english", "korean"
+# Response Language - Choose from "english", "korean", etc..
 RESPONSE_LANGUAGE=english
 
 # Analysis Mode - Choose from "batch", "realtime"

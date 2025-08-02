@@ -76,6 +76,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
 
         # Print raw LLM response JSON (before any post-processing)
         print("\n✅ [LLM Raw Response JSON]")
+        print("-----------------------------")
         try:
             print_json(json.dumps(parsed, ensure_ascii=False, indent=4))
         except Exception as e:
@@ -118,6 +119,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # Enrich with GeoIP and print final data before ES input
         enriched_data = enrich_source_ips_with_geoip(parsed)
         print("\n✅ [Final ES Input JSON]")
+        print("-----------------------------")
         print_json(json.dumps(enriched_data, ensure_ascii=False, indent=4))
 
         # Send to Elasticsearch
@@ -133,17 +135,34 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
     except json.JSONDecodeError as e:
         return _handle_processing_error(e, "json_parse_error", chunk_start_time, chunk_end_time,
                                       chunk_number, chunk_data, processing_mode, llm_provider, 
-                                      llm_model, log_path, elasticsearch_index)
+                                      llm_model, log_path, elasticsearch_index, raw_response=review)
         
     except Exception as e:
         return _handle_processing_error(e, "processing_error", chunk_start_time, chunk_end_time,
                                       chunk_number, chunk_data, processing_mode, llm_provider,
-                                      llm_model, log_path, elasticsearch_index)
+                                      llm_model, log_path, elasticsearch_index, raw_response=None)
 
 def _handle_processing_error(error, error_type, chunk_start_time, chunk_end_time, chunk_number, 
-                           chunk_data, processing_mode, llm_provider, llm_model, log_path, elasticsearch_index):
+                           chunk_data, processing_mode, llm_provider, llm_model, log_path, elasticsearch_index, raw_response=None):
     """Handle processing errors and send failure information to Elasticsearch"""
     print(f"❌ {error_type.replace('_', ' ').title()}: {error}")
+    
+    # If this is a JSON parse error and we have the raw response, print it for debugging
+    if error_type == "json_parse_error" and raw_response:
+        print(f"\n🔍 [Debug] Raw LLM Response (for debugging JSON parse error):")
+        print("-" * 80)
+        print(raw_response)
+        print("-" * 80)
+        print(f"Response length: {len(raw_response)} characters")
+        
+        # Also try to show where the error might be occurring
+        if hasattr(error, 'pos'):
+            error_pos = error.pos
+            start_pos = max(0, error_pos - 100)
+            end_pos = min(len(raw_response), error_pos + 100)
+            print(f"Error position: {error_pos}")
+            print(f"Context around error position:")
+            print(f"'{raw_response[start_pos:end_pos]}'")
     
     if chunk_end_time is None:
         chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'

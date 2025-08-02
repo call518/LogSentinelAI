@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Optional
 
-from ..core.prompts import PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
+from ..core.prompts import get_httpd_apache_error_prompt
 from ..core.commons import (
     run_generic_batch_analysis, 
     run_generic_realtime_analysis,
@@ -78,7 +78,7 @@ def main():
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
-            prompt_template=PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG,
+            prompt_template=get_httpd_apache_error_prompt(),
             analysis_title=analysis_title,
             chunk_size=args.chunk_size,
             log_path=args.log_path,
@@ -91,7 +91,7 @@ def main():
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
-            prompt_template=PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG,
+            prompt_template=get_httpd_apache_error_prompt(),
             analysis_title=analysis_title,
             log_path=args.log_path,
             remote_mode=remote_mode,
