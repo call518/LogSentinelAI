@@ -233,17 +233,27 @@ JSON schema: {model_schema}
 <LOGS END>
 """
 
-def add_no_think_directive(prompt_template):
+def add_no_think_directive(prompt_template, provider=None):
     """
     Add /no_think directive to prompt template if LLM_NO_THINK is enabled
+    and the provider supports it
     
     Args:
         prompt_template: Original prompt template string
+        provider: LLM provider (ollama, vllm, openai). If None, uses global LLM_PROVIDER
         
     Returns:
-        Modified prompt template with /no_think directive if enabled
+        Modified prompt template with /no_think directive if enabled and supported
     """
-    if LLM_NO_THINK:
+    from .config import LLM_PROVIDER
+    
+    # Use global provider if not specified
+    if provider is None:
+        provider = LLM_PROVIDER
+    
+    # Only apply /no_think for providers/models that support it
+    # Currently known to work with: vLLM (Qwen3, some other models)
+    if LLM_NO_THINK and provider in ["vllm"]:
         return prompt_template.rstrip() + "\n\n/no_think"
     return prompt_template
 
