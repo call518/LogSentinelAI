@@ -133,17 +133,17 @@ ANALYSIS_MODE=batch        # batch/realtime
 
 # Log file paths (batch/realtime)
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
-LOG_PATH_APACHE_ERROR=sample-logs/apache-10k.log
+LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_APACHE_ERROR=/var/log/apache2/error.log
+LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
 LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 
 # chunk size (analysis unit)
 CHUNK_SIZE_HTTPD_ACCESS=10
-CHUNK_SIZE_APACHE_ERROR=10
+CHUNK_SIZE_HTTPD_APACHE_ERROR=10
 CHUNK_SIZE_LINUX_SYSTEM=10
 CHUNK_SIZE_TCPDUMP_PACKET=5
 
@@ -152,7 +152,7 @@ REALTIME_POLLING_INTERVAL=5
 REALTIME_MAX_LINES_PER_BATCH=50
 REALTIME_POSITION_FILE_DIR=.positions
 REALTIME_BUFFER_TIME=2
-REALTIME_PROCESSING_MODE=full     # full/sampling/auto-sampling
+REALTIME_PROCESSING_MODE=full     # full/sampling
 REALTIME_SAMPLING_THRESHOLD=100
 
 # GeoIP options
@@ -350,7 +350,7 @@ logsentinelai --help
 # HTTP Access log analysis (batch)
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
 # Apache Error log analysis
-logsentinelai-apache-error --log-path sample-logs/apache-10k.log
+logsentinelai-httpd-apache --log-path sample-logs/apache-10k.log
 # Linux System log analysis
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
 # TCPDump packet log analysis
@@ -510,23 +510,142 @@ Contact/Feedback: GitHub Issue, Discussions, Pull Request welcome
 
 ---
 
-**If you have any difficulties installing or using LogSentinelAI, feel free to contact us.**
-
----
-
-## 13. Reference/Recommended Links
+## 13. Reference Links & Contact
 - [LogSentinelAI GitHub](https://github.com/call518/LogSentinelAI)
 - [Docker-ELK Official](https://github.com/deviantony/docker-elk)
 - [Ollama Official](https://ollama.com/)
 - [vLLM Official](https://github.com/vllm-project/vllm)
 - [Python Official](https://www.python.org/downloads/)
 
----
-
-## 14. Contact & Feedback
-- GitHub Issue, Discussions, Pull Request welcome
-- Suggestions for docs/code improvement, bug reports, feature requests are all welcome!
+**Contact/Feedback**: GitHub Issue, Discussions, Pull Request welcome
 
 ---
 
-**If you have any difficulties installing or using LogSentinelAI, feel free to contact us.**
+## Appendix
+
+### A. Real-time Auto-Sampling Detailed Mechanism
+
+This section provides a detailed explanation of how the system automatically switches processing modes when large volumes of logs are ingested in real-time mode.
+
+#### A.1 Related Parameters and Their Roles
+
+| Parameter | Default | Role | Impact |
+|-----------|---------|------|---------|
+| `REALTIME_PROCESSING_MODE` | `full` | Base processing mode (full/sampling) | Determines initial processing method |
+| `REALTIME_SAMPLING_THRESHOLD` | `100` | Auto-sampling switch threshold | Based on number of pending log lines |
+| `CHUNK_SIZE_*` | `10` | LLM analysis unit | Number of log lines to analyze at once |
+| `REALTIME_POLLING_INTERVAL` | `5` | Polling interval (seconds) | Log file check frequency |
+| `REALTIME_MAX_LINES_PER_BATCH` | `50` | Read limit | Maximum lines to read at once |
+| `REALTIME_BUFFER_TIME` | `2` | Buffer time (seconds) | Prevents incomplete log line processing |
+
+#### A.2 Auto-Sampling Trigger Scenarios
+
+##### Scenario 1: Normal Log Processing (FULL mode maintained)
+```
+Configuration:
+- CHUNK_SIZE_HTTPD_ACCESS = 10
+- REALTIME_SAMPLING_THRESHOLD = 100
+- REALTIME_POLLING_INTERVAL = 5
+- REALTIME_MAX_LINES_PER_BATCH = 50
+
+Process:
+1. Check /var/log/apache2/access.log every 5 seconds
+2. Find 15 new log lines → Add to internal pending buffer
+3. Pending buffer: 15 lines (below threshold of 100)
+4. Process CHUNK_SIZE(10): Analyze 10 lines with LLM, 5 lines remain pending
+5. Check for additional logs in next polling cycle
+```
+
+##### Scenario 2: Traffic Spike - Auto-switch to Sampling
+```
+Configuration: Same as above
+
+Spike situation:
+1. Poll every 5 seconds, reading 50 lines each time (MAX_LINES_PER_BATCH)
+2. Continuous heavy log influx over multiple polling cycles
+3. Pending buffer accumulation: 20 lines → 45 lines → 85 lines → 125 lines
+4. 125 lines > threshold(100) ▶️ Auto-switch to SAMPLING mode
+
+SAMPLING mode operation:
+- System outputs "AUTO-SWITCH: Pending lines (125) exceed threshold (100)"
+- Displays "SWITCHING TO SAMPLING MODE" message
+- Select only latest 10 lines (CHUNK_SIZE) from 125 pending lines
+- Discard remaining 115 lines (original log file preserved)
+- Output "SAMPLING: Discarded 115 older lines, keeping latest 10" message
+- Send only latest 10 lines to LLM for analysis
+- Limit memory usage, prevent system overload
+```
+
+##### Scenario 3: Traffic Normalization - Return to FULL mode
+```
+Normalization process:
+1. Log influx decreases: around 5-15 lines per polling cycle
+2. Pending buffer drops below threshold (100)
+3. Automatically return to FULL mode
+4. Resume sequential processing of all logs
+```
+
+#### A.3 Real-world Usage Examples
+
+##### Web Server DDoS Attack Scenario
+```bash
+# Configuration: In config file
+CHUNK_SIZE_HTTPD_ACCESS=15
+REALTIME_SAMPLING_THRESHOLD=200
+REALTIME_POLLING_INTERVAL=3
+
+# Execution
+logsentinelai-httpd-access --mode realtime
+
+# Situational behavior:
+# Normal: 10-20 requests/sec → FULL mode analyzes all logs
+# Attack: 500+ requests/sec → SAMPLING mode when pending buffer exceeds 200 lines
+# SAMPLING: Analyze only latest 15 lines, ignore rest to protect system
+# Attack ends: Request volume normalizes → Auto return to FULL mode
+```
+
+##### System Log Mass Generation Scenario
+```bash
+# Configuration
+CHUNK_SIZE_LINUX_SYSTEM=20
+REALTIME_SAMPLING_THRESHOLD=150
+
+# Situation: System error generating 100 error log lines per second
+# Within 1-2 minutes, pending buffer exceeds 150 lines
+# → Auto SAMPLING: Analyze only latest 20 lines
+# → Protect system resources, prioritize latest errors
+```
+
+#### A.4 Sampling Strategy Features and Limitations
+
+##### Advantages
+- **Automation**: Control system load without user intervention
+- **Memory Protection**: Prevent unlimited buffer growth
+- **Recency Guarantee**: Focus on most recent logs
+- **Original Preservation**: Log files themselves remain intact
+
+##### Limitations
+- **Analysis Gaps**: Some logs skipped during sampling
+- **Time-based Only**: Chronological processing, no severity-based priority
+- **Temporary Blind Spots**: Limited pattern analysis during spike periods
+
+##### Recommended Tuning Methods
+```bash
+# High-performance system (sufficient memory)
+REALTIME_SAMPLING_THRESHOLD=500
+CHUNK_SIZE_*=25
+
+# Low-spec system (memory constrained)
+REALTIME_SAMPLING_THRESHOLD=50
+CHUNK_SIZE_*=5
+
+# Critical logs (minimize gaps)
+REALTIME_SAMPLING_THRESHOLD=1000
+REALTIME_POLLING_INTERVAL=2
+
+# General monitoring (efficiency priority)
+REALTIME_SAMPLING_THRESHOLD=100
+REALTIME_POLLING_INTERVAL=10
+```
+
+Through this auto-sampling mechanism, LogSentinelAI provides stable real-time analysis even in unpredictable log traffic situations.

@@ -135,17 +135,17 @@ ANALYSIS_MODE=batch        # batch/realtime
 
 # 로그 파일 경로(배치/실시간)
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
-LOG_PATH_APACHE_ERROR=sample-logs/apache-10k.log
+LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_APACHE_ERROR=/var/log/apache2/error.log
+LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
 LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 
 # chunk size(분석 단위)
 CHUNK_SIZE_HTTPD_ACCESS=10
-CHUNK_SIZE_APACHE_ERROR=10
+CHUNK_SIZE_HTTPD_APACHE_ERROR=10
 CHUNK_SIZE_LINUX_SYSTEM=10
 CHUNK_SIZE_TCPDUMP_PACKET=5
 
@@ -154,7 +154,7 @@ REALTIME_POLLING_INTERVAL=5
 REALTIME_MAX_LINES_PER_BATCH=50
 REALTIME_POSITION_FILE_DIR=.positions
 REALTIME_BUFFER_TIME=2
-REALTIME_PROCESSING_MODE=full     # full/sampling/auto-sampling
+REALTIME_PROCESSING_MODE=full     # full/sampling
 REALTIME_SAMPLING_THRESHOLD=100
 
 # GeoIP 옵션
@@ -356,7 +356,7 @@ logsentinelai --help
 # HTTP Access 로그 분석(배치)
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
 # Apache Error 로그 분석
-logsentinelai-apache-error --log-path sample-logs/apache-10k.log
+logsentinelai-httpd-apache --log-path sample-logs/apache-10k.log
 # Linux System 로그 분석
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
 # TCPDump 패킷 로그 분석
@@ -508,34 +508,142 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 
 ---
 
-## 13. 참고/권장 링크 및 문의
+## 13. 참고 링크 및 문의
 - [LogSentinelAI GitHub](https://github.com/call518/LogSentinelAI)
 - [Docker-ELK 공식](https://github.com/deviantony/docker-elk)
 - [Ollama 공식](https://ollama.com/)
 - [vLLM 공식](https://github.com/vllm-project/vllm)
 - [Python 공식](https://www.python.org/downloads/)
 
-문의/피드백: GitHub Issue, Discussions, Pull Request 환영
+**문의/피드백**: GitHub Issue, Discussions, Pull Request 환영
 
 ---
 
-**LogSentinelAI 설치 및 사용에 어려움이 있다면 언제든 문의해 주세요.**
+## Appendix
 
----
+### A. 실시간 자동 샘플링(Auto-Sampling) 상세 메커니즘
 
-## 13. 참고/권장 링크
-- [LogSentinelAI GitHub](https://github.com/call518/LogSentinelAI)
-- [Docker-ELK 공식](https://github.com/deviantony/docker-elk)
-- [Ollama 공식](https://ollama.com/)
-- [vLLM 공식](https://github.com/vllm-project/vllm)
-- [Python 공식](https://www.python.org/downloads/)
+실시간 모드에서 대량의 로그가 유입될 때 시스템이 어떻게 자동으로 처리 모드를 전환하는지에 대한 상세한 설명입니다.
 
----
+#### A.1 관련 매개변수 및 역할
 
-## 14. 문의 및 피드백
-- GitHub Issue, Discussions, Pull Request 환영
-- 문서/코드 개선 제안, 버그 리포트, 신규 기능 요청 모두 환영합니다!
+| 매개변수 | 기본값 | 역할 | 영향 |
+|---------|--------|------|------|
+| `REALTIME_PROCESSING_MODE` | `full` | 기본 처리 모드 (full/sampling) | 시작 시 처리 방식 결정 |
+| `REALTIME_SAMPLING_THRESHOLD` | `100` | 자동 샘플링 전환 임계값 | 대기 중인 로그 라인 수 기준 |
+| `CHUNK_SIZE_*` | `10` | LLM 분석 단위 | 한 번에 분석할 로그 라인 수 |
+| `REALTIME_POLLING_INTERVAL` | `5` | 폴링 간격 (초) | 로그 파일 확인 주기 |
+| `REALTIME_MAX_LINES_PER_BATCH` | `50` | 읽기 제한 | 한 번에 읽을 최대 라인 수 |
+| `REALTIME_BUFFER_TIME` | `2` | 버퍼링 시간 (초) | 불완전한 로그 라인 방지 |
 
----
+#### A.2 자동 샘플링 발동 시나리오
 
-**LogSentinelAI 설치 및 사용에 어려움이 있다면 언제든 문의해 주세요.**
+##### 시나리오 1: 평상시 로그 처리 (FULL 모드 유지)
+```
+설정값:
+- CHUNK_SIZE_HTTPD_ACCESS = 10
+- REALTIME_SAMPLING_THRESHOLD = 100
+- REALTIME_POLLING_INTERVAL = 5
+- REALTIME_MAX_LINES_PER_BATCH = 50
+
+동작 과정:
+1. 5초마다 /var/log/apache2/access.log 확인
+2. 신규 로그 15줄 발견 → 내부 대기 버퍼에 추가
+3. 대기 버퍼: 15줄 (임계값 100 미만)
+4. CHUNK_SIZE(10)만큼 처리: 10줄 LLM 분석, 5줄 대기
+5. 다음 폴링에서 추가 로그 확인
+```
+
+##### 시나리오 2: 트래픽 급증 시 자동 샘플링 전환
+```
+설정값: 동일
+
+급증 상황:
+1. 5초마다 폴링하는데 매번 50줄씩(MAX_LINES_PER_BATCH) 읽음
+2. 여러 폴링 사이클 동안 지속적으로 대량 로그 유입
+3. 대기 버퍼 누적: 20줄 → 45줄 → 85줄 → 125줄
+4. 125줄 > 임계값(100) ▶️ 자동 SAMPLING 모드 전환
+
+SAMPLING 모드 동작:
+- 시스템이 "AUTO-SWITCH: Pending lines (125) exceed threshold (100)" 출력
+- "SWITCHING TO SAMPLING MODE" 메시지 표시
+- 대기 중인 125줄 중 최신 10줄(CHUNK_SIZE)만 선택
+- 나머지 115줄은 폐기 (원본 로그 파일은 보존)
+- "SAMPLING: Discarded 115 older lines, keeping latest 10" 메시지 출력
+- LLM에 최신 10줄만 전송하여 분석
+- 메모리 사용량 제한, 시스템 과부하 방지
+```
+
+##### 시나리오 3: 트래픽 정상화 후 FULL 모드 복귀
+```
+정상화 과정:
+1. 로그 유입량 감소: 폴링당 5-15줄 정도
+2. 대기 버퍼가 임계값(100) 미만으로 감소
+3. 자동으로 FULL 모드로 복귀
+4. 다시 모든 로그를 순차적으로 처리
+```
+
+#### A.3 실제 사용 예시
+
+##### 웹 서버 DDoS 공격 상황
+```bash
+# 설정: config 파일에서
+CHUNK_SIZE_HTTPD_ACCESS=15
+REALTIME_SAMPLING_THRESHOLD=200
+REALTIME_POLLING_INTERVAL=3
+
+# 실행
+logsentinelai-httpd-access --mode realtime
+
+# 상황별 동작:
+# 평시: 초당 10-20개 요청 → FULL 모드로 모든 로그 분석
+# 공격: 초당 500+ 요청 → 대기 버퍼 200줄 초과 시 SAMPLING 모드
+# SAMPLING: 최신 15줄만 분석, 나머지 무시하여 시스템 보호
+# 공격 종료: 요청량 정상화 → 자동 FULL 모드 복귀
+```
+
+##### 시스템 로그 대량 생성 상황
+```bash
+# 설정
+CHUNK_SIZE_LINUX_SYSTEM=20
+REALTIME_SAMPLING_THRESHOLD=150
+
+# 상황: 시스템 오류로 초당 100줄의 에러 로그 생성
+# 1-2분 내에 대기 버퍼가 150줄 초과
+# → 자동 SAMPLING: 최신 20줄만 분석
+# → 시스템 리소스 보호, 최신 오류만 우선 분석
+```
+
+#### A.4 샘플링 전략의 특징 및 한계
+
+##### 장점
+- **자동화**: 사용자 개입 없이 시스템 부하 제어
+- **메모리 보호**: 무제한 버퍼 증가 방지
+- **최신성 보장**: 가장 최근 로그에 집중
+- **원본 보존**: 로그 파일 자체는 손상되지 않음
+
+##### 한계
+- **분석 누락**: 샘플링 시 일부 로그 분석 생략
+- **순서 기반**: 시간순 처리, 심각도 기반 우선순위 없음
+- **일시적 맹점**: 급증 구간의 패턴 분석 제한
+
+##### 권장 튜닝 방법
+```bash
+# 고성능 시스템 (메모리 충분)
+REALTIME_SAMPLING_THRESHOLD=500
+CHUNK_SIZE_*=25
+
+# 저사양 시스템 (메모리 제한적)
+REALTIME_SAMPLING_THRESHOLD=50
+CHUNK_SIZE_*=5
+
+# 중요 로그 (누락 최소화)
+REALTIME_SAMPLING_THRESHOLD=1000
+REALTIME_POLLING_INTERVAL=2
+
+# 일반 모니터링 (효율성 우선)
+REALTIME_SAMPLING_THRESHOLD=100
+REALTIME_POLLING_INTERVAL=10
+```
+
+이러한 자동 샘플링 메커니즘을 통해 LogSentinelAI는 예측 불가능한 로그 트래픽 상황에서도 안정적인 실시간 분석을 제공합니다.
