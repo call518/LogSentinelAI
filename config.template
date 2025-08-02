@@ -98,8 +98,8 @@ ANALYSIS_MODE=batch
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-#LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-single-line.log
-LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-multi-line.log
+LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-single-line.log
+#LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-multi-line.log
 
 # Real-time Mode: Live log files to monitor
 # CLI Override: Use --log-path argument to override these paths
