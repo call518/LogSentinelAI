@@ -76,7 +76,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
 
         # Print raw LLM response JSON (before any post-processing)
         print("\n✅ [LLM Raw Response JSON]")
-        print("-----------------------------")
+        print("-" * 30)
         try:
             print_json(json.dumps(parsed, ensure_ascii=False, indent=4))
         except Exception as e:
@@ -119,7 +119,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # Enrich with GeoIP and print final data before ES input
         enriched_data = enrich_source_ips_with_geoip(parsed)
         print("\n✅ [Final ES Input JSON]")
-        print("-----------------------------")
+        print("-" * 30)
         print_json(json.dumps(enriched_data, ensure_ascii=False, indent=4))
 
         # Send to Elasticsearch
@@ -261,6 +261,12 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
             logs = "".join(chunk).rstrip("\n")
             model_schema = analysis_schema_class.model_json_schema()
             prompt = prompt_template.format(logs=logs, model_schema=model_schema, response_language=response_language)
+            prompt = prompt.strip()
+            if i == 0:
+                print("\n[LLM Prompt Submitted]")
+                print("-" * 50)
+                print(prompt)
+                print("-" * 50)
             print(f"\n--- Chunk {i+1} ---")
             print_chunk_contents(chunk)
             
