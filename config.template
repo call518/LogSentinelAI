@@ -25,6 +25,16 @@ LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 #LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OPENAI=gpt-4.1-nano
 
+# LLM API Host Configuration
+# Ollama API host (default: http://127.0.0.1:11434)
+LLM_API_HOST_OLLAMA=http://127.0.0.1:11434
+
+# vLLM API host (default: http://127.0.0.1:5000/v1)
+LLM_API_HOST_VLLM=http://127.0.0.1:5000/v1
+
+# OpenAI API host (default: https://api.openai.com/v1)
+LLM_API_HOST_OPENAI=https://api.openai.com/v1
+
 # LLM Generation Parameters
 # Temperature: Controls randomness (0.0 = deterministic, 1.0 = very random)
 # Recommended: 0.0-0.1 for log analysis (consistency), 0.7-0.9 for creative tasks

@@ -6,7 +6,7 @@ import time
 import outlines
 import ollama
 import openai
-from .config import LLM_PROVIDER, LLM_MODELS, LLM_TEMPERATURE, LLM_TOP_P
+from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P
 
 def initialize_llm_model(llm_provider=None, llm_model_name=None):
     """
@@ -27,19 +27,19 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
     
     if llm_provider == "ollama":
         client = ollama.Client(
-            host='http://127.0.0.1:11434',
+            host=LLM_API_HOSTS["ollama"],
         )
         model = outlines.from_ollama(client, llm_model_name)
     elif llm_provider == "vllm":
         client = openai.OpenAI(
-            base_url="http://127.0.0.1:5000/v1",
+            base_url=LLM_API_HOSTS["vllm"],
             api_key="dummy"
         )
         model = outlines.from_openai(client, llm_model_name)
     elif llm_provider == "openai":
         import os
         client = openai.OpenAI(
-            base_url="https://api.openai.com/v1",
+            base_url=LLM_API_HOSTS["openai"],
             api_key=os.getenv("OPENAI_API_KEY")
         )
         model = outlines.from_openai(client, llm_model_name)

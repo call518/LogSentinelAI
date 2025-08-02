@@ -15,6 +15,11 @@ LLM_MODELS = {
     "vllm": os.getenv("LLM_MODEL_VLLM", "Qwen/Qwen2.5-1.5B-Instruct"),
     "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini")
 }
+LLM_API_HOSTS = {
+    "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434"),
+    "vllm": os.getenv("LLM_API_HOST_VLLM", "http://127.0.0.1:5000/v1"),
+    "openai": os.getenv("LLM_API_HOST_OPENAI", "https://api.openai.com/v1")
+}
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
 LLM_NO_THINK = os.getenv("LLM_NO_THINK", "false").lower() == "true"
@@ -130,4 +135,25 @@ def get_analysis_config(log_type, chunk_size=None, analysis_mode=None,
         "access_mode": access_mode,
         "ssh_config": final_ssh_config,
         "realtime_config": REALTIME_CONFIG if mode == "realtime" else None
+    }
+
+def get_llm_config(llm_provider=None):
+    """
+    Get LLM configuration for specific provider
+    
+    Args:
+        llm_provider: LLM provider name (optional, defaults to global LLM_PROVIDER)
+    
+    Returns:
+        dict: Configuration containing provider, model, api_host, temperature, top_p, no_think
+    """
+    provider = llm_provider if llm_provider is not None else LLM_PROVIDER
+    
+    return {
+        "provider": provider,
+        "model": LLM_MODELS.get(provider, "unknown"),
+        "api_host": LLM_API_HOSTS.get(provider, ""),
+        "temperature": LLM_TEMPERATURE,
+        "top_p": LLM_TOP_P,
+        "no_think": LLM_NO_THINK
     }
