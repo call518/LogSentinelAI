@@ -6,12 +6,16 @@
 # OpenAI API Key (required if using OpenAI provider)
 OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
 
+# Gemini API Key (required if using Gemini provider)
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+
 # =============================================================================
 # LLM Configuration
 # =============================================================================
-# LLM Provider - Choose from "ollama", "vllm", "openai"
+# LLM Provider - Choose from "ollama", "vllm", "openai", "gemini"
 #LLM_PROVIDER=ollama
 #LLM_PROVIDER=vllm
+#LLM_PROVIDER=gemini
 LLM_PROVIDER=openai
 
 # LLM Model - Ollama
@@ -24,6 +28,9 @@ LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 # LLM Model - OpenAI
 #LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OPENAI=gpt-4.1-nano
+
+# LLM Model - Gemini
+LLM_MODEL_GEMINI=gemini-1.5-flash
 
 # LLM API Host Configuration
 # Ollama API host (default: http://127.0.0.1:11434)
