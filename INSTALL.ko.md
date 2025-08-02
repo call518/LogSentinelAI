@@ -78,7 +78,7 @@ uv pip install .
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 systemctl start ollama
-ollama pull qwen3:1.7b
+ollama pull gemma3:1b
 ```
 
 ### 4.3 (선택) vLLM 설치 (로컬 GPU LLM)
@@ -121,7 +121,7 @@ nano config  # 또는 vim config
 # LLM Provider 및 모델
 LLM_PROVIDER=openai   # openai/ollama/vllm/gemini
 LLM_MODEL_OPENAI=gpt-4o-mini
-LLM_MODEL_OLLAMA=qwen2.5:1.5b
+LLM_MODEL_OLLAMA=gemma3:1b
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 LLM_MODEL_GEMINI=gemini-1.5-flash
 
