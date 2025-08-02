@@ -16,61 +16,64 @@
 ---
 
 
-## 2. uv 설치 및 최신 Python 준비
+## 2. uv 설치 및 가상환경 생성
 
-### 2.1 uv 설치 (pip로)
+### 2.1 uv 설치
 ```bash
-python3 -m pip install --user --upgrade uv
+# Python 3.9+ 환경에서 uv 설치
+python3 -m pip install --user uv
 # 또는
-pip3 install --user --upgrade uv
-# uv 명령이 PATH에 없으면 아래 추가
+pip3 install --user uv
+
+# PATH 추가 (필요시)
 export PATH="$HOME/.local/bin:$PATH"
-uv --version  # 정상 출력 확인
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# 설치 확인
+uv --version
 ```
 
-### 2.2 최신 Python 설치 (예: 3.11)
+### 2.2 Python 3.11+ 설치 및 가상환경 생성
 ```bash
-uv pip install -U pip  # uv pip 최신화(권장)
+# Python 3.11 설치
 uv python install 3.11
-uv python list  # 설치된 python 목록 확인
+
+# 가상환경 생성 및 활성화
+uv venv --python=3.11 logsentinelai-venv
+source logsentinelai-venv/bin/activate
+
+# 프롬프트가 (logsentinelai-venv)로 변경되는지 확인
 ```
 
 ---
 
-## 3. uv로 가상환경 생성 및 활성화
+## 3. LogSentinelAI 설치
 
+### 3.1 PyPI에서 설치 (권장)
 ```bash
-uv venv --python=3.11 --seed ~/logsentinelai-venv
-source ~/logsentinelai-venv/bin/activate
-# 프롬프트가 (logsentinelai-venv)로 바뀌는지 확인
+# uv를 사용한 설치
+uv sync
+uv pip install -U logsentinelai
 ```
 
----
-
-## 4. LogSentinelAI 설치
-
-### 4.1 PyPI에서 설치(권장)
-```bash
-pip install --upgrade pip
-pip install logsentinelai
-```
-
-### 4.2 GitHub 소스 직접 설치(개발/최신)
+### 3.2 GitHub 소스에서 설치 (개발/최신)
 ```bash
 git clone https://github.com/call518/LogSentinelAI.git
 cd LogSentinelAI
-pip install .
+uv sync
+uv pip install .
 ```
 
 ---
 
-## 5. 필수 외부 도구 설치
+## 4. 필수 외부 도구 설치
 
-### 5.1 (선택) Docker 설치
+### 4.1 (선택) Docker 설치
 - [공식 Docker 설치 가이드](https://docs.docker.com/engine/install/)
 - RHEL/Ubuntu 모두 공식 문서 참고
 
-### 5.2 (선택) Ollama 설치 (로컬 LLM)
+### 4.2 (선택) Ollama 설치 (로컬 LLM)
 - [Ollama 공식 설치](https://ollama.com/download)
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -78,15 +81,12 @@ systemctl start ollama
 ollama pull qwen3:1.7b
 ```
 
-### 5.3 (선택) vLLM 설치 (로컬 GPU LLM)
+### 4.3 (선택) vLLM 설치 (로컬 GPU LLM)
 ```bash
-# (A) PyPI 설치
-pip install vllm
-
-# (B) Docker 기반 vLLM 설치 및 모델 다운로드 예시
+# Docker 기반 vLLM 설치 및 모델 다운로드 예시
 git clone https://github.com/call518/vLLM-Tutorial.git
 cd vLLM-Tutorial
-pip install huggingface_hub
+uv pip install huggingface_hub
 huggingface-cli download lmstudio-community/Qwen2.5-3B-Instruct-GGUF Qwen2.5-3B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-3B-Instruct/
 huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local-dir ./config/Qwen2.5-3B-Instruct
 # Docker로 vLLM 실행
@@ -95,7 +95,7 @@ huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local
 curl -s -X GET http://localhost:5000/v1/models | jq
 ```
 
-#### vLLM config 예시 (권장값)
+#### vLLM generation_config.json 예시 (권장값)
 ```json
 {
   "temperature": 0.1,
@@ -107,7 +107,7 @@ curl -s -X GET http://localhost:5000/v1/models | jq
 ---
 
 
-## 6. 설정 파일 준비 및 주요 옵션
+## 5. 설정 파일 준비 및 주요 옵션
 
 ```bash
 cd ~/LogSentinelAI  # 소스 설치 시
@@ -119,13 +119,17 @@ nano config  # 또는 vim config
 ### config 주요 항목 예시
 ```ini
 # LLM Provider 및 모델
-LLM_PROVIDER=openai   # openai/ollama/vllm
+LLM_PROVIDER=openai   # openai/ollama/vllm/gemini
 LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OLLAMA=qwen2.5:1.5b
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
+LLM_MODEL_GEMINI=gemini-1.5-flash
 
 # OpenAI API Key
 OPENAI_API_KEY=sk-...
+
+# Gemini API Key (required if using Gemini provider)
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 
 # 분석 결과 언어
 RESPONSE_LANGUAGE=korean   # 또는 english
@@ -173,7 +177,7 @@ ELASTICSEARCH_PASSWORD=changeme
 ---
 
 
-## 7. GeoIP DB 자동/수동 설치 및 활용
+## 6. GeoIP DB 자동/수동 설치 및 활용
 
 - 최초 실행 시 GeoIP City DB가 자동 다운로드되어 `~/.logsentinelai/`에 저장됨(권장)
 - 수동 다운로드 필요 시:
@@ -191,7 +195,7 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ---
 
 
-## 8. 샘플 로그 파일 준비(테스트용)
+## 7. 샘플 로그 파일 준비(테스트용)
 
 ```bash
 # 이미 git clone을 한 경우에는 아래 명령은 생략해도 됩니다.
@@ -202,9 +206,9 @@ ls *.log  # 다양한 샘플 로그 확인
 
 ---
 
-## 9. Elasticsearch & Kibana 설치 및 연동(선택)
+## 8. Elasticsearch & Kibana 설치 및 연동(선택)
 
-### 9.1 Docker 기반 ELK 스택 설치
+### 8.1 Docker 기반 ELK 스택 설치
 ```bash
 git clone https://github.com/call518/Docker-ELK.git
 cd Docker-ELK
@@ -215,7 +219,7 @@ docker compose up -d
 ```
 
 
-### 9.2 Elasticsearch 인덱스/정책/템플릿 설정
+### 8.2 Elasticsearch 인덱스/정책/템플릿 설정
 
 아래 명령은 Kibana/Elasticsearch가 정상적으로 실행 중일 때(기본: http://localhost:5601, http://localhost:9200) 터미널에서 직접 실행합니다. 기본 계정은 `elastic`/`changeme`입니다.
 
@@ -344,14 +348,14 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 ---
 
 
-## 10. LogSentinelAI 주요 명령어 및 동작 테스트
+## 9. LogSentinelAI 주요 명령어 및 동작 테스트
 
-### 10.1 명령어 전체 목록 확인
+### 9.1 명령어 전체 목록 확인
 ```bash
 logsentinelai --help
 ```
 
-### 10.2 주요 분석 명령어 예시
+### 9.2 주요 분석 명령어 예시
 ```bash
 # HTTP Access 로그 분석(배치)
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
@@ -371,7 +375,7 @@ logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/i
 logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ```
 
-### 10.3 CLI 옵션 요약
+### 9.3 CLI 옵션 요약
 
 | 옵션 | 설명 | config 기본값 | CLI로 덮어쓰기 |
 |------|------|---------------|---------------|
@@ -387,13 +391,13 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 > CLI 옵션이 config 파일보다 항상 우선 적용됨
 
-### 10.8 SSH 원격 로그 분석
+### 9.8 SSH 원격 로그 분석
 ```bash
 logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
 ```
 - **Tip:** 대상 서버를 미리 known_hosts에 등록해야 함 (`ssh-keyscan -H <host> >> ~/.ssh/known_hosts`)
 
-### 10.9 GeoIP DB 수동 다운로드/경로 지정
+### 9.9 GeoIP DB 수동 다운로드/경로 지정
 ```bash
 logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ```
@@ -401,11 +405,11 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ---
 
 
-## 11. Declarative Extraction(선언적 추출) 사용법
+## 10. Declarative Extraction(선언적 추출) 사용법
 
 LogSentinelAI의 가장 큰 특징은 **Declarative Extraction**입니다. 각 분석기에서 원하는 결과 구조(Pydantic class)만 선언하면, LLM이 해당 구조에 맞춰 자동으로 로그를 분석하고 JSON으로 결과를 반환합니다. 복잡한 파싱/후처리 없이 원하는 필드만 선언하면 AI가 알아서 결과를 채워줍니다.
 
-### 11.1 기본 사용법
+### 10.1 기본 사용법
 
 1. 분석기 스크립트에서 결과로 받고 싶은 구조(Pydantic class)를 선언합니다.
 2. 분석 명령을 실행하면, LLM이 해당 구조에 맞는 JSON을 자동 생성합니다.
@@ -462,7 +466,7 @@ class MyPacketResult(BaseModel):
 
 ---
 
-## 12. 고급 사용 예시
+## 11. 고급 사용 예시
 
 ### 11.1 config 파일로 기본값 설정 & CLI로 덮어쓰기
 ```bash

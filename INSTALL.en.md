@@ -8,68 +8,70 @@ This document provides a detailed step-by-step guide for installing, configuring
 
 - **OS**: RHEL 8/9, RockyLinux 8/9, CentOS 8/9, Ubuntu 20.04/22.04 (including WSL2)
 - **Python**: 3.11+ (3.12 recommended)
-- **Memory**: Minimum 4GB (8GB+ recommended for local LLM)
-- **Disk**: At least 2GB free space
+- **Memory**: Minimum 4GB (8GB+ recommended for local LL## 13. Reference Links & Contact*: At least 2GB free space
 - **Network**: Access to PyPI, GitHub, OpenAI, Ollama/vLLM, etc.
 - **(Optional) Docker**: Required for running Elasticsearch/Kibana, vLLM, Ollama containers
 
 ---
 
-## 2. Install uv & Prepare Latest Python
+## 2. Install uv & Create Virtual Environment
 
-### 2.1 Install uv (via pip)
+### 2.1 Install uv
 ```bash
-python3 -m pip install --user --upgrade uv
+# Install uv in Python 3.9+ environment
+python3 -m pip install --user uv
 # or
-pip3 install --user --upgrade uv
-# If uv is not in PATH, add below
+pip3 install --user uv
+
+# Add PATH if needed
 export PATH="$HOME/.local/bin:$PATH"
-uv --version  # Check output
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify installation
+uv --version
 ```
 
-### 2.2 Install Latest Python (e.g., 3.11)
+### 2.2 Install Python 3.11+ & Create Virtual Environment
 ```bash
-uv pip install -U pip  # Update uv pip (recommended)
+# Install Python 3.11
 uv python install 3.11
-uv python list  # Check installed python versions
-```
 
----
+# Create and activate virtual environment
+uv venv --python=3.11 logsentinelai-venv
+source logsentinelai-venv/bin/activate
 
-## 3. Create & Activate Virtual Environment with uv
-
-```bash
-uv venv --python=3.11 --seed ~/logsentinelai-venv
-source ~/logsentinelai-venv/bin/activate
 # Ensure prompt changes to (logsentinelai-venv)
 ```
 
 ---
 
-## 4. Install LogSentinelAI
+## 3. Install LogSentinelAI
 
-### 4.1 Install from PyPI (Recommended)
+### 3.1 Install from PyPI (Recommended)
 ```bash
-pip install --upgrade pip
-pip install logsentinelai
+# Install using uv
+uv sync
+uv pip install -U logsentinelai
 ```
 
-### 4.2 Install from GitHub Source (Development/Latest)
+### 3.2 Install from GitHub Source (Development/Latest)
 ```bash
 git clone https://github.com/call518/LogSentinelAI.git
 cd LogSentinelAI
-pip install .
+uv sync
+uv pip install .
 ```
 
 ---
 
-## 5. Install Required External Tools
+## 4. Install Required External Tools
 
-### 5.1 (Optional) Install Docker
+### 4.1 (Optional) Install Docker
 - [Official Docker Install Guide](https://docs.docker.com/engine/install/)
 - Refer to official docs for both RHEL/Ubuntu
 
-### 5.2 (Optional) Install Ollama (Local LLM)
+### 4.2 (Optional) Install Ollama (Local LLM)
 - [Ollama Official Install](https://ollama.com/download)
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -77,15 +79,12 @@ systemctl start ollama
 ollama pull qwen3:1.7b
 ```
 
-### 5.3 (Optional) Install vLLM (Local GPU LLM)
+### 4.3 (Optional) Install vLLM (Local GPU LLM)
 ```bash
-# (A) Install via PyPI
-pip install vllm
-
-# (B) Docker-based vLLM install & model download example
+# Docker-based vLLM install & model download example
 git clone https://github.com/call518/vLLM-Tutorial.git
 cd vLLM-Tutorial
-pip install huggingface_hub
+uv pip install huggingface_hub
 huggingface-cli download lmstudio-community/Qwen2.5-3B-Instruct-GGUF Qwen2.5-3B-Instruct-Q4_K_M.gguf --local-dir ./models/Qwen2.5-3B-Instruct/
 huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local-dir ./config/Qwen2.5-3B-Instruct
 # Run vLLM with Docker
@@ -94,7 +93,7 @@ huggingface-cli download Qwen/Qwen2.5-3B-Instruct generation_config.json --local
 curl -s -X GET http://localhost:5000/v1/models | jq
 ```
 
-#### vLLM config example (recommended values)
+#### vLLM generation_config.json example (recommended values)
 ```json
 {
   "temperature": 0.1,
@@ -105,7 +104,7 @@ curl -s -X GET http://localhost:5000/v1/models | jq
 
 ---
 
-## 6. Prepare Config File & Main Options
+## 5. Prepare Config File & Main Options
 
 ```bash
 cd ~/LogSentinelAI  # If installed from source
@@ -117,13 +116,17 @@ nano config  # or vim config
 ### Example config main items
 ```ini
 # LLM Provider & Model
-LLM_PROVIDER=openai   # openai/ollama/vllm
+LLM_PROVIDER=openai   # openai/ollama/vllm/gemini
 LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OLLAMA=qwen2.5:1.5b
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
+LLM_MODEL_GEMINI=gemini-1.5-flash
 
 # OpenAI API Key
 OPENAI_API_KEY=sk-...
+
+# Gemini API Key (required if using Gemini provider)
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 
 # Response language
 RESPONSE_LANGUAGE=korean   # or english
@@ -170,7 +173,7 @@ ELASTICSEARCH_PASSWORD=changeme
 
 ---
 
-## 7. GeoIP DB Auto/Manual Install & Usage
+## 6. GeoIP DB Auto/Manual Install & Usage
 
 - On first run, GeoIP City DB is automatically downloaded to `~/.logsentinelai/` (recommended)
 - For manual download:
@@ -187,7 +190,7 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 ---
 
-## 8. Prepare Sample Log Files (for testing)
+## 7. Prepare Sample Log Files (for testing)
 
 ```bash
 # If you already cloned the repo, skip this
@@ -198,9 +201,9 @@ ls *.log  # Check various sample logs
 
 ---
 
-## 9. Install & Integrate Elasticsearch & Kibana (Optional)
+## 8. Install & Integrate Elasticsearch & Kibana (Optional)
 
-### 9.1 Install ELK Stack via Docker
+### 8.1 Install ELK Stack via Docker
 ```bash
 git clone https://github.com/call518/Docker-ELK.git
 cd Docker-ELK
@@ -210,7 +213,7 @@ docker compose up -d
 # Access http://localhost:5601, elastic/changeme
 ```
 
-### 9.2 Set Elasticsearch Index/Policy/Template
+### 8.2 Set Elasticsearch Index/Policy/Template
 
 Run the following commands in the terminal when Kibana/Elasticsearch is running (default: http://localhost:5601, http://localhost:9200). Default account: `elastic`/`changeme`.
 
@@ -338,14 +341,14 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 
 ---
 
-## 10. LogSentinelAI Main Commands & Test
+## 9. LogSentinelAI Main Commands & Test
 
-### 10.1 List All Commands
+### 9.1 List All Commands
 ```bash
 logsentinelai --help
 ```
 
-### 10.2 Main Analysis Command Examples
+### 9.2 Main Analysis Command Examples
 ```bash
 # HTTP Access log analysis (batch)
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
@@ -365,7 +368,7 @@ logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/i
 logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ```
 
-### 10.3 CLI Option Summary
+### 9.3 CLI Option Summary
 
 | Option | Description | config default | CLI override |
 |--------|-------------|---------------|-------------|
@@ -381,13 +384,13 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 > CLI options always override config file
 
-### 10.8 SSH Remote Log Analysis
+### 9.8 SSH Remote Log Analysis
 ```bash
 logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
 ```
 - **Tip:** Register the target server in known_hosts in advance (`ssh-keyscan -H <host> >> ~/.ssh/known_hosts`)
 
-### 10.9 Manual GeoIP DB Download/Path
+### 9.9 Manual GeoIP DB Download/Path
 ```bash
 logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ```
@@ -395,11 +398,11 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ---
 
 
-## 11. Declarative Extraction Usage
+## 10. Declarative Extraction Usage
 
-The core feature of LogSentinelAI is **Declarative Extraction**. In each analyzer, you simply declare the result structure (Pydantic class) you want, and the LLM automatically analyzes the logs and returns results in that structure as JSON. No complex parsing or post-processing is needed—just declare the fields you want, and the AI fills them in.
+LogSentinelAI's biggest feature is **Declarative Extraction**. By declaring only the desired result structure (Pydantic class) in each analyzer, the LLM automatically analyzes logs according to that structure and returns results in JSON format. Without complex parsing/post-processing, you just declare the desired fields and AI fills in the results.
 
-### 11.1 Basic Usage
+### 10.1 Basic Usage
 
 1. In your analyzer script, declare the result structure (Pydantic class) you want to receive.
 2. When you run the analysis command, the LLM automatically generates JSON matching that structure.
@@ -456,7 +459,7 @@ By declaring only the result structure you want in each analyzer, the LLM automa
 
 ---
 
-## 12. Advanced Usage Examples
+## 11. Advanced Usage Examples
 
 ### 11.1 Set Defaults in config & Override with CLI
 ```bash
