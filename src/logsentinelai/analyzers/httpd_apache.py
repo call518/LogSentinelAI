@@ -36,7 +36,7 @@ class SecurityEvent(BaseModel):
     severity: SeverityLevel
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    log_level: str = Field(description="Apache log level")
+    log_level: str = Field(description="Log level")
     event_message: str = Field(description="Event message")
     file_path: Optional[str] = Field(description="Related file path")
     source_ips: list[str] = Field(description="Source IP list")
@@ -49,7 +49,6 @@ class Statistics(BaseModel):
     total_event: int = Field(description="Total number of errors")
     event_by_level: dict[str, int] = Field(default_factory=dict, description="Errors by level")
     event_by_type: dict[str, int] = Field(default_factory=dict, description="Errors by type")
-    top_event_ips: dict[str, int] = Field(default_factory=dict, description="Top error IPs")
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")

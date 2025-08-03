@@ -30,7 +30,8 @@ KEY RULES:
 - confidence_score: decimal 0.0-1.0 (NOT percentage)
 
 STATISTICS (calculate from actual logs):
-total_requests, unique_ips, error_rate (decimal), top_source_ips{{}}, response_code_dist{{}}
+total_requests, unique_ips, error_rate (decimal)
+
 
 JSON schema: {model_schema}
 
@@ -78,7 +79,7 @@ KEY RULES:
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
 
-STATISTICS: total_event, event_by_level{{}}, event_by_type{{}}, top_event_ips{{}}
+STATISTICS: total_event, event_by_level{{}}, event_by_type{{}}
 
 JSON schema: {model_schema}
 
@@ -118,8 +119,7 @@ KEY RULES:
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
 
-STATISTICS: total_events, auth_failures, unique_ips, unique_users, event_by_type{{}}, top_event_ips{{}}
-
+STATISTICS: total_events, auth_failures, unique_ips, unique_users, event_by_type{{}}
 JSON schema: {model_schema}
 
 <LOGS BEGIN>
@@ -185,7 +185,7 @@ CRITICAL RULES:
 FIELD REQUIREMENTS(JSON OUTPUT CRITICAL):
 - source_ports, dest_ports: MUST be list of INTEGER values (e.g., [443, 80, 22]); null or empty strings are NOT allowed
 - protocol: SINGLE enum value from [HTTP, HTTPS, FTP, SSH, TELNET, DNS, SMTP, POP3, IMAP, SNMP, LDAP, MYSQL, POSTGRESQL, REDIS, MONGODB, TCP, UDP, ICMP, OTHER]
-- source_ips, dest_ips: MUST be IP string (e.g., "192.168.1.1"); null or empty strings are NOT allowed
+- source_ips, dest_ips: MUST be list of IP string (e.g., ["192.168.1.1"]); null or empty strings are NOT allowed
 - For events covering multiple IPs/ports, choose the most representative single value
 - If unclear, use the first/primary IP and port from the packet data
 - data_transfer_bytes must be calculated INTEGER (e.g., 16013), NEVER mathematical expression (e.g., 1460 + 31 + ...)
@@ -193,7 +193,7 @@ FIELD REQUIREMENTS(JSON OUTPUT CRITICAL):
 - Valid JSON structure required with proper quotes, commas, brackets
 - For aggregated events, select the most representative single values for required fields
 
-STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes (calculated integer sum), top_source_ips{{}}, top_dest_ips{{}}
+STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes (calculated integer sum)
 
 JSON schema: {model_schema}
 

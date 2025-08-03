@@ -103,8 +103,6 @@ class Statistics(BaseModel):
     connection_attempts: int = Field(description="Number of connection attempts")
     failed_connections: int = Field(description="Number of failed connections")
     data_transfer_bytes: int = Field(description="Total data transfer in bytes")
-    top_source_ips: dict[str, int] = Field(description="Top source IP addresses with packet counts", default_factory=dict)
-    top_dest_ips: dict[str, int] = Field(description="Top destination IP addresses with packet counts", default_factory=dict)
 
 class PacketAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")

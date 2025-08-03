@@ -250,7 +250,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
 -H "Content-Type: application/json" \
 -u elastic:changeme \
 -d '{
-  "index_patterns": ["logsentinelai-analysis-*"] ,
+  "index_patterns": ["logsentinelai-analysis-*"],
   "template": {
     "settings": {
       "number_of_shards": 1,
@@ -280,35 +280,6 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
               "properties": {
                 "ip": { "type": "ip" },
                 "location": { "type": "geo_point" }
-              }
-            }
-          }
-        },
-        "statistics": {
-          "type": "object",
-          "properties": {
-            "top_source_ips": {
-              "type": "object",
-              "properties": {
-                "ip": { "type": "ip" },
-                "location": { "type": "geo_point" },
-                "count": { "type": "integer" }
-              }
-            },
-            "top_dest_ips": {
-              "type": "object",
-              "properties": {
-                "ip": { "type": "ip" },
-                "location": { "type": "geo_point" },
-                "count": { "type": "integer" }
-              }
-            },
-            "top_event_ips": {
-              "type": "object",
-              "properties": {
-                "ip": { "type": "ip" },
-                "location": { "type": "geo_point" },
-                "count": { "type": "integer" }
               }
             }
           }
