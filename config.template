@@ -27,13 +27,13 @@ LLM_MODEL_OLLAMA=gemma3:1b
 # LLM Model - vLLM
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 
-# LLM Model - OpenAI
-#LLM_MODEL_OPENAI=gpt-4o-mini
-LLM_MODEL_OPENAI=gpt-4.1-nano
-
 # LLM Model - Gemini
 LLM_MODEL_GEMINI=gemini-1.5-pro
 #LLM_MODEL_GEMINI=gemini-2.5-flash-lite
+
+# LLM Model - OpenAI
+#LLM_MODEL_OPENAI=gpt-4o-mini
+LLM_MODEL_OPENAI=gpt-4.1-nano
 
 # LLM API Host Configuration
 # Ollama API host (default: http://127.0.0.1:11434)
