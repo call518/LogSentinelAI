@@ -183,7 +183,7 @@ CRITICAL RULES:
 - confidence_score: decimal 0.0-1.0
 
 FIELD REQUIREMENTS(JSON OUTPUT CRITICAL):
-- source_port, dest_port: MUST be strictly INTEGER values (e.g., 443, 80, 22); any non-integer is NOT allowed
+- source_ports, dest_ports: MUST be list of INTEGER values (e.g., [443, 80, 22]); null or empty strings are NOT allowed
 - protocol: SINGLE enum value from [HTTP, HTTPS, FTP, SSH, TELNET, DNS, SMTP, POP3, IMAP, SNMP, LDAP, MYSQL, POSTGRESQL, REDIS, MONGODB, TCP, UDP, ICMP, OTHER]
 - source_ips, dest_ips: MUST be IP string (e.g., "192.168.1.1"); null or empty strings are NOT allowed
 - For events covering multiple IPs/ports, choose the most representative single value
