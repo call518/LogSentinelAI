@@ -182,23 +182,18 @@ CRITICAL RULES:
 - Summary/events in {response_language}
 - confidence_score: decimal 0.0-1.0
 
-FIELD REQUIREMENTS:
+FIELD REQUIREMENTS(JSON OUTPUT CRITICAL):
 - source_port, dest_port: MUST be strictly INTEGER values (e.g., 443, 80, 22); any non-integer is NOT allowed
 - protocol: SINGLE enum value from [HTTP, HTTPS, FTP, SSH, TELNET, DNS, SMTP, POP3, IMAP, SNMP, LDAP, MYSQL, POSTGRESQL, REDIS, MONGODB, TCP, UDP, ICMP, OTHER]
-- source_ips, dest_ips: MUST be SINGLE IP string (e.g., "192.168.1.1")
+- source_ips, dest_ips: MUST be IP string (e.g., "192.168.1.1"); null or empty strings are NOT allowed
 - For events covering multiple IPs/ports, choose the most representative single value
 - If unclear, use the first/primary IP and port from the packet data
-
-STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes (calculated integer sum), top_source_ips{{}}, top_dest_ips{{}}
-
-JSON OUTPUT CRITICAL: 
 - data_transfer_bytes must be calculated INTEGER (e.g., 16013), NEVER mathematical expression (e.g., 1460 + 31 + ...)
-- source_port, dest_port: MUST be strictly INTEGER values (e.g., 443, 80, 22); any non-integer is NOT allowed
-- protocol must be SINGLE enum string (e.g., "TCP", "HTTPS", "UDP"), NOT array like ["HTTPS", "TCP"]
-- source_ips, dest_ips: MUST be SINGLE IP string (e.g., "192.168.1.1")
 - ALL numeric fields must be INTEGER/DECIMAL values, never expressions
 - Valid JSON structure required with proper quotes, commas, brackets
 - For aggregated events, select the most representative single values for required fields
+
+STATISTICS: total_packets, unique_connections, protocols_detected[], connection_attempts (SYN count), failed_connections, data_transfer_bytes (calculated integer sum), top_source_ips{{}}, top_dest_ips{{}}
 
 JSON schema: {model_schema}
 

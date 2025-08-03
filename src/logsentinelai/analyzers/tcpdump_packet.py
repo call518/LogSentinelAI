@@ -85,10 +85,10 @@ class SecurityEvent(BaseModel):
     severity: SeverityLevel
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    source_ips: str = Field(description="Source IP address")
-    dest_ips: str = Field(description="Destination IP address")
-    source_port: int = Field(description="Source port number")
-    dest_port: int = Field(description="Destination port number")
+    source_ips: list[str] = Field(description="Source IP list")
+    dest_ips: list[str] = Field(description="Destination IP list")
+    source_ports: list[int] = Field(description="Source port number list")
+    dest_ports: list[int] = Field(description="Destination port number list")
     protocol: PacketProtocol
     payload_content: str = Field(description="Payload content if detected")
     attack_patterns: list[PacketSecurityEvent] = Field(description="Detected attack patterns")
