@@ -38,7 +38,6 @@ class SecurityEvent(BaseModel):
     severity: SeverityLevel
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    log_level: str = Field(description="Log level")
     source_ips: Optional[list[str]] = Field(description="Source IP address list")
     username: Optional[str] = Field(description="Username")
     process: Optional[str] = Field(description="Related process")

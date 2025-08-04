@@ -28,7 +28,6 @@ LLM_API_HOSTS = {
 }
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
-LLM_NO_THINK = os.getenv("LLM_NO_THINK", "false").lower() == "true"
 
 # Common Analysis Configuration
 RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
@@ -147,7 +146,7 @@ def get_llm_config(llm_provider=None):
         llm_provider: LLM provider name (optional, defaults to global LLM_PROVIDER)
     
     Returns:
-        dict: Configuration containing provider, model, api_host, temperature, top_p, no_think
+        dict: Configuration containing provider, model, api_host, temperature, top_p
     """
     provider = llm_provider if llm_provider is not None else LLM_PROVIDER
     
@@ -156,6 +155,5 @@ def get_llm_config(llm_provider=None):
         "model": LLM_MODELS.get(provider, "unknown"),
         "api_host": LLM_API_HOSTS.get(provider, ""),
         "temperature": LLM_TEMPERATURE,
-        "top_p": LLM_TOP_P,
-        "no_think": LLM_NO_THINK
+        "top_p": LLM_TOP_P
     }

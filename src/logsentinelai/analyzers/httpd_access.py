@@ -33,12 +33,11 @@ class AttackType(str, Enum):
 class SecurityEvent(BaseModel):
     event_type: str = Field(description="Security event type")
     severity: SeverityLevel
-    description: str = Field(description="Detailed event description")
+    description: str = Field(description="Detailed event description, including a brief summary of region statistics for related logs")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    log_level: str = Field(description="Log level")
     url_pattern: str = Field(description="Related URL pattern")
     http_method: str = Field(description="HTTP method")
-    source_ips: list[str] = Field(description="Source IP list")
+    source_ips: list[str] = Field(description="Complete list of ALL source IP addresses found in this chunk - NEVER leave empty")
     response_codes: list[str] = Field(description="Response code list")
     attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
     recommended_actions: list[str] = Field(description="Recommended actions")
@@ -52,9 +51,10 @@ class Statistics(BaseModel):
     response_code_dist: dict[str, int] = Field(default_factory=dict, description="Response code distribution")
 
 class LogAnalysis(BaseModel):
-    summary: str = Field(description="Analysis summary")
+    summary: str = Field(description="Analysis summary including IP patterns and geographic distribution")
     events: list[SecurityEvent] = Field(
-        description="List of security events - may be empty if no security concerns detected"
+        description="List of security events - MUST NEVER BE EMPTY. Always create at least one INFO event for normal traffic documenting IP addresses and patterns.",
+        min_length=1
     )
     statistics: Statistics
     highest_severity: Optional[SeverityLevel] = Field(description="Highest severity level of detected events (null if no events)")

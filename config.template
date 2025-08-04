@@ -54,25 +54,6 @@ LLM_TEMPERATURE=0.1
 # Lower values = more focused, Higher values = more diverse
 LLM_TOP_P=0.5
 
-# No Think: Disable reasoning process for models that support it (true/false)
-# Set to true to skip intermediate reasoning steps and reduce token usage
-# 
-# Technical Details: When enabled, adds '/no_think' directive to the prompt
-# This instructs compatible models to provide direct answers without showing reasoning steps
-# 
-# Provider Support:
-# - vLLM: SUPPORTED - Works with reasoning-capable models like Qwen3 series
-# - OpenAI: NOT SUPPORTED - Directive is ignored, no effect on responses
-# - Ollama: NOT SUPPORTED - Directive is ignored, no effect on responses
-# 
-# Benefits (when supported):
-# - Faster response generation
-# - Reduced token usage 
-# - More concise outputs focused on results rather than reasoning process
-# 
-# Note: Safe to enable for all providers (unsupported providers simply ignore the directive)
-LLM_NO_THINK=true
-
 # Show Prompt: Display the full prompt sent to LLM before processing (true/false)
 # Set to true to see the complete prompt for debugging and transparency
 # Useful for debugging prompt issues and understanding what's sent to the LLM
