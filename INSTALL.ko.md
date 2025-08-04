@@ -622,3 +622,12 @@ REALTIME_POLLING_INTERVAL=10
 ```
 
 이러한 자동 샘플링 메커니즘을 통해 LogSentinelAI는 예측 불가능한 로그 트래픽 상황에서도 안정적인 실시간 분석을 제공합니다.
+
+### B. Tcpdump 캡쳐 명령 예시
+
+```bash
+# Single-Line
+$ tcpdump -tttt -nn -w tcpdump.pcap
+
+# Multi-Line
+$ tcpdump -tttt -nn -X -w tcpdump.pcap

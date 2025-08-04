@@ -623,3 +623,12 @@ REALTIME_POLLING_INTERVAL=10
 ```
 
 Through this auto-sampling mechanism, LogSentinelAI provides stable real-time analysis even in unpredictable log traffic situations.
+
+### B. Tcpdump Commands Example
+
+```bash
+# Single-Line
+$ tcpdump -tttt -nn -w tcpdump.pcap
+
+# Multi-Line
+$ tcpdump -tttt -nn -X -w tcpdump.pcap
