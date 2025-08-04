@@ -9,10 +9,10 @@ THREAT ASSESSMENT:
 - NORMAL WEB CONTEXT: Single page = 10-100+ requests (HTML/CSS/JS/images/fonts/favicon/robots.txt)
 
 SEVERITY (threat-focused):
-- CRITICAL: Confirmed exploitation/compromise
-- HIGH: Clear attack campaigns with exploitation potential  
-- MEDIUM: Suspicious patterns requiring investigation
-- LOW: Minor anomalies in normal traffic
+- CRITICAL: Active exploitation attempts, SQL injection with union/select, RCE patterns, admin panel brute force, sensitive file access (/etc/passwd, config files), etc security attacks
+- HIGH: Clear attack campaigns, multiple injection attempts, directory traversal, XSS with script tags, coordinated scanning
+- MEDIUM: Suspicious patterns requiring investigation, reconnaissance attempts
+- LOW: Minor anomalies in normal traffic, isolated suspicious requests
 - INFO: Normal operations with monitoring value (search engine bots, routine browsing, static resources, single 404s, expected traffic patterns)
 
 KEY RULES:
@@ -44,9 +44,9 @@ PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG = """
 Expert Apache error log analyst. Extract LOGID-XXXXXX values for related_log_ids.
 
 SEVERITY (Apache-specific):
-- CRITICAL: Active exploitation with success indicators, server compromise
-- HIGH: Clear attack patterns with high exploitation potential
-- MEDIUM: Suspicious patterns requiring investigation
+- CRITICAL: Successful exploitation evidence, command execution attempts, active file inclusion/traversal success, privilege escalation indicators, segmentation faults, out of memory errors, critical module failures
+- HIGH: Multiple attack attempts from same source, clear malicious payloads, persistent scanning for vulnerabilities
+- MEDIUM: Suspicious patterns requiring investigation, reconnaissance activities
 - LOW: Routine scanning blocked by controls, isolated unusual requests
 - INFO: Normal server operations (startup/shutdown notices, module loading, config messages, single file not found errors, routine maintenance)
 
@@ -91,12 +91,12 @@ JSON schema: {model_schema}
 PROMPT_TEMPLATE_LINUX_SYSTEM_LOG = """
 Expert Linux system log analyst. Extract LOGID-XXXXXX values for related_log_ids.
 
-SEVERITY (conservative):
-- CRITICAL: Confirmed system compromise with evidence
-- HIGH: Sustained brute force (10+ failures), clear privilege escalation success
-- MEDIUM: Multiple suspicious auth attempts (5-9 failures), potential reconnaissance
-- LOW: Few failed logins (2-4), routine privilege usage, minor anomalies
-- INFO: Noteworthy monitoring patterns (20+ logins/hour from single source, first-time admin access from new locations, config changes, maintenance activities)
+SEVERITY (security-focused):
+- CRITICAL: Evidence of successful compromise, root access gained, malicious code execution, data exfiltration indicators
+- HIGH: Sustained brute force (8+ failures), privilege escalation attempts, unusual administrative access patterns, repeated security violations
+- MEDIUM: Multiple suspicious auth attempts (4-7 failures), potential reconnaissance, unusual user behavior
+- LOW: Few failed logins (2-3), routine privilege usage, minor anomalies, isolated security events
+- INFO: Normal system operations (regular cron jobs, standard logins, routine sudo usage, service starts/stops, scheduled tasks, logrotate, expected user/group changes, system maintenance activities)
 
 CONSOLIDATION (CRITICAL):
 - CONSOLIDATE similar routine activities into SINGLE events
@@ -111,7 +111,9 @@ NORMAL vs SUSPICIOUS:
 KEY RULES:
 - MANDATORY: Never empty events array
 - Consolidate similar activities comprehensively
-- Be conservative with severity - avoid over-flagging routine operations
+- **PRIORITIZE INFO classification for routine operations** - normal system activities should be INFO
+- Most daily operations (cron, regular logins, service management) = INFO level
+- Only escalate to higher severity for genuine security concerns
 - If no notable events found, create at least 1 INFO event summarizing normal operations
     - description: For higher severity, provide as much detail as possible: criteria, rationale, impact, cause, and expected consequences.
     - recommended_actions: For each action, explain the reason, purpose, expected effect, impact, and, if possible, both best and alternative options. Each recommended_action must include concrete commands, procedures, and timelines.
