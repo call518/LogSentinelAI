@@ -77,7 +77,6 @@ logsentinelai = "logsentinelai.cli:main"
 logsentinelai-httpd-access = "logsentinelai.analyzers.httpd_access:main"
 logsentinelai-httpd-apache = "logsentinelai.analyzers.httpd_apache:main" 
 logsentinelai-linux-system = "logsentinelai.analyzers.linux_system:main"
-logsentinelai-tcpdump = "logsentinelai.analyzers.tcpdump_packet:main"
 logsentinelai-geoip-download = "logsentinelai.utils.geoip_downloader:main"
 logsentinelai-geoip-lookup = "logsentinelai.utils.geoip_lookup:main"
 

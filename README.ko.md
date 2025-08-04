@@ -34,7 +34,7 @@ class MyAccessLogResult(BaseModel):
 ### AI 기반 분석
 - **Declarative Extraction 지원**: 원하는 결과 구조(Pydantic class)만 선언하면 LLM이 자동 분석
 - **LLM 제공자**: OpenAI API, Ollama, vLLM
-- **지원 로그 유형**: HTTP Access, Apache Error, Linux System, TCPDump
+- **지원 로그 유형**: HTTP Access, Apache Error, Linux System
 - **위협 탐지**: SQL Injection, XSS, Brute Force, 네트워크 이상 탐지
 - **출력**: Pydantic 검증이 적용된 구조화 JSON
 - **Pydantic 클래스만 정의하면 LLM이 자동으로 해당 구조에 맞춰 분석 결과를 생성**
@@ -77,8 +77,7 @@ src/logsentinelai/
 │   ├── __init__.py                # 분석기 패키지 초기화
 │   ├── httpd_access.py            # HTTP access 로그 분석기(Apache/Nginx)
 │   ├── httpd_apache.py            # Apache error 로그 분석기
-│   ├── linux_system.py            # Linux system 로그 분석기(syslog/messages)
-│   └── tcpdump_packet.py          # 네트워크 패킷 캡처 분석기
+│   └── linux_system.py            # Linux system 로그 분석기(syslog/messages)
 │
 ├── core/                          # 핵심 분석 엔진(모듈화)
 │   ├── __init__.py                # Core 패키지 초기화 및 통합 import
@@ -104,7 +103,6 @@ src/logsentinelai/
 logsentinelai-httpd-access   → analyzers/httpd_access.py
 logsentinelai-apache-error   → analyzers/httpd_apache.py  
 logsentinelai-linux-system   → analyzers/linux_system.py
-logsentinelai-tcpdump        → analyzers/tcpdump_packet.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
 
@@ -150,20 +148,6 @@ Jun 15 02:04:59 combo sshd(pam_unix)[20885]: authentication failure; logname= ui
 Jun 15 02:04:59 combo sshd(pam_unix)[20886]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
 Jun 15 02:04:59 combo sshd(pam_unix)[20892]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
 Jun 15 02:04:59 combo sshd(pam_unix)[20893]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
-```
-
-#### TCPDump 패킷 로그
-```
-2025-07-20 14:00:00.228603 IP 150.165.103.133.443 > 163.62.4.236.54372: Flags [P.], seq 2408409918:2408411378, ack 41863130, win 32850, length 1460
-    0x0000:  6c6c d367 9a69 100e 7ecb 53f0 0800 4500  ll.g.i..~.S...E.
-    0x0010:  05dc ae4a 4000 3906 e77c 96a5 6785 a33e  ...J@.9..|..g..>
-    0x0020:  04ec 01bb d464 8f8d 6b3e 027e c7da 5018  .....d..k>.~..P.
-    0x0030:  8052 1642 0000                           .R.B..
-2025-07-20 14:00:00.228605 IP 192.242.209.255.5830 > 52.107.241.218.443: Flags [P.], seq 229435932:229435963, ack 245183773, win 2048, options [nop,nop,TS val 1083882715 ecr 5831867], length 31
-    0x0000:  6c6c d367 9a69 100e 7ecb 53f0 0800 4500  ll.g.i..~.S...E.
-    0x0010:  0053 0000 4000 3906 886d c0f2 d1ff 346b  .S..@.9..m....4k
-    0x0020:  f1da 16c6 01bb 0dac ea1c 0e9d 351d 8018  ............5...
-    0x0030:  0800 b76e 0000 0101 080a 409a bcdb 0058  ...n......@....X
 ```
 
 ## 설치 가이드

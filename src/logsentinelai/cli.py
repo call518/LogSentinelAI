@@ -20,9 +20,6 @@ Examples:
   # Linux System Log Analysis  
   logsentinelai-linux-system --mode realtime
 
-  # TCP Dump Analysis with SSH
-  logsentinelai-tcpdump --remote --ssh admin@server.com --ssh-key ~/.ssh/id_rsa
-
   # Download GeoIP Database
   logsentinelai-geoip-download
 
@@ -35,7 +32,6 @@ Available Commands:
   logsentinelai-httpd-access   - Analyze HTTP access logs
   logsentinelai-httpd-apache   - Analyze Apache error logs
   logsentinelai-linux-system   - Analyze Linux system logs
-  logsentinelai-tcpdump        - Analyze TCP dump packets
   logsentinelai-geoip-download - Download GeoIP database
   logsentinelai-geoip-lookup   - Lookup IP geolocation using configured GeoIP database
 
@@ -94,20 +90,7 @@ For detailed help on each command, use: <command> --help
     )
     
     # TCP Dump Analysis
-    tcpdump_parser = subparsers.add_parser(
-        "tcpdump",
-        help="Analyze TCP dump packets"
-    )
-    tcpdump_parser.add_argument(
-        "--log-path",
-        help="Path to log file"
-    )
-    tcpdump_parser.add_argument(
-        "--mode",
-        choices=["batch", "realtime"],
-        default="batch",
-        help="Analysis mode (default: batch)"
-    )
+    # REMOVED: TCP Dump analysis functionality has been removed
     
     # GeoIP Database Download
     geoip_parser = subparsers.add_parser(
@@ -150,15 +133,6 @@ For detailed help on each command, use: <command> --help
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
         linux_system_main()
-    
-    elif args.command == "tcpdump":
-        from .analyzers.tcpdump_packet import main as tcpdump_main
-        sys.argv = ["logsentinelai-tcpdump"]
-        if hasattr(args, 'log_path') and args.log_path:
-            sys.argv.extend(["--log-path", args.log_path])
-        if hasattr(args, 'mode') and args.mode:
-            sys.argv.extend(["--mode", args.mode])
-        tcpdump_main()
     
     elif args.command == "geoip-download":
         from .utils.geoip_downloader import main as geoip_main

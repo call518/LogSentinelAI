@@ -74,7 +74,6 @@ flake8 src/         # Lint
 logsentinelai-httpd-access sample-logs/access-100.log
 logsentinelai-httpd-apache sample-logs/apache-100.log
 logsentinelai-linux-system sample-logs/linux-100.log
-logsentinelai-tcpdump sample-logs/tcpdump-packet-39-multi-line.log
 ```
 
 ### Setting Up Automated Tests

@@ -81,16 +81,6 @@ class MyLinuxLogResult(BaseModel):
     is_anomaly: bool
 ```
 
-#### Example: Customizing TCPDump Packet Log Analyzer
-```python
-from pydantic import BaseModel
-
-class MyPacketResult(BaseModel):
-    src_ip: str
-    dst_ip: str
-    is_attack: bool
-```
-
 By declaring only the result structure you want in each analyzer, the LLM automatically returns results in that structure—no manual parsing required.
 
 ---
@@ -138,21 +128,6 @@ logsentinelai-linux-system /var/log/syslog
 - Service crashes
 - Security events
 - System anomalies
-
-### Network Packet Analysis
-```bash
-# TCPDump output analysis
-logsentinelai-tcpdump /path/to/tcpdump.log
-
-# Direct from network interface
-sudo tcpdump -i eth0 -w - | logsentinelai-tcpdump -
-```
-
-**What it detects:**
-- Network intrusion attempts
-- Suspicious traffic patterns
-- Protocol anomalies
-- Data exfiltration
 
 ---
 
@@ -408,12 +383,6 @@ logsentinelai-httpd-apache [OPTIONS] LOG_FILE
 #### logsentinelai-linux-system
 ```bash
 logsentinelai-linux-system [OPTIONS] LOG_FILE
-# Similar options to httpd-access
-```
-
-#### logsentinelai-tcpdump
-```bash
-logsentinelai-tcpdump [OPTIONS] LOG_FILE
 # Similar options to httpd-access
 ```
 
@@ -774,8 +743,7 @@ src/logsentinelai/
 ├── analyzers/              # Log type-specific analyzers
 │   ├── httpd_access.py     # Apache/Nginx access logs
 │   ├── httpd_apache.py     # Apache error logs
-│   ├── linux_system.py    # Linux system logs
-│   └── tcpdump_packet.py   # Network packet analysis
+│   └── linux_system.py    # Linux system logs
 ├── core/                   # Core functionality
 │   ├── commons.py          # Common analysis functions
 │   ├── config.py           # Configuration management

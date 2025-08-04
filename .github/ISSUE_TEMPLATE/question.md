@@ -11,7 +11,7 @@ What would you like to know?
 
 ## Context
 Provide context about what you're trying to accomplish:
-- **Log type you're working with**: [e.g., Apache access, Linux system, tcpdump]
+- **Log type you're working with**: [e.g., Apache access, Apache error, Linux system]
 - **Your use case**: [e.g., security monitoring, error analysis]
 - **What you've tried**: [e.g., specific commands, configurations]
 

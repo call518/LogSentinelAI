@@ -35,7 +35,7 @@ If applicable, include full error messages or stack traces:
 ```
 
 ## Sample Log Data
-- **Log type**: [e.g., Apache access logs, Linux system logs, tcpdump packets]
+- **Log type**: [e.g., Apache access logs, Apache error logs, Linux system logs]
 - **Log sample**: Please provide a small sample of the log that's causing issues (sanitize any sensitive information)
 
 ```

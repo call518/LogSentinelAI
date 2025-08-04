@@ -8,7 +8,14 @@
 
 - **운영체제**: RHEL 8/9, RockyLinux 8/9, CentOS 8/9, Ubuntu 20.04/22.04 (WSL2 포함)
 - **Python**: 3.11 이상 (3.12 권장)
-- **메모리**: 최소 4GB (LLM 로컬 실행 시 8GB 이상 권장)
+- **메모리**: 최소 4GB (LL# 실시간 모니터링 (로컬)
+logsentinelai-linux-system --mode realtime
+# SSH 원격 로그 분석
+logsentinelai-linu각 분석기에서 원하는 결과 구조만 선언하면, LLM이 자동으로 해당 구조에 맞는 결과를 반환해 주므로 별도의 파싱 작업이 필요 없습니다.
+
+---mote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
+# 수동 GeoIP DB 다운로드/경로 지정
+logsentinelai-geoip-download --output-dir ~/.logsentinelai/시 8GB 이상 권장)
 - **디스크**: 2GB 이상 여유 공간
 - **네트워크**: PyPI, GitHub, OpenAI, Ollama/vLLM 등 외부 접속 필요
 - **(선택) Docker**: Elasticsearch/Kibana, vLLM, Ollama 등 컨테이너 실행 시 필요
@@ -141,17 +148,14 @@ ANALYSIS_MODE=batch        # batch/realtime
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
 LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
-LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 
 # chunk size(분석 단위)
 CHUNK_SIZE_HTTPD_ACCESS=10
 CHUNK_SIZE_HTTPD_APACHE_ERROR=10
 CHUNK_SIZE_LINUX_SYSTEM=10
-CHUNK_SIZE_TCPDUMP_PACKET=5
 
 # 실시간 모드 옵션
 REALTIME_POLLING_INTERVAL=5
@@ -334,12 +338,8 @@ logsentinelai-httpd-access --log-path sample-logs/access-10k.log
 logsentinelai-httpd-apache --log-path sample-logs/apache-10k.log
 # Linux System 로그 분석
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
-# TCPDump 패킷 로그 분석
-logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-10k-single-line.log
 # 실시간 모니터링(로컬)
 logsentinelai-linux-system --mode realtime
-# 실시간 샘플링 모드
-logsentinelai-tcpdump --mode realtime --processing-mode sampling --sampling-threshold 50
 # SSH 원격 로그 분석
 logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
 # GeoIP DB 수동 다운로드/경로 지정
@@ -421,16 +421,6 @@ class MyLinuxLogResult(BaseModel):
     event_type: str
     user: str
     is_anomaly: bool
-```
-
-#### 예시: TCPDump 패킷 로그 분석기 커스터마이징
-```python
-from pydantic import BaseModel
-
-class MyPacketResult(BaseModel):
-    src_ip: str
-    dst_ip: str
-    is_attack: bool
 ```
 
 이처럼 각 분석기에서 원하는 결과 구조만 선언하면, 복잡한 파싱 없이 LLM이 자동으로 해당 구조에 맞는 결과를 반환합니다.
@@ -619,15 +609,3 @@ REALTIME_POLLING_INTERVAL=2
 # 일반 모니터링 (효율성 우선)
 REALTIME_SAMPLING_THRESHOLD=100
 REALTIME_POLLING_INTERVAL=10
-```
-
-이러한 자동 샘플링 메커니즘을 통해 LogSentinelAI는 예측 불가능한 로그 트래픽 상황에서도 안정적인 실시간 분석을 제공합니다.
-
-### B. Tcpdump 캡쳐 명령 예시
-
-```bash
-# Single-Line
-$ tcpdump -tttt -nn -w tcpdump.pcap
-
-# Multi-Line
-$ tcpdump -tttt -nn -X -w tcpdump.pcap

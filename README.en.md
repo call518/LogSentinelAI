@@ -34,7 +34,7 @@ class MyAccessLogResult(BaseModel):
 ### AI-powered Analysis
 - **Declarative Extraction**: Just declare your desired result structure (Pydantic class) and the LLM analyzes logs automatically
 - **LLM Providers**: OpenAI API, Ollama, vLLM
-- **Supported Log Types**: HTTP Access, Apache Error, Linux System, TCPDump
+- **Supported Log Types**: HTTP Access, Apache Error, Linux System
 - **Threat Detection**: SQL Injection, XSS, Brute Force, Network Anomaly Detection
 - **Output**: Structured JSON validated by Pydantic
 - **Just define a Pydantic class and the LLM generates results in that structure automatically**
@@ -77,8 +77,7 @@ src/logsentinelai/
 │   ├── __init__.py                # Analyzer package initialization
 │   ├── httpd_access.py            # HTTP access log analyzer (Apache/Nginx)
 │   ├── httpd_apache.py            # Apache error log analyzer
-│   ├── linux_system.py            # Linux system log analyzer (syslog/messages)
-│   └── tcpdump_packet.py          # Network packet capture analyzer
+│   └── linux_system.py            # Linux system log analyzer (syslog/messages)
 │
 ├── core/                          # Core analysis engine (modularized)
 │   ├── __init__.py                # Core package initialization and integrated import
@@ -100,11 +99,10 @@ src/logsentinelai/
 ### CLI Command Mapping
 
 ```bash
-# CLI commands are mapped to analyzer scripts:
+# CLI 명령은 분석기 스크립트에 매핑됨:
 logsentinelai-httpd-access   → analyzers/httpd_access.py
 logsentinelai-apache-error   → analyzers/httpd_apache.py  
 logsentinelai-linux-system   → analyzers/linux_system.py
-logsentinelai-tcpdump        → analyzers/tcpdump_packet.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
 
@@ -150,20 +148,6 @@ Jun 15 02:04:59 combo sshd(pam_unix)[20885]: authentication failure; logname= ui
 Jun 15 02:04:59 combo sshd(pam_unix)[20886]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
 Jun 15 02:04:59 combo sshd(pam_unix)[20892]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
 Jun 15 02:04:59 combo sshd(pam_unix)[20893]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
-```
-
-#### TCPDump Packet Log
-```
-2025-07-20 14:00:00.228603 IP 150.165.103.133.443 > 163.62.4.236.54372: Flags [P.], seq 2408409918:2408411378, ack 41863130, win 32850, length 1460
-    0x0000:  6c6c d367 9a69 100e 7ecb 53f0 0800 4500  ll.g.i..~.S...E.
-    0x0010:  05dc ae4a 4000 3906 e77c 96a5 6785 a33e  ...J@.9..|..g..>
-    0x0020:  04ec 01bb d464 8f8d 6b3e 027e c7da 5018  .....d..k>.~..P.
-    0x0030:  8052 1642 0000                           .R.B..
-2025-07-20 14:00:00.228605 IP 192.242.209.255.5830 > 52.107.241.218.443: Flags [P.], seq 229435932:229435963, ack 245183773, win 2048, options [nop,nop,TS val 1083882715 ecr 5831867], length 31
-    0x0000:  6c6c d367 9a69 100e 7ecb 53f0 0800 4500  ll.g.i..~.S...E.
-    0x0010:  0053 0000 4000 3906 886d c0f2 d1ff 346b  .S..@.9..m....4k
-    0x0020:  f1da 16c6 01bb 0dac ea1c 0e9d 351d 8018  ............5...
-    0x0030:  0800 b76e 0000 0101 080a 409a bcdb 0058  ...n......@....X
 ```
 
 ## Installation Guide

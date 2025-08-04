@@ -91,13 +91,13 @@ class RealtimeLogMonitor:
         print(f"Monitoring:       {self.log_path}")
         print(f"Mode:             {self.processing_mode.upper()}")
         if self.processing_mode == "full":
-            unit = 'packets' if self.log_type == 'tcpdump_packet' else 'lines'
+            unit = 'lines'
             print(f"Auto-sampling:    {self.sampling_threshold} {unit} threshold")
         elif self.processing_mode == "sampling":
-            unit = 'packets' if self.log_type == 'tcpdump_packet' else 'lines'
+            unit = 'lines'
             print(f"Sampling:         Always keep latest {self.chunk_size} {unit}")
         print(f"Poll Interval:    {self.realtime_config['polling_interval']}s")
-        unit = 'packets' if self.log_type == 'tcpdump_packet' else 'lines'
+        unit = 'lines'
         print(f"Chunk Size:       {self.chunk_size} {unit}")
         print("=" * 80)
     
@@ -328,10 +328,6 @@ class RealtimeLogMonitor:
         Yields:
             List[str]: Chunk of new log lines
         """
-        # TCPDump logs are handled as packet units
-        if self.log_type == "tcpdump_packet":
-            return self._get_new_packet_chunks()
-        
         # Regular line-based processing
         new_lines = self._read_new_lines()
         
@@ -378,12 +374,6 @@ class RealtimeLogMonitor:
             self.pending_lines = self.pending_lines[self.chunk_size:]
             print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
             yield chunk
-    
-    def _get_new_packet_chunks(self) -> Generator[List[str], None, None]:
-        """TCPDump-specific packet-based chunk generation"""
-        # This would need specific tcpdump handling logic
-        # For now, fall back to line-based processing
-        return self.get_new_log_chunks()
 
 def create_realtime_monitor(log_type: str, 
                           chunk_size=None, 

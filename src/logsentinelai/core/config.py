@@ -1,5 +1,10 @@
 """
-Configuration module for LogSentinelAI
+Configuration module for Lo# Log paths configuration
+LOG_PATHS = {
+    "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
+    "httpd_apache_error": os.getenv("LOG_PATH_HTTPD_APACHE_ERROR", "sample-logs/apache-10k.log"),
+    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log")
+}elAI
 Centralizes all configuration constants and environment variable handling
 """
 import os
@@ -33,16 +38,14 @@ ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
 LOG_PATHS = {
     "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
     "httpd_apache_error": os.getenv("LOG_PATH_HTTPD_APACHE_ERROR", "sample-logs/apache-10k.log"),
-    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log"),
-    "tcpdump_packet": os.getenv("LOG_PATH_TCPDUMP_PACKET", "sample-logs/tcpdump-packet-2k.log")
+    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log")
 }
 
-# Real-time Log Paths Configuration
-REALTIME_LOG_PATHS = {
+# Realtime log paths configuration 
+LOG_PATHS_REALTIME = {
     "httpd_access": os.getenv("LOG_PATH_REALTIME_HTTPD_ACCESS", "/var/log/apache2/access.log"),
     "httpd_apache_error": os.getenv("LOG_PATH_REALTIME_HTTPD_APACHE_ERROR", "/var/log/apache2/error.log"),
-    "linux_system": os.getenv("LOG_PATH_REALTIME_LINUX_SYSTEM", "/var/log/messages"),
-    "tcpdump_packet": os.getenv("LOG_PATH_REALTIME_TCPDUMP_PACKET", "/var/log/tcpdump.log")
+    "linux_system": os.getenv("LOG_PATH_REALTIME_LINUX_SYSTEM", "/var/log/messages")
 }
 
 # Real-time Monitoring Configuration
@@ -66,20 +69,18 @@ DEFAULT_REMOTE_SSH_CONFIG = {
     "timeout": int(os.getenv("REMOTE_SSH_TIMEOUT", "10"))
 }
 
-# Default Remote Log Paths Configuration
+# Remote SSH configuration for log paths
 DEFAULT_REMOTE_LOG_PATHS = {
     "httpd_access": os.getenv("REMOTE_LOG_PATH_HTTPD_ACCESS", "/var/log/apache2/access.log"),
     "httpd_apache_error": os.getenv("REMOTE_LOG_PATH_HTTPD_APACHE_ERROR", "/var/log/apache2/error.log"),
-    "linux_system": os.getenv("REMOTE_LOG_PATH_LINUX_SYSTEM", "/var/log/messages"),
-    "tcpdump_packet": os.getenv("REMOTE_LOG_PATH_TCPDUMP_PACKET", "/var/log/tcpdump.log")
+    "linux_system": os.getenv("REMOTE_LOG_PATH_LINUX_SYSTEM", "/var/log/messages")
 }
 
 # Default Chunk Sizes
 LOG_CHUNK_SIZES = {
     "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
     "httpd_apache_error": int(os.getenv("CHUNK_SIZE_HTTPD_APACHE_ERROR", "10")),
-    "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10")),
-    "tcpdump_packet": int(os.getenv("CHUNK_SIZE_TCPDUMP_PACKET", "5"))
+    "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10"))
 }
 
 # GeoIP Configuration
@@ -103,7 +104,7 @@ def get_analysis_config(log_type, chunk_size=None, analysis_mode=None,
     Get analysis configuration for specific log type
     
     Args:
-        log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
+        log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system")
         chunk_size: Override chunk size (optional)
         analysis_mode: Override analysis mode (optional) - "batch" or "realtime"
         remote_mode: Override remote mode (optional) - "local" or "ssh" 
@@ -120,7 +121,7 @@ def get_analysis_config(log_type, chunk_size=None, analysis_mode=None,
     if access_mode == "ssh":
         log_path = remote_log_path or DEFAULT_REMOTE_LOG_PATHS.get(log_type, "")
     else:
-        log_path = REALTIME_LOG_PATHS.get(log_type, "") if mode == "realtime" else LOG_PATHS.get(log_type, "")
+        log_path = LOG_PATHS_REALTIME.get(log_type, "") if mode == "realtime" else LOG_PATHS.get(log_type, "")
     
     # SSH configuration
     if access_mode == "ssh":

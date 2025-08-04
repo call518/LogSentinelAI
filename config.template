@@ -1,6 +1,6 @@
 # LogSentinelAI Configuration File
 
-===============================================================================
+# ===============================================================================
 # API Keys
 # =============================================================================
 # OpenAI API Key (required if using OpenAI provider)
@@ -98,8 +98,6 @@ ANALYSIS_MODE=batch
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-single-line.log
-#LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-multi-line.log
 
 # Real-time Mode: Live log files to monitor
 # CLI Override: Use --log-path argument to override these paths
@@ -107,7 +105,6 @@ LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-10k-single-line.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
 LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
-LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 
 # =============================================================================
 # Chunk Size Configuration (entries per chunk)
@@ -123,7 +120,6 @@ LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 CHUNK_SIZE_HTTPD_ACCESS=10
 CHUNK_SIZE_HTTPD_APACHE_ERROR=10
 CHUNK_SIZE_LINUX_SYSTEM=10
-CHUNK_SIZE_TCPDUMP_PACKET=10
 
 # =============================================================================
 # Elasticsearch Configuration
@@ -158,7 +154,6 @@ REMOTE_SSH_TIMEOUT=10
 REMOTE_LOG_PATH_HTTPD_ACCESS=/var/log/apache2/access.log
 REMOTE_LOG_PATH_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
 REMOTE_LOG_PATH_LINUX_SYSTEM=/var/log/messages
-REMOTE_LOG_PATH_TCPDUMP_PACKET=/var/log/tcpdump.log
 
 # Polling interval for checking new log entries (seconds)
 # - How often to check log files for new content

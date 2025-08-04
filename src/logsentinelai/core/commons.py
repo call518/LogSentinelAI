@@ -205,7 +205,7 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
     Generic batch analysis function for all log types
     
     Args:
-        log_type: Type of log ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
+        log_type: Type of log ("httpd_access", "httpd_apache_error", "linux_system")
         analysis_schema_class: Pydantic schema class for structured output
         prompt_template: Prompt template string
         analysis_title: Title to display in output header
@@ -302,7 +302,7 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
     Generic real-time analysis function for all log types
     
     Args:
-        log_type: Type of log ("httpd_access", "httpd_apache_error", "linux_system", "tcpdump_packet")
+        log_type: Type of log ("httpd_access", "httpd_apache_error", "linux_system")
         analysis_schema_class: Pydantic schema class for structured output
         prompt_template: Prompt template string
         analysis_title: Title to display in output header

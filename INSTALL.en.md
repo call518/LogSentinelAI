@@ -138,17 +138,14 @@ ANALYSIS_MODE=batch        # batch/realtime
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-LOG_PATH_TCPDUMP_PACKET=sample-logs/tcpdump-packet-2k.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
 LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
-LOG_PATH_REALTIME_TCPDUMP_PACKET=/var/log/tcpdump.log
 
 # chunk size (analysis unit)
 CHUNK_SIZE_HTTPD_ACCESS=10
 CHUNK_SIZE_HTTPD_APACHE_ERROR=10
 CHUNK_SIZE_LINUX_SYSTEM=10
-CHUNK_SIZE_TCPDUMP_PACKET=5
 
 # Realtime mode options
 REALTIME_POLLING_INTERVAL=5
@@ -327,14 +324,8 @@ logsentinelai-httpd-access --log-path sample-logs/access-10k.log
 logsentinelai-httpd-apache --log-path sample-logs/apache-10k.log
 # Linux System log analysis
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
-# TCPDump packet log analysis
-logsentinelai-tcpdump --log-path sample-logs/tcpdump-packet-10k-single-line.log
 # Realtime monitoring (local)
 logsentinelai-linux-system --mode realtime
-# Realtime sampling mode
-logsentinelai-tcpdump --mode realtime --processing-mode sampling --sampling-threshold 50
-# SSH remote log analysis
-logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
 # Manual GeoIP DB download/path
 logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ```
@@ -414,16 +405,6 @@ class MyLinuxLogResult(BaseModel):
     event_type: str
     user: str
     is_anomaly: bool
-```
-
-#### Example: Customizing TCPDump Packet Log Analyzer
-```python
-from pydantic import BaseModel
-
-class MyPacketResult(BaseModel):
-    src_ip: str
-    dst_ip: str
-    is_attack: bool
 ```
 
 By declaring only the result structure you want in each analyzer, the LLM automatically returns results in that structure—no manual parsing required.
@@ -624,11 +605,3 @@ REALTIME_POLLING_INTERVAL=10
 
 Through this auto-sampling mechanism, LogSentinelAI provides stable real-time analysis even in unpredictable log traffic situations.
 
-### B. Tcpdump Commands Example
-
-```bash
-# Single-Line
-$ tcpdump -tttt -nn -w tcpdump.pcap
-
-# Multi-Line
-$ tcpdump -tttt -nn -X -w tcpdump.pcap

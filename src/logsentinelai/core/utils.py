@@ -20,7 +20,7 @@ def chunked_iterable(iterable, size, debug=False):
     for item in iterable:
         log_content = item.rstrip()
         
-        # Use existing LOGID if present (for tcpdump packets)
+        # Create LOGID for the line
         if log_content.startswith("LOGID-"):
             new_item = f"{log_content}\n"
         else:
@@ -65,7 +65,7 @@ def print_chunk_contents(chunk):
         else:
             original_content = line
         
-        # Handle multiline tcpdump data
+        # Handle multiline data
         if "\\n" in original_content:
             multiline_content = original_content.replace('\\n', '\n')
             print(f"{idx:2d}: {multiline_content}")
