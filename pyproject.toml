@@ -75,7 +75,7 @@ Documentation = "https://github.com/call518/LogSentinelAI#readme"
 [project.scripts]
 logsentinelai = "logsentinelai.cli:main"
 logsentinelai-httpd-access = "logsentinelai.analyzers.httpd_access:main"
-logsentinelai-httpd-apache = "logsentinelai.analyzers.httpd_apache:main" 
+logsentinelai-httpd-server = "logsentinelai.analyzers.httpd_server:main" 
 logsentinelai-linux-system = "logsentinelai.analyzers.linux_system:main"
 logsentinelai-geoip-download = "logsentinelai.utils.geoip_downloader:main"
 logsentinelai-geoip-lookup = "logsentinelai.utils.geoip_lookup:main"

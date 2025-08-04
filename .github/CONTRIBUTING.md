@@ -72,7 +72,7 @@ flake8 src/         # Lint
 ```bash
 # Test all analyzers
 logsentinelai-httpd-access sample-logs/access-100.log
-logsentinelai-httpd-apache sample-logs/apache-100.log
+logsentinelai-httpd-server sample-logs/apache-100.log
 logsentinelai-linux-system sample-logs/linux-100.log
 ```
 

@@ -77,14 +77,14 @@ ANALYSIS_MODE=batch
 # CLI Override: Use --log-path argument to override these paths
 # Example: python analysis-linux-system-log.py --log-path /custom/path/messages.log
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
-LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
+LOG_PATH_HTTPD_SERVER=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 
 # Real-time Mode: Live log files to monitor
 # CLI Override: Use --log-path argument to override these paths
 # Example: python analysis-linux-system-log.py --mode realtime --log-path /var/log/custom.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
+LOG_PATH_REALTIME_HTTPD_SERVER=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
 
 # =============================================================================
@@ -99,7 +99,7 @@ LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
 # CLI Override: Use --chunk-size argument to override these values
 # Example: python analysis-linux-system-log.py --chunk-size 20
 CHUNK_SIZE_HTTPD_ACCESS=10
-CHUNK_SIZE_HTTPD_APACHE_ERROR=10
+CHUNK_SIZE_HTTPD_SERVER=10
 CHUNK_SIZE_LINUX_SYSTEM=10
 
 # =============================================================================
@@ -133,7 +133,7 @@ REMOTE_SSH_TIMEOUT=10
 # Remote Log File Paths (only used when REMOTE_LOG_MODE=ssh)
 # Override these paths to match remote server's log locations
 REMOTE_LOG_PATH_HTTPD_ACCESS=/var/log/apache2/access.log
-REMOTE_LOG_PATH_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
+REMOTE_LOG_PATH_HTTPD_SERVER=/var/log/apache2/error.log
 REMOTE_LOG_PATH_LINUX_SYSTEM=/var/log/messages
 
 # Polling interval for checking new log entries (seconds)

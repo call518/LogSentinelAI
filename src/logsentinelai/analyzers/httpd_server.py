@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Optional
 
-from ..core.prompts import get_httpd_apache_error_prompt
+from ..core.prompts import get_httpd_server_error_prompt
 from ..core.commons import (
     run_generic_batch_analysis, 
     run_generic_realtime_analysis,
@@ -61,21 +61,21 @@ class LogAnalysis(BaseModel):
 
 def main():
     """Main function with argument parsing"""
-    parser = create_argument_parser('HTTPD Apache Error Log Analysis')
+    parser = create_argument_parser('HTTPD Server Log Analysis')
     args = parser.parse_args()
     
     # SSH 설정 파싱
     ssh_config = handle_ssh_arguments(args)
     remote_mode = "ssh" if ssh_config else "local"
     
-    log_type = "httpd_apache_error"
-    analysis_title = "HTTPD Apache Error Log Analysis"
+    log_type = "httpd_server"
+    analysis_title = "HTTPD Server Log Analysis"
     
     if args.mode == 'realtime':
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
-            prompt_template=get_httpd_apache_error_prompt(),
+            prompt_template=get_httpd_server_error_prompt(),
             analysis_title=analysis_title,
             chunk_size=args.chunk_size,
             log_path=args.log_path,
@@ -88,7 +88,7 @@ def main():
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
-            prompt_template=get_httpd_apache_error_prompt(),
+            prompt_template=get_httpd_server_error_prompt(),
             analysis_title=analysis_title,
             log_path=args.log_path,
             remote_mode=remote_mode,

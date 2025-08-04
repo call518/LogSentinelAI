@@ -1,10 +1,5 @@
 """
-Configuration module for Lo# Log paths configuration
-LOG_PATHS = {
-    "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
-    "httpd_apache_error": os.getenv("LOG_PATH_HTTPD_APACHE_ERROR", "sample-logs/apache-10k.log"),
-    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log")
-}elAI
+Configuration module for LogSentinelAI
 Centralizes all configuration constants and environment variable handling
 """
 import os
@@ -36,14 +31,14 @@ ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
 # Log Paths Configuration
 LOG_PATHS = {
     "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
-    "httpd_apache_error": os.getenv("LOG_PATH_HTTPD_APACHE_ERROR", "sample-logs/apache-10k.log"),
+    "httpd_server": os.getenv("LOG_PATH_HTTPD_SERVER", "sample-logs/apache-10k.log"),
     "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log")
 }
 
 # Realtime log paths configuration 
 LOG_PATHS_REALTIME = {
     "httpd_access": os.getenv("LOG_PATH_REALTIME_HTTPD_ACCESS", "/var/log/apache2/access.log"),
-    "httpd_apache_error": os.getenv("LOG_PATH_REALTIME_HTTPD_APACHE_ERROR", "/var/log/apache2/error.log"),
+    "httpd_server": os.getenv("LOG_PATH_REALTIME_HTTPD_SERVER", "/var/log/apache2/error.log"),
     "linux_system": os.getenv("LOG_PATH_REALTIME_LINUX_SYSTEM", "/var/log/messages")
 }
 
@@ -71,14 +66,14 @@ DEFAULT_REMOTE_SSH_CONFIG = {
 # Remote SSH configuration for log paths
 DEFAULT_REMOTE_LOG_PATHS = {
     "httpd_access": os.getenv("REMOTE_LOG_PATH_HTTPD_ACCESS", "/var/log/apache2/access.log"),
-    "httpd_apache_error": os.getenv("REMOTE_LOG_PATH_HTTPD_APACHE_ERROR", "/var/log/apache2/error.log"),
+    "httpd_server": os.getenv("REMOTE_LOG_PATH_HTTPD_SERVER", "/var/log/apache2/error.log"),
     "linux_system": os.getenv("REMOTE_LOG_PATH_LINUX_SYSTEM", "/var/log/messages")
 }
 
 # Default Chunk Sizes
 LOG_CHUNK_SIZES = {
     "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
-    "httpd_apache_error": int(os.getenv("CHUNK_SIZE_HTTPD_APACHE_ERROR", "10")),
+    "httpd_server": int(os.getenv("CHUNK_SIZE_HTTPD_SERVER", "10")),
     "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10"))
 }
 
@@ -103,7 +98,7 @@ def get_analysis_config(log_type, chunk_size=None, analysis_mode=None,
     Get analysis configuration for specific log type
     
     Args:
-        log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system")
+        log_type: Log type ("httpd_access", "httpd_server", "linux_system")
         chunk_size: Override chunk size (optional)
         analysis_mode: Override analysis mode (optional) - "batch" or "realtime"
         remote_mode: Override remote mode (optional) - "local" or "ssh" 

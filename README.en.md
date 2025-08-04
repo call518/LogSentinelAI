@@ -63,45 +63,12 @@ class MyAccessLogResult(BaseModel):
 
 ![JSON Output](img/ex-json.png)
 
-## 📁 Project Structure and Main Python Scripts
-
-### Core Python Components
-
-```
-src/logsentinelai/
-├── __init__.py                    # Package initialization
-├── cli.py                         # Main CLI entry point and command routing
-├── py.typed                       # mypy type hint marker
-│
-├── analyzers/                     # Log type-specific analyzers
-│   ├── __init__.py                # Analyzer package initialization
-│   ├── httpd_access.py            # HTTP access log analyzer (Apache/Nginx)
-│   ├── httpd_apache.py            # Apache error log analyzer
-│   └── linux_system.py            # Linux system log analyzer (syslog/messages)
-│
-├── core/                          # Core analysis engine (modularized)
-│   ├── __init__.py                # Core package initialization and integrated import
-│   ├── commons.py                 # Batch/real-time analysis common functions, processing flow definition
-│   ├── config.py                  # Environment variable-based configuration management
-│   ├── llm.py                     # LLM model initialization and interaction
-│   ├── elasticsearch.py           # Elasticsearch integration and data transmission
-│   ├── geoip.py                   # GeoIP lookup and IP enrichment
-│   ├── ssh.py                     # SSH remote log access
-│   ├── monitoring.py              # Real-time log monitoring and processing
-│   ├── utils.py                   # Log processing utilities and helpers
-│   └── prompts.py                 # Log type-specific LLM prompt templates
-│
-└── utils/                         # Utility functions
-    ├── __init__.py                # Utils package initialization
-    └── geoip_downloader.py        # MaxMind GeoIP DB downloader
-```
-
 ### CLI Command Mapping
 
 ```bash
-# CLI 명령은 분석기 스크립트에 매핑됨:
+# CLI commands mapped to analyzer scripts:
 logsentinelai-httpd-access   → analyzers/httpd_access.py
-logsentinelai-apache-error   → analyzers/httpd_apache.py  
+logsentinelai-httpd-server   → analyzers/httpd_server.py  
 logsentinelai-linux-system   → analyzers/linux_system.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
@@ -122,7 +89,7 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 40.77.167.129 - - [22/Jan/2019:03:56:18 +0330] "GET /image/57710/productModel/100x100 HTTP/1.1" 200 1695 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
 ```
 
-#### Apache Error Log
+#### Apache Server Log
 ```
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: SSL support unavailable

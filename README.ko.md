@@ -63,45 +63,12 @@ class MyAccessLogResult(BaseModel):
 
 ![JSON Output](img/ex-json.png)
 
-## 📁 프로젝트 구조 및 주요 파이썬 스크립트
-
-### 핵심 파이썬 구성요소
-
-```
-src/logsentinelai/
-├── __init__.py                    # 패키지 초기화
-├── cli.py                         # 메인 CLI 진입점 및 명령 라우팅
-├── py.typed                       # mypy 타입 힌트 마커
-│
-├── analyzers/                     # 로그 유형별 분석기
-│   ├── __init__.py                # 분석기 패키지 초기화
-│   ├── httpd_access.py            # HTTP access 로그 분석기(Apache/Nginx)
-│   ├── httpd_apache.py            # Apache error 로그 분석기
-│   └── linux_system.py            # Linux system 로그 분석기(syslog/messages)
-│
-├── core/                          # 핵심 분석 엔진(모듈화)
-│   ├── __init__.py                # Core 패키지 초기화 및 통합 import
-│   ├── commons.py                 # 배치/실시간 분석 공통 함수, 처리 흐름 정의
-│   ├── config.py                  # 환경변수 기반 설정 관리
-│   ├── llm.py                     # LLM 모델 초기화 및 상호작용
-│   ├── elasticsearch.py           # Elasticsearch 연동 및 데이터 전송
-│   ├── geoip.py                   # GeoIP 조회 및 IP 부가정보
-│   ├── ssh.py                     # SSH 원격 로그 접근
-│   ├── monitoring.py              # 실시간 로그 모니터링 및 처리
-│   ├── utils.py                   # 로그 처리 유틸리티 및 헬퍼
-│   └── prompts.py                 # 로그 유형별 LLM 프롬프트 템플릿
-│
-└── utils/                         # 유틸리티 함수
-    ├── __init__.py                # Utils 패키지 초기화
-    └── geoip_downloader.py        # MaxMind GeoIP DB 다운로더
-```
-
 ### CLI 명령 매핑
 
 ```bash
 # CLI 명령은 분석기 스크립트에 매핑됨:
 logsentinelai-httpd-access   → analyzers/httpd_access.py
-logsentinelai-apache-error   → analyzers/httpd_apache.py  
+logsentinelai-httpd-server   → analyzers/httpd_server.py  
 logsentinelai-linux-system   → analyzers/linux_system.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
@@ -122,7 +89,7 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 40.77.167.129 - - [22/Jan/2019:03:56:18 +0330] "GET /image/57710/productModel/100x100 HTTP/1.1" 200 1695 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)" "-"
 ```
 
-#### Apache Error 로그
+#### Apache Server 로그
 ```
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: SSL support unavailable

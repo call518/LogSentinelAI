@@ -136,15 +136,15 @@ ANALYSIS_MODE=batch        # batch/realtime
 
 # Log file paths (batch/realtime)
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
-LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
+LOG_PATH_HTTPD_SERVER=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
+LOG_PATH_REALTIME_HTTPD_SERVER=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
 
 # chunk size (analysis unit)
 CHUNK_SIZE_HTTPD_ACCESS=10
-CHUNK_SIZE_HTTPD_APACHE_ERROR=10
+CHUNK_SIZE_HTTPD_SERVER=10
 CHUNK_SIZE_LINUX_SYSTEM=10
 
 # Realtime mode options
@@ -321,7 +321,7 @@ logsentinelai --help
 # HTTP Access log analysis (batch)
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
 # Apache Error log analysis
-logsentinelai-httpd-apache --log-path sample-logs/apache-10k.log
+logsentinelai-httpd-server --log-path sample-logs/apache-10k.log
 # Linux System log analysis
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
 # Realtime monitoring (local)

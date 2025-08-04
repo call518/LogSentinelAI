@@ -58,7 +58,7 @@ JSON schema: {model_schema}
 <LOGS END>
 """
 
-PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG = """
+PROMPT_TEMPLATE_HTTPD_SERVER_LOG = """
 Expert Apache error log analyst. Extract LOGID-XXXXXX values for related_log_ids.
 
 SEVERITY (Apache-specific):
@@ -156,9 +156,9 @@ def get_httpd_access_prompt():
     """Get HTTP access log analysis prompt"""
     return PROMPT_TEMPLATE_HTTPD_ACCESS_LOG
 
-def get_httpd_apache_error_prompt():
-    """Get Apache error log analysis prompt"""
-    return PROMPT_TEMPLATE_HTTPD_APACHE_ERROR_LOG
+def get_httpd_server_error_prompt():
+    """Get HTTP server error log analysis prompt"""
+    return PROMPT_TEMPLATE_HTTPD_SERVER_LOG
 
 def get_linux_system_prompt():
     """Get Linux system log analysis prompt"""

@@ -30,7 +30,7 @@ Examples:
 
 Available Commands:
   logsentinelai-httpd-access   - Analyze HTTP access logs
-  logsentinelai-httpd-apache   - Analyze Apache error logs
+  logsentinelai-httpd-server   - Analyze HTTP server error logs
   logsentinelai-linux-system   - Analyze Linux system logs
   logsentinelai-geoip-download - Download GeoIP database
   logsentinelai-geoip-lookup   - Lookup IP geolocation using configured GeoIP database

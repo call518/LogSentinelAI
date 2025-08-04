@@ -30,7 +30,6 @@ Welcome to the LogSentinelAI Wiki! This comprehensive guide covers everything yo
 ### Development
 - [Contributing](#contributing)
 - [API Reference](#api-reference)
-- [Architecture](#architecture)
 
 ---
 
@@ -109,7 +108,7 @@ logsentinelai-httpd-access /var/log/apache2/access.log --monitor
 
 ### Apache Error Logs
 ```bash
-logsentinelai-httpd-apache /var/log/apache2/error.log
+logsentinelai-httpd-server /var/log/apache2/error.log
 ```
 
 **What it detects:**
@@ -374,9 +373,9 @@ Options:
   --help                              Show help message
 ```
 
-#### logsentinelai-httpd-apache
+#### logsentinelai-httpd-server
 ```bash
-logsentinelai-httpd-apache [OPTIONS] LOG_FILE
+logsentinelai-httpd-server [OPTIONS] LOG_FILE
 # Similar options to httpd-access
 ```
 
@@ -703,61 +702,6 @@ for result in results:
 ```
 
 ---
-
-## Architecture
-
-### System Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Log Sources   │───▶│ LogSentinelAI   │───▶│ Elasticsearch   │
-│                 │    │                 │    │                 │
-│ • Local Files   │    │ ┌─────────────┐ │    │ • Security      │
-│ • Remote SSH    │    │ │ Log Parser  │ │    │   Events        │
-│ • Real-time     │    │ └─────────────┘ │    │ • Raw Logs      │
-│                 │    │ ┌─────────────┐ │    │ • Metadata      │
-│                 │    │ │ LLM         │ │    │                 │
-│                 │    │ │ Analysis    │ │    │                 │
-│                 │    │ └─────────────┘ │    │                 │
-│                 │    │ ┌─────────────┐ │    │                 │
-│                 │    │ │ GeoIP       │ │    │                 │
-│                 │    │ │ Enrichment  │ │    │                 │
-│                 │    │ └─────────────┘ │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                        │
-                                                        ▼
-                                              ┌─────────────────┐
-                                              │     Kibana      │
-                                              │   Dashboard     │
-                                              │                 │
-                                              │ • Visualization │
-                                              │ • Alerts        │
-                                              │ • Analytics     │
-                                              └─────────────────┘
-```
-
-### Code Structure
-
-```
-src/logsentinelai/
-├── analyzers/              # Log type-specific analyzers
-│   ├── httpd_access.py     # Apache/Nginx access logs
-│   ├── httpd_apache.py     # Apache error logs
-│   └── linux_system.py    # Linux system logs
-├── core/                   # Core functionality
-│   ├── commons.py          # Common analysis functions
-│   ├── config.py           # Configuration management
-│   ├── elasticsearch.py    # Elasticsearch integration
-│   ├── geoip.py           # GeoIP functionality
-│   ├── llm.py             # LLM provider interface
-│   ├── monitoring.py       # Real-time monitoring
-│   ├── prompts.py         # LLM prompt templates
-│   ├── ssh.py             # SSH remote access
-│   └── utils.py           # Utility functions
-├── utils/                  # Additional utilities
-│   └── geoip_downloader.py # GeoIP database management
-└── cli.py                 # Command-line interface
-```
 
 ### Data Flow
 

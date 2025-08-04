@@ -43,7 +43,7 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
     
     Args:
         data: Analysis data to send (JSON format)
-        log_type: Log type ("httpd_access", "httpd_apache_error", "linux_system")
+        log_type: Log type ("httpd_access", "httpd_server", "linux_system")
         chunk_id: Chunk number (optional)
     
     Returns:

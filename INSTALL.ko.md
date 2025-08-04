@@ -146,15 +146,15 @@ ANALYSIS_MODE=batch        # batch/realtime
 
 # 로그 파일 경로(배치/실시간)
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
-LOG_PATH_HTTPD_APACHE_ERROR=sample-logs/apache-10k.log
+LOG_PATH_HTTPD_SERVER=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
 LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_HTTPD_APACHE_ERROR=/var/log/apache2/error.log
+LOG_PATH_REALTIME_HTTPD_SERVER=/var/log/apache2/error.log
 LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
 
 # chunk size(분석 단위)
 CHUNK_SIZE_HTTPD_ACCESS=10
-CHUNK_SIZE_HTTPD_APACHE_ERROR=10
+CHUNK_SIZE_HTTPD_SERVER=10
 CHUNK_SIZE_LINUX_SYSTEM=10
 
 # 실시간 모드 옵션
@@ -335,7 +335,7 @@ logsentinelai --help
 # HTTP Access 로그 분석(배치)
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
 # Apache Error 로그 분석
-logsentinelai-httpd-apache --log-path sample-logs/apache-10k.log
+logsentinelai-httpd-server --log-path sample-logs/apache-10k.log
 # Linux System 로그 분석
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
 # 실시간 모니터링(로컬)
