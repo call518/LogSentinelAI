@@ -4,6 +4,8 @@
 
 LogSentinelAI는 **Declarative Extraction (선언적 추출)** 방식으로 LLM을 활용하여 Apache, Linux 등 다양한 로그에서 보안 이벤트, 이상 징후, 오류를 분석하고, 이를 Elasticsearch/Kibana로 시각화 가능한 구조화 데이터로 변환합니다. 원하는 결과 구조를 Pydantic 클래스로 선언하기만 하면, AI가 자동으로 로그를 분석하여 해당 스키마에 맞는 JSON을 반환합니다. 복잡한 파싱 작업은 필요하지 않습니다.
 
+[![DeepWiki URL](https://deepwiki.com/static/img/deepwiki-badge.svg)](https://deepwiki.com/call518/LogSentinelAI)
+
 ## 시스템 아키텍처
 
 ![System Architecture](img/system-architecture.png)
