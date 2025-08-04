@@ -4,13 +4,13 @@
 
 LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing is required.
 
-[![DeepWiki URL](https://deepwiki.com/static/img/deepwiki-badge.svg)](https://deepwiki.com/call518/LogSentinelAI)
+🚀 [![DeepWiki URL](https://deepwiki.com/call518/LogSentinelAI)
 
 ## System Architecture
 
 ![System Architecture](img/system-architecture.png)
 
-## 🚀 Key Features
+## Key Features
 
 > ⚡️ **Declarative Extraction**
 >
@@ -61,7 +61,7 @@ class MyAccessLogResult(BaseModel):
 
 ![Kibana Dashboard](img/ex-dashboard.png)
 
-## 📋 JSON Output Example
+## JSON Output Example
 
 ![JSON Output](img/ex-json.png)
 
@@ -75,7 +75,7 @@ logsentinelai-linux-system   → analyzers/linux_system.py
 logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
 
-### 📑 Sample Log Preview
+### Sample Log Preview
 
 #### HTTP Access Log
 ```
