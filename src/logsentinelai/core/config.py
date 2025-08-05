@@ -32,14 +32,16 @@ ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
 LOG_PATHS = {
     "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
     "httpd_server": os.getenv("LOG_PATH_HTTPD_SERVER", "sample-logs/apache-10k.log"),
-    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log")
+    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log"),
+    "general_log": os.getenv("LOG_PATH_GENERAL_LOG", "sample-logs/general.log")
 }
 
 # Realtime log paths configuration 
 LOG_PATHS_REALTIME = {
     "httpd_access": os.getenv("LOG_PATH_REALTIME_HTTPD_ACCESS", "/var/log/apache2/access.log"),
     "httpd_server": os.getenv("LOG_PATH_REALTIME_HTTPD_SERVER", "/var/log/apache2/error.log"),
-    "linux_system": os.getenv("LOG_PATH_REALTIME_LINUX_SYSTEM", "/var/log/messages")
+    "linux_system": os.getenv("LOG_PATH_REALTIME_LINUX_SYSTEM", "/var/log/messages"),
+    "general_log": os.getenv("LOG_PATH_REALTIME_GENERAL_LOG", "/var/log/general.log")
 }
 
 # Real-time Monitoring Configuration
@@ -67,14 +69,16 @@ DEFAULT_REMOTE_SSH_CONFIG = {
 DEFAULT_REMOTE_LOG_PATHS = {
     "httpd_access": os.getenv("REMOTE_LOG_PATH_HTTPD_ACCESS", "/var/log/apache2/access.log"),
     "httpd_server": os.getenv("REMOTE_LOG_PATH_HTTPD_SERVER", "/var/log/apache2/error.log"),
-    "linux_system": os.getenv("REMOTE_LOG_PATH_LINUX_SYSTEM", "/var/log/messages")
+    "linux_system": os.getenv("REMOTE_LOG_PATH_LINUX_SYSTEM", "/var/log/messages"),
+    "general_log": os.getenv("REMOTE_LOG_PATH_GENERAL_LOG", "/var/log/general.log")
 }
 
 # Default Chunk Sizes
 LOG_CHUNK_SIZES = {
     "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
     "httpd_server": int(os.getenv("CHUNK_SIZE_HTTPD_SERVER", "10")),
-    "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10"))
+    "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10")),
+    "general_log": int(os.getenv("CHUNK_SIZE_GENERAL_LOG", "10"))
 }
 
 # GeoIP Configuration

@@ -1,0 +1,27 @@
+2024-08-06 10:15:23 [INFO] Application server started successfully on port 8080
+2024-08-06 10:15:24 [INFO] Database connection pool initialized with 10 connections
+2024-08-06 10:16:02 [DEBUG] User authentication request from 192.168.1.100
+2024-08-06 10:16:02 [INFO] User login successful: user=admin, ip=192.168.1.100
+2024-08-06 10:16:15 [ERROR] Failed to process payment transaction: card_number=****1234, amount=150.00, error=insufficient_funds
+2024-08-06 10:16:45 [WARN] High memory usage detected: current=85%, threshold=80%
+2024-08-06 10:17:12 [INFO] API request: GET /api/users/profile, user=admin, response_time=145ms
+2024-08-06 10:17:30 [ERROR] Database connection timeout: connection_id=conn_007, query=SELECT * FROM users WHERE id=?
+2024-08-06 10:17:31 [INFO] Database connection retry successful
+2024-08-06 10:18:05 [WARN] Suspicious login attempt detected: user=admin, ip=10.0.0.50, failed_attempts=3
+2024-08-06 10:18:06 [ERROR] Authentication failed: user=admin, ip=10.0.0.50, reason=invalid_password
+2024-08-06 10:18:07 [CRITICAL] Account locked due to multiple failed login attempts: user=admin
+2024-08-06 10:19:22 [INFO] Scheduled backup started: backup_id=backup_20240806_101922
+2024-08-06 10:19:45 [ERROR] File system error: path=/var/logs/archive, error=permission_denied
+2024-08-06 10:20:01 [INFO] User session timeout: user=user123, session_duration=30min
+{"timestamp": "2024-08-06T10:20:15Z", "level": "INFO", "service": "api-gateway", "message": "Request processed", "request_id": "req_abc123", "client_ip": "203.0.113.42", "method": "POST", "endpoint": "/api/orders", "status_code": 200, "response_time_ms": 234}
+{"timestamp": "2024-08-06T10:20:16Z", "level": "ERROR", "service": "payment-service", "message": "Payment processing failed", "request_id": "req_abc124", "error_code": "CARD_DECLINED", "amount": 299.99, "currency": "USD"}
+Aug  6 10:20:30 server01 nginx[1234]: 203.0.113.15 - - [06/Aug/2024:10:20:30 +0000] "GET /dashboard HTTP/1.1" 200 5432 "https://example.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+Aug  6 10:20:31 server01 systemd[1]: Started user session for admin
+Aug  6 10:20:35 server01 kernel: TCP: time wait bucket table overflow
+[2024-08-06 10:21:00] ERROR: SQL injection attempt detected in parameter 'id': value='1 OR 1=1--'
+[2024-08-06 10:21:01] CRITICAL: Unauthorized access attempt to admin panel from IP 45.76.23.105
+[2024-08-06 10:21:15] INFO: User logout: username=alice, session_id=sess_xyz789
+10:21:30 INFO  [UserService] User registration completed: email=newuser@example.com, ip=172.16.0.10
+10:21:45 WARN  [SecurityModule] Rate limit exceeded for IP 198.51.100.25: 150 requests in 60 seconds
+10:22:00 ERROR [DatabasePool] Connection pool exhausted: active=50, max=50, waiting=25
+2024-08-06T10:22:15+00:00 [AUDIT] File access: user=operator, file=/etc/sensitive/config.txt, action=read, result=success

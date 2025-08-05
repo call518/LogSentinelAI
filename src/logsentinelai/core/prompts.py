@@ -172,3 +172,106 @@ def get_httpd_server_error_prompt():
 def get_linux_system_prompt():
     """Get Linux system log analysis prompt"""
     return PROMPT_TEMPLATE_LINUX_SYSTEM_LOG
+
+PROMPT_TEMPLATE_GENERAL_LOG = """
+Expert general log security analyst. Analyze any type of log data for security events, errors, and notable patterns.
+
+LOG ANALYSIS APPROACH:
+- FIRST: Automatically detect log format(s) - Apache/Nginx access, JSON API logs, syslog, database logs, application logs, custom formats, etc.
+- SECOND: Parse and extract key information based on detected format(s)
+- THIRD: Analyze for security events, errors, performance issues, and business logic events
+- FOURTH: Provide comprehensive pattern analysis and monitoring recommendations
+
+FORMAT DETECTION:
+- Common Web Logs: Apache/Nginx access logs, error logs (Combined, Common, custom formats)
+- Structured Logs: JSON, XML, CSV, key-value pairs
+- System Logs: Syslog, systemd journal, Windows Event Log format
+- Application Logs: Database logs, Java/Python/Node.js application logs
+- Security Logs: Firewall, IDS/IPS, authentication systems
+- Custom Formats: Any structured or semi-structured log format
+
+ENTITY EXTRACTION:
+- IP Addresses (source, destination, any IPs in logs)
+- Timestamps (detect and normalize various formats)
+- User identifiers (usernames, session IDs, API keys)
+- Error codes and status codes
+- URLs, file paths, database tables
+- Process names, service names, application names
+- Any domain-specific entities
+
+SEVERITY ASSESSMENT:
+- CRITICAL: Active security breaches, system failures, data corruption, unauthorized access
+- HIGH: Clear attack patterns, significant errors, performance degradation, security violations
+- MEDIUM: Suspicious activities, warnings that need investigation, configuration issues
+- LOW: Minor anomalies, performance notices, routine warnings
+- INFO: Normal operations with monitoring value, business transactions, successful operations
+
+EVENT CATEGORIZATION:
+- SECURITY: Authentication failures, authorization issues, attack patterns, intrusion attempts
+- ERROR: System errors, application crashes, failed operations, exceptions
+- WARNING: Configuration issues, performance warnings, deprecated features
+- PERFORMANCE: Slow queries, high response times, resource exhaustion
+- ACCESS: User access patterns, API usage, file access
+- AUTHENTICATION: Login attempts, session management, password changes
+- AUTHORIZATION: Permission checks, role assignments, access denials
+- NETWORK: Connection issues, network errors, DNS problems
+- DATABASE: Query errors, connection problems, transaction issues
+- APPLICATION: Business logic events, workflow steps, feature usage
+- SYSTEM: Service starts/stops, configuration changes, maintenance
+- USER_ACTION: User interactions, data modifications, feature usage
+- BUSINESS_LOGIC: Business process events, transaction flows
+
+MANDATORY EVENT CREATION RULES:
+- NEVER LEAVE events ARRAY EMPTY - This is strictly forbidden
+- ALWAYS create at least 1 event per chunk, even for completely normal logs
+- For normal operations: Create INFO level events documenting patterns and entities
+- Every event MUST include extracted_entities with ALL relevant information found
+- For INFO events: Document log patterns, source analysis, and monitoring insights
+
+PATTERN ANALYSIS REQUIREMENTS:
+- Identify all log formats present in the chunk
+- Extract timestamp patterns and normalize them
+- Identify common fields across different log entries
+- Determine log sources/applications generating the logs
+- Analyze traffic patterns, error rates, and trends
+
+EXTRACTED ENTITIES FORMAT:
+Use this structure for extracted_entities field:
+{{
+  "ip_addresses": ["1.2.3.4", "5.6.7.8"],
+  "usernames": ["admin", "user123"],
+  "timestamps": ["2023-01-01T10:00:00Z"],
+  "status_codes": ["200", "404", "500"],
+  "urls": ["/api/login", "/dashboard"],
+  "error_codes": ["ERR001", "TIMEOUT"],
+  "services": ["nginx", "mysql", "app-server"],
+  "session_ids": ["sess_abc123"],
+  "custom_fields": {{"key": "value"}}
+}}
+
+KEY REQUIREMENTS:
+- Include complete source IP analysis for security monitoring
+- Provide detailed descriptions explaining the significance of each event
+- Recommend specific actions with commands/procedures where applicable
+- Set confidence scores as decimals (0.0-1.0, not percentages)
+- Document log pattern analysis for better monitoring setup
+- For normal traffic: Create comprehensive INFO events with entity analysis
+
+STATISTICS REQUIREMENTS:
+- Count events by category and severity
+- Identify unique sources and patterns
+- Track events requiring human review
+- Provide actionable insights for log monitoring improvement
+
+LANGUAGE: {response_language}
+
+JSON schema: {model_schema}
+
+<LOGS BEGIN>
+{logs}
+<LOGS END>
+"""
+
+def get_general_log_prompt():
+    """Get general log analysis prompt"""
+    return PROMPT_TEMPLATE_GENERAL_LOG

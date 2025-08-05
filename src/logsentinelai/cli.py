@@ -32,6 +32,7 @@ Available Commands:
   logsentinelai-httpd-access   - Analyze HTTP access logs
   logsentinelai-httpd-server   - Analyze HTTP server error logs
   logsentinelai-linux-system   - Analyze Linux system logs
+  logsentinelai-general-log    - Analyze any general log files
   logsentinelai-geoip-download - Download GeoIP database
   logsentinelai-geoip-lookup   - Lookup IP geolocation using configured GeoIP database
 
@@ -89,6 +90,22 @@ For detailed help on each command, use: <command> --help
         help="Analysis mode (default: batch)"
     )
     
+    # General Log Analysis
+    general_parser = subparsers.add_parser(
+        "general-log", 
+        help="Analyze any general log files"
+    )
+    general_parser.add_argument(
+        "--log-path",
+        help="Path to log file"
+    )
+    general_parser.add_argument(
+        "--mode",
+        choices=["batch", "realtime"],
+        default="batch",
+        help="Analysis mode (default: batch)"
+    )
+    
     # TCP Dump Analysis
     # REMOVED: TCP Dump analysis functionality has been removed
     
@@ -133,6 +150,15 @@ For detailed help on each command, use: <command> --help
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
         linux_system_main()
+    
+    elif args.command == "general-log":
+        from .analyzers.general_log import main as general_log_main
+        sys.argv = ["logsentinelai-general-log"]
+        if hasattr(args, 'log_path') and args.log_path:
+            sys.argv.extend(["--log-path", args.log_path])
+        if hasattr(args, 'mode') and args.mode:
+            sys.argv.extend(["--mode", args.mode])
+        general_log_main()
     
     elif args.command == "geoip-download":
         from .utils.geoip_downloader import main as geoip_main
