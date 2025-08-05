@@ -32,7 +32,7 @@ class AttackType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 class SecurityEvent(BaseModel):
-    event_type: str = Field(description="Security ro error event type")
+    event_type: str = Field(description="Security or error event type")
     severity: SeverityLevel
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
@@ -56,10 +56,6 @@ class LogAnalysis(BaseModel):
     statistics: Statistics
     highest_severity: Optional[SeverityLevel] = Field(description="Highest severity level of detected events (null if no events)")
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
-    log_raw_data: list[str] = Field(
-        # alias="@log_raw_data",
-        description="Relevant log events related to detected security events. Each item = one complete log event. If multiline log, join lines with newlines. Not required to include all logs from chunk, only those related to events."
-    )
 #--------------------------------------------------------------------------------------
 
 def main():

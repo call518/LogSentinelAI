@@ -7,9 +7,6 @@ LOG PARSING CRITICAL:
 - FIRST identify and separate individual log entries based on log format patterns
 - Analyze each separated log entry independently  
 - Group related log entries only if they represent the same security event
-- IMPORTANT: In log_raw_data field, provide relevant log events related to detected security events, NOT individual lines
-- Not required to include all logs from chunk, only those related to events
-- For multiline logs: combine all related lines into a single string with newline characters
 
 THREAT ASSESSMENT:
 - LEGITIMATE: Search engines, CDNs, normal browsing, static resources (CSS/JS/images)
@@ -73,9 +70,6 @@ LOG PARSING CRITICAL:
 - FIRST identify and separate individual log entries based on log format patterns
 - Analyze each separated log entry independently
 - Group related log entries only if they represent the same server error event
-- IMPORTANT: In log_raw_data field, provide relevant log events related to detected events, NOT individual lines
-- Not required to include all logs from chunk, only those related to events
-- For multiline logs: combine all related lines into a single string with newline characters
 
 FOCUS: Server Configuration → Application Runtime → Security → System Issues
 
@@ -111,7 +105,6 @@ RULES:
 - Config errors = MEDIUM/HIGH by severity
 - Single file errors = INFO
 - Focus on actionable server administration intelligence
-- log_raw_data should include relevant events related to detected issues
 
 STATISTICS: total_event, event_by_level{{}}, event_by_type{{}}.
 
@@ -132,9 +125,6 @@ LOG PARSING CRITICAL:
 - FIRST identify and separate individual log entries based on log format patterns
 - Analyze each separated log entry independently
 - Group related log entries only if they represent the same security event
-- IMPORTANT: In log_raw_data field, provide relevant log events related to detected events, NOT individual lines
-- Not required to include all logs from chunk, only those related to events
-- For multiline logs: combine all related lines into a single string with newline characters
 
 SEVERITY:
 - CRITICAL: Successful compromise, root access, malicious execution, data exfiltration
