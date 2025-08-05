@@ -42,6 +42,7 @@ class SecurityEvent(BaseModel):
     attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
     recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
+    related_logs: list[str] = Field(min_items=1, description="Original log lines that triggered this event - include exact unmodified log entries from the source data (at least one required)")
 
 class Statistics(BaseModel):
     total_event: int = Field(description="Total number of errors")
@@ -51,7 +52,8 @@ class Statistics(BaseModel):
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
     events: list[SecurityEvent] = Field(
-        description="List of security events - may be empty if no security concerns detected"
+        min_length=1,
+        description="List of events - MUST NEVER BE EMPTY. Always create at least one INFO event with 'No significant issues detected' if no problems found"
     )
     statistics: Statistics
     highest_severity: Optional[SeverityLevel] = Field(description="Highest severity level of detected events (null if no events)")
