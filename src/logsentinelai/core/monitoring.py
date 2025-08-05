@@ -171,13 +171,9 @@ class RealtimeLogMonitor:
                     current_size = self.ssh_monitor.get_file_size()
                     current_inode = self.ssh_monitor.get_file_inode()
                     
-                    # Start from recent position for initial run
-                    if current_size > 10000:  # 10KB+
-                        self.last_position = max(0, current_size - 5000)
-                        print(f"📍 Starting from recent position in remote file: position={self.last_position}")
-                    else:
-                        self.last_position = 0
-                        print(f"📍 Starting from beginning of remote file")
+                    # Start from file end for real-time monitoring
+                    self.last_position = current_size
+                    print(f"📍 Starting from end of remote file: position={self.last_position}")
                     
                     self.last_inode = current_inode
                     self.last_size = current_size
@@ -187,12 +183,9 @@ class RealtimeLogMonitor:
                     file_stat = os.stat(self.log_path)
                     current_size = file_stat.st_size
                     
-                    if current_size > 10000:  # 10KB+
-                        self.last_position = max(0, current_size - 5000)
-                        print(f"📍 Starting from recent position in file: position={self.last_position}")
-                    else:
-                        self.last_position = 0
-                        print(f"📍 Starting from beginning of file")
+                    # Start from file end for real-time monitoring
+                    self.last_position = current_size
+                    print(f"📍 Starting from end of file: position={self.last_position}")
                     
                     self.last_inode = file_stat.st_ino
                     self.last_size = current_size
