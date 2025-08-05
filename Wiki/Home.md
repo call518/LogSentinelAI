@@ -1,6 +1,4 @@
-
 # LogSentinelAI Wiki
-
 
 Welcome to the LogSentinelAI Wiki! This comprehensive guide covers everything you need to know about using LogSentinelAI for intelligent log analysis.
 
@@ -29,7 +27,6 @@ Welcome to the LogSentinelAI Wiki! This comprehensive guide covers everything yo
 
 ### Development
 - [Contributing](#contributing)
-- [API Reference](#api-reference)
 
 ---
 
@@ -184,70 +181,106 @@ logsentinelai-linux-system /var/log/syslog
 
 ## Elasticsearch Integration
 
-### Setup Elasticsearch
+> **📋 Installation**: See [INSTALL.ko.md](../INSTALL.ko.md) for complete Docker-ELK setup instructions.
 
-#### Docker Setup
-```bash
-# Start Elasticsearch
-docker run -d \
-  --name elasticsearch \
-  -p 9200:9200 \
-  -e "discovery.type=single-node" \
-  -e "xpack.security.enabled=false" \
-  elasticsearch:8.11.0
-```
+### Quick Usage After Installation
 
-#### Configuration
+Once your Elasticsearch is running (via Docker-ELK or standalone), configure LogSentinelAI:
+
 ```toml
 [elasticsearch]
 enabled = true
 host = "localhost"
 port = 9200
 index_prefix = "logsentinelai"
-use_ssl = false
-verify_certs = false
 ```
 
-### Index Templates
+### Automatic Index Management
 
-LogSentinelAI automatically creates optimized index templates for:
-- **Security Events**: `logsentinelai-security-*`
-- **Raw Logs**: `logsentinelai-logs-*`
-- **Metadata**: `logsentinelai-metadata-*`
+LogSentinelAI automatically creates optimized index templates:
+- **Security Events**: `logsentinelai-security-YYYY.MM.DD`
+- **Raw Logs**: `logsentinelai-logs-YYYY.MM.DD`
+- **Metadata**: `logsentinelai-metadata-YYYY.MM.DD`
 
 ### Index Lifecycle Management (ILM)
 
-Default ILM policy:
-- **Hot Phase**: 7 days
-- **Warm Phase**: 30 days
-- **Cold Phase**: 90 days
-- **Delete**: 365 days
+Default retention policy automatically applied:
+- **Hot Phase**: 7 days (frequent searches)
+- **Warm Phase**: 30 days (occasional searches)
+- **Cold Phase**: 90 days (rare searches)
+- **Delete**: 365 days (automatic cleanup)
+
+### Usage Tips
+
+**Real-time Indexing**:
+```bash
+# Stream analysis results directly to Elasticsearch
+logsentinelai-httpd-access /var/log/apache2/access.log --output elasticsearch --mode realtime
+```
+
+**Bulk Processing**:
+```bash
+# Process multiple log files into Elasticsearch
+logsentinelai-httpd-access /var/log/apache2/access.log.* --output elasticsearch
+```
+
+**Index Monitoring**:
+```bash
+# Check index status
+curl "http://localhost:9200/_cat/indices/logsentinelai-*?v"
+
+# View today's security events count
+curl "http://localhost:9200/logsentinelai-security-$(date +%Y.%m.%d)/_count"
+```
 
 ---
 
 ## Kibana Dashboard Setup
 
-### Import Dashboard
+> **📋 Installation**: See [INSTALL.ko.md](../INSTALL.ko.md) for complete Kibana setup with Docker-ELK.
 
-1. **Download Dashboard**
-   - Get `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson` from repository
+### Quick Setup After Installation
 
-2. **Import in Kibana**
-   - Go to Stack Management → Saved Objects
-   - Click "Import"
-   - Select the `.ndjson` file
+1. **Import Pre-built Dashboard**
+   ```bash
+   # Dashboard file is included in the repository
+   curl -X POST "localhost:5601/api/saved_objects/_import" \
+     -H "kbn-xsrf: true" \
+     -H "Content-Type: application/json" \
+     --form file=@Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson
+   ```
 
-3. **Configure Index Patterns**
-   - Go to Stack Management → Index Patterns
+2. **Configure Index Patterns**
+   - Go to Kibana → Stack Management → Index Patterns
    - Create pattern: `logsentinelai-*`
+   - Set time field: `@timestamp`
 
 ### Dashboard Features
 
-- **Security Overview**: Real-time threat detection
-- **Geographic Analysis**: Attack origin mapping
-- **Timeline Analysis**: Event chronology
-- **Top Attackers**: Most active threat sources
-- **Attack Types**: Categorized threat analysis
+- **🚨 Security Overview**: Real-time threat detection with severity breakdown
+- **🌍 Geographic Analysis**: Attack origin mapping with coordinates
+- **📈 Timeline Analysis**: Event chronology and trend analysis
+- **👥 Top Attackers**: Most active threat sources ranked
+- **🎯 Attack Types**: Categorized threat analysis with drill-down
+
+### Usage Tips
+
+**Custom Time Ranges**:
+- Use Kibana's time picker for specific analysis periods
+- Set up auto-refresh for real-time monitoring
+
+**Filtering and Searching**:
+```bash
+# Example KQL queries for LogSentinelAI data
+severity: "high" OR severity: "critical"
+source_ips: "192.168.*"
+event_type: "sql_injection"
+```
+
+**Dashboard Customization**:
+- Clone existing dashboard for custom views
+- Add new visualizations based on your specific log patterns
+- Set up custom alerts based on threat patterns
 
 ---
 
@@ -415,60 +448,166 @@ All commands support:
 
 ### Complete Configuration Reference
 
-```toml
-[llm]
-# LLM Provider Configuration
-provider = "openai"           # openai, ollama, vllm
-model = "gpt-4o-mini"        # Model name
-api_key = ""                 # API key (OpenAI only)
-base_url = ""                # Base URL (Ollama/vLLM)
-timeout = 30                 # Request timeout (seconds)
-max_retries = 3              # Maximum retry attempts
+LogSentinelAI uses environment variables for configuration. Copy `config.template` to `config` and customize:
 
-[elasticsearch]
-# Elasticsearch Configuration
-enabled = true               # Enable Elasticsearch output
-host = "localhost"           # Elasticsearch host
-port = 9200                  # Elasticsearch port
-index_prefix = "logsentinelai"  # Index prefix
-use_ssl = false              # Use SSL connection
-verify_certs = true          # Verify SSL certificates
-username = ""                # Authentication username
-password = ""                # Authentication password
-
-[geoip]
-# GeoIP Configuration
-enabled = true               # Enable GeoIP lookups
-database_path = "~/.logsentinelai/GeoLite2-City.mmdb"  # City database includes coordinates
-fallback_country = "Unknown" # Fallback for unknown IPs
-cache_size = 1000           # Cache size for performance
-include_private_ips = false # Include private IPs in processing
-
-[analysis]
-# Analysis Configuration
-language = "english"         # Output language
-max_tokens = 4000           # Maximum tokens per request
-temperature = 0.1           # LLM temperature (creativity)
-batch_size = 50             # Batch processing size
-enable_cache = true         # Enable result caching
-
-[ssh]
-# SSH Configuration
-enabled = false             # Enable SSH functionality
-default_host = ""           # Default SSH host
-default_user = ""           # Default SSH user
-default_key = "~/.ssh/id_rsa"  # Default SSH key
-
-[logging]
-# Logging Configuration
-level = "INFO"              # Log level (DEBUG, INFO, WARNING, ERROR)
-format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-file = ""                   # Log file path (empty = stdout)
+```bash
+# Copy configuration template
+cp config.template config
+# Edit configuration
+nano config
 ```
+
+**Key Configuration Sections:**
+
+**LLM Provider Configuration:**
+```bash
+# Provider Selection
+LLM_PROVIDER=openai          # openai, ollama, vllm, gemini
+
+# Model Selection (per provider)
+LLM_MODEL_OPENAI=gpt-4o-mini
+LLM_MODEL_OLLAMA=qwen2.5-coder:3b
+LLM_MODEL_GEMINI=gemini-1.5-pro
+
+# API Configuration
+OPENAI_API_KEY=sk-your-key-here
+LLM_API_HOST_OPENAI=https://api.openai.com/v1
+LLM_API_HOST_OLLAMA=http://127.0.0.1:11434
+
+# Generation Parameters
+LLM_TEMPERATURE=0.1          # Consistency for log analysis
+LLM_TOP_P=0.3               # Focus on high-probability tokens
+```
+
+**Analysis Configuration:**
+```bash
+# Language and Mode
+RESPONSE_LANGUAGE=english    # korean, japanese, etc.
+ANALYSIS_MODE=batch         # batch or realtime
+
+# Chunk Sizes (entries per LLM request)
+CHUNK_SIZE_HTTPD_ACCESS=10
+CHUNK_SIZE_LINUX_SYSTEM=10
+CHUNK_SIZE_GENERAL_LOG=10
+
+# Default Log Paths
+LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
+LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
+```
+
+**Real-time Monitoring:**
+```bash
+# Polling Configuration
+REALTIME_POLLING_INTERVAL=5      # Check interval (seconds)
+REALTIME_MAX_LINES_PER_BATCH=50  # Max lines per poll
+REALTIME_BUFFER_TIME=2           # Wait for complete lines
+
+# Sampling Control
+REALTIME_SAMPLING_THRESHOLD=100  # Auto-sampling trigger
+```
+
+**GeoIP Configuration:**
+```bash
+GEOIP_ENABLED=true
+GEOIP_DATABASE_PATH=~/.logsentinelai/GeoLite2-City.mmdb
+GEOIP_INCLUDE_PRIVATE_IPS=false
+GEOIP_CACHE_SIZE=1000
+```
+
+**Elasticsearch Configuration:**
+```bash
+ELASTICSEARCH_HOST=http://localhost:9200
+ELASTICSEARCH_USER=elastic
+ELASTICSEARCH_PASSWORD=changeme
+ELASTICSEARCH_INDEX=logsentinelai-analysis
+```
+
+**SSH Remote Access:**
+```bash
+REMOTE_LOG_MODE=local       # local or ssh
+REMOTE_SSH_HOST=server.com
+REMOTE_SSH_USER=loguser
+REMOTE_SSH_KEY_PATH=~/.ssh/id_rsa
+REMOTE_SSH_TIMEOUT=10
+```
+
+> **📋 Full Reference**: See `config.template` in the repository for all available options with detailed comments.
 
 ---
 
 ## Output Format
+
+> **🚀 Key Advantage**: LogSentinelAI uses **Declarative Extraction** - you simply declare the output structure you want (Pydantic models), and the LLM automatically extracts relevant information from logs to match that structure. No manual parsing or field mapping required!
+
+### How Declarative Extraction Works
+
+**Traditional Log Analysis:**
+```bash
+# Manual parsing, regex patterns, field mapping
+grep "ERROR" /var/log/app.log | awk '{print $1, $3}' | sed 's/[^a-zA-Z0-9]//g'
+```
+
+**LogSentinelAI Approach:**
+```python
+# Just declare what you want
+class SecurityEvent(BaseModel):
+    severity: str
+    threat_type: str
+    source_ip: str
+    confidence_score: float
+    description: str
+```
+
+The LLM automatically fills these fields from any log format - no parsing rules needed!
+
+### Example Output Structures
+
+Each analyzer produces structured output based on its declared Pydantic model:
+
+**HTTP Access Log Analysis:**
+```json
+{
+  "events": [
+    {
+      "event_type": "suspicious_access",
+      "severity": "high", 
+      "source_ips": ["192.168.1.100"],
+      "url_pattern": "/admin.php",
+      "attack_patterns": ["sql_injection"],
+      "confidence_score": 0.85,
+      "description": "SQL injection attempt detected",
+      "recommended_actions": ["Block IP", "Review security rules"]
+    }
+  ],
+  "statistics": {
+    "total_requests": 1500,
+    "unique_ips": 45,
+    "error_rate": 0.12
+  }
+}
+```
+
+**Linux System Log Analysis:**
+```json
+{
+  "events": [
+    {
+      "event_type": "auth_failure", 
+      "severity": "medium",
+      "username": "admin",
+      "source_ips": ["10.0.0.5"],
+      "process": "sshd",
+      "confidence_score": 0.9,
+      "description": "Multiple authentication failures detected"
+    }
+  ],
+  "statistics": {
+    "total_events": 25,
+    "auth_failures": 8,
+    "unique_users": 3
+  }
+}
+```
 
 ### JSON Output Structure
 
@@ -518,16 +657,35 @@ file = ""                   # Log file path (empty = stdout)
 }
 ```
 
+### Customizing Output Fields
+
+**The Power of Declaration**: Want different fields? Just declare them in your analyzer's Pydantic model:
+
+```python
+# Custom Security Event Structure
+class MySecurityEvent(BaseModel):
+    timestamp: str
+    risk_level: int  # 1-10 scale
+    attack_vector: str
+    affected_service: str
+    remediation_steps: List[str]
+    business_impact: str
+```
+
+The LLM will automatically extract and populate these fields from your logs, regardless of the original log format!
+
 ### Security Event Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `threat_detected` | boolean | Whether a threat was detected |
-| `threat_type` | string | Type of threat (sql_injection, xss, brute_force, etc.) |
-| `severity` | string | Severity level (low, medium, high, critical) |
-| `confidence` | float | Confidence score (0.0-1.0) |
-| `description` | string | Human-readable description |
-| `recommendations` | array | Recommended actions |
+| Field | Type | Description | Auto-Extracted |
+|-------|------|-------------|----------------|
+| `threat_detected` | boolean | Whether a threat was detected | ✅ From log patterns |
+| `threat_type` | string | Type of threat (sql_injection, xss, brute_force, etc.) | ✅ From attack signatures |
+| `severity` | string | Severity level (low, medium, high, critical) | ✅ From impact analysis |
+| `confidence` | float | Confidence score (0.0-1.0) | ✅ From pattern matching |
+| `description` | string | Human-readable description | ✅ From log context |
+| `recommendations` | array | Recommended actions | ✅ From threat intelligence |
+
+**✨ Key Insight**: All these fields are automatically extracted by the LLM based on your declared structure. Change the structure, get different data - no code changes needed!
 
 ---
 
@@ -585,19 +743,6 @@ sudo usermod -a -G adm $USER
 sudo chmod 644 /var/log/apache2/access.log
 ```
 
-### Debug Mode
-
-Enable debug logging:
-```toml
-[logging]
-level = "DEBUG"
-```
-
-Or use command line:
-```bash
-logsentinelai-httpd-access --verbose /var/log/apache2/access.log
-```
-
 ### Performance Issues
 
 #### High Memory Usage
@@ -614,32 +759,6 @@ logsentinelai-httpd-access --verbose /var/log/apache2/access.log
 
 ## Contributing
 
-### Development Setup
-```bash
-# Clone repository
-git clone https://github.com/call518/LogSentinelAI.git
-cd LogSentinelAI
-
-# Install development dependencies
-uv sync
-
-# Setup pre-commit hooks
-pre-commit install
-```
-
-### Code Style
-```bash
-# Format code
-black src/
-isort src/
-
-# Type checking
-mypy src/
-
-# Linting
-flake8 src/
-```
-
 ### Adding New Analyzers
 
 1. **Create analyzer file**: `src/logsentinelai/analyzers/your_analyzer.py`
@@ -654,59 +773,6 @@ flake8 src/
 3. Make changes following style guide
 4. Add tests
 5. Submit pull request
-
----
-
-## API Reference
-
-### Core Classes
-
-#### `LogAnalyzer`
-```python
-from logsentinelai.core.commons import LogAnalyzer
-
-analyzer = LogAnalyzer(config_path="config")
-results = analyzer.analyze_file("access.log", log_type="httpd_access")
-```
-
-#### `ElasticsearchClient`
-```python
-from logsentinelai.core.elasticsearch import ElasticsearchClient
-
-es_client = ElasticsearchClient(config)
-es_client.index_security_event(event_data)
-```
-
-#### `GeoIPLookup`
-```python
-from logsentinelai.core.geoip import GeoIPLookup
-
-geoip = GeoIPLookup()
-# Get comprehensive location data including coordinates
-location = geoip.lookup_geoip("8.8.8.8")
-# Returns: {"ip": "8.8.8.8", "country_code": "US", "country_name": "United States", 
-#           "city": "Mountain View", "latitude": 37.406, "longitude": -122.078}
-
-# Legacy method for backward compatibility (country only)
-country = geoip.lookup_country("8.8.8.8")
-```
-
-### Custom Analysis
-
-```python
-from logsentinelai.analyzers.httpd_access import analyze_httpd_access_logs
-
-# Analyze logs programmatically
-results = analyze_httpd_access_logs(
-    log_file="access.log",
-    output_format="json",
-    config_path="config"
-)
-
-for result in results:
-    if result.analysis.threat_detected:
-        print(f"Threat detected: {result.analysis.description}")
-```
 
 ---
 
