@@ -33,9 +33,9 @@ class AttackType(str, Enum):
 class SecurityEvent(BaseModel):
     event_type: str = Field(description="Security event type")
     severity: SeverityLevel
+    related_logs: list[str] = Field(min_length=1, description="Original log lines that triggered this event - include exact unmodified log entries from the source data (at least one required)")
     description: str = Field(description="Detailed event description, including a brief summary of region statistics for related logs")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    event_message: str = Field(description="Event message")
     url_pattern: str = Field(description="Related URL pattern")
     http_method: str = Field(description="HTTP method")
     source_ips: list[str] = Field(description="Complete list of ALL source IP addresses found in this chunk - NEVER leave empty")
@@ -43,7 +43,6 @@ class SecurityEvent(BaseModel):
     attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
     recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
-    related_logs: list[str] = Field(min_items=1, description="Original log lines that triggered this event - include exact unmodified log entries from the source data (at least one required)")
 
 class Statistics(BaseModel):
     total_requests: int = Field(description="Total number of requests")

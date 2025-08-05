@@ -34,15 +34,14 @@ class AttackType(str, Enum):
 class SecurityEvent(BaseModel):
     event_type: str = Field(description="Security or error event type")
     severity: SeverityLevel
+    related_logs: list[str] = Field(min_length=1, description="Original log lines that triggered this event - include exact unmodified log entries from the source data (at least one required)")
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
-    event_message: str = Field(description="Event message")
     file_path: Optional[str] = Field(description="Related file path")
     source_ips: list[str] = Field(description="Source IP list")
     attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
     recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
-    related_logs: list[str] = Field(min_items=1, description="Original log lines that triggered this event - include exact unmodified log entries from the source data (at least one required)")
 
 class Statistics(BaseModel):
     total_event: int = Field(description="Total number of errors")
