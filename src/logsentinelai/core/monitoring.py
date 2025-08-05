@@ -105,7 +105,7 @@ class RealtimeLogMonitor:
         """Load last read position and file info from position file"""
         try:
             if os.path.exists(self.position_file):
-                with open(self.position_file, 'r') as f:
+                with open(self.position_file, 'r', encoding='utf-8') as f:
                     content = f.read().strip()
                     parts = content.split(':')
                     if len(parts) >= 1:
@@ -161,6 +161,7 @@ class RealtimeLogMonitor:
         """Reset position to beginning of file"""
         self.last_position = 0
         self.line_buffer = []
+        self.pending_lines = []  # Also clear pending lines on reset
         self._save_position_and_file_info()
     
     def _initialize_from_file_end(self):
@@ -204,7 +205,7 @@ class RealtimeLogMonitor:
     def _save_position_and_file_info(self):
         """Save current read position and file info to position file"""
         try:
-            with open(self.position_file, 'w') as f:
+            with open(self.position_file, 'w', encoding='utf-8') as f:
                 f.write(f"{self.last_position}:{self.last_inode}:{self.last_size}")
         except IOError as e:
             print(f"WARNING: Error saving position: {e}")
@@ -252,19 +253,27 @@ class RealtimeLogMonitor:
                 
                 if new_content.endswith('\n'):
                     complete_lines = lines[:-1]  # Remove empty last element
-                    self.line_buffer = []
+                    incomplete_line = ""
                 else:
                     complete_lines = lines[:-1]  # All but last incomplete line
-                    self.line_buffer = [lines[-1]]  # Save incomplete line
+                    incomplete_line = lines[-1]  # Save incomplete line
                 
                 # Prepend buffered content to first line
                 if self.line_buffer and complete_lines:
                     complete_lines[0] = self.line_buffer[0] + complete_lines[0]
-                    self.line_buffer = []
                 
-                # Update position
-                if complete_lines:
-                    self.last_position = new_position - len(self.line_buffer[0].encode('utf-8')) if self.line_buffer else new_position
+                # Update position correctly
+                if complete_lines or not incomplete_line:
+                    # Calculate correct position: file position minus incomplete line bytes
+                    incomplete_bytes = len(incomplete_line.encode('utf-8')) if incomplete_line else 0
+                    self.last_position = new_position - incomplete_bytes
+                
+                # Update line buffer
+                self.line_buffer = [incomplete_line] if incomplete_line else []
+                
+                # Save updated position and file info
+                self.last_size = current_size
+                self._save_position_and_file_info()
                 
                 # Filter out empty lines
                 complete_lines = [line.strip() for line in complete_lines if line.strip()]
@@ -324,7 +333,7 @@ class RealtimeLogMonitor:
         # Regular line-based processing
         new_lines = self._read_new_lines()
         
-        if not new_lines:
+        if not new_lines and not self.pending_lines:
             return
         
         # Limit lines per batch
@@ -350,8 +359,11 @@ class RealtimeLogMonitor:
             effective_mode = "sampling"
         
         # Status update with correct effective mode
-        if len(new_lines) > 0:
-            status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines (+{len(new_lines)} new)"
+        if len(new_lines) > 0 or self.pending_lines:
+            if len(new_lines) > 0:
+                status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines (+{len(new_lines)} new)"
+            else:
+                status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines"
             print(f"STATUS: {status_msg}")
         
         # Apply sampling if needed
@@ -367,6 +379,18 @@ class RealtimeLogMonitor:
             self.pending_lines = self.pending_lines[self.chunk_size:]
             print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
             yield chunk
+    
+    def mark_chunk_processed(self, processed_lines: List[str]):
+        """
+        Mark a chunk as processed and update position accordingly
+        
+        Args:
+            processed_lines: The lines that were processed in the chunk
+        """
+        # This method should be called after a chunk is successfully processed
+        # The position is already correctly updated in _read_local_new_lines
+        # We just need to ensure it's saved
+        self._save_position_and_file_info()
 
 def create_realtime_monitor(log_type: str, 
                           chunk_size=None, 
