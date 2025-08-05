@@ -271,10 +271,6 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
     },
     "mappings": {
       "properties": {
-        "@log_raw_data": {
-          "type": "object",
-          "dynamic": false
-        },
         "events": {
           "type": "object",
           "properties": {

@@ -57,6 +57,7 @@ class LogAnalysis(BaseModel):
     highest_severity: Optional[SeverityLevel] = Field(description="Highest severity level of detected events (null if no events)")
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
     log_raw_data: list[str] = Field(
+        alias="@log_raw_data",
         description="Relevant log events related to detected security events. Each item = one complete log event. If multiline log, join lines with newlines. Not required to include all logs from chunk, only those related to events."
     )
 #--------------------------------------------------------------------------------------
