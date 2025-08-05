@@ -42,7 +42,6 @@ class SecurityEvent(BaseModel):
     attack_patterns: list[AttackType] = Field(description="Detected attack patterns")
     recommended_actions: list[str] = Field(description="Recommended actions")
     requires_human_review: bool = Field(description="Whether human review is required")
-    related_log_ids: list[str] = Field(description="Related LOGID list (e.g., ['LOGID-7DD17B008706AC22C60AD6DF9AC5E2E9', 'LOGID-F3B6E3F03EC9E5BC1F65624EB65C6C51'])")
 
 class Statistics(BaseModel):
     total_event: int = Field(description="Total number of errors")
@@ -57,6 +56,9 @@ class LogAnalysis(BaseModel):
     statistics: Statistics
     highest_severity: Optional[SeverityLevel] = Field(description="Highest severity level of detected events (null if no events)")
     requires_immediate_attention: bool = Field(description="Requires immediate attention")
+    log_raw_data: list[str] = Field(
+        description="Complete parsed log events (NOT individual lines). Each item = one complete log event. If multiline log, join lines with newlines. Example: ['[timestamp] error line1\\nfollow-up line2', '[timestamp] error line3']"
+    )
 #--------------------------------------------------------------------------------------
 
 def main():

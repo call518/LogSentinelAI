@@ -8,7 +8,6 @@ including batch and real-time processing capabilities.
 import json
 from rich import print_json
 import datetime
-import hashlib
 from typing import Dict, Any, Optional, List
 
 # Import from modularized components
@@ -82,17 +81,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         except Exception as e:
             print(f"(Failed to pretty-print LLM response: {e})\nRaw: {review}")
         
-        # Create log ID mapping
-        log_raw_data = {}
-        log_count = 0
-        for line in chunk_data:
-            line = line.strip()
-            if line.startswith("LOGID-"):
-                parts = line.split(" ", 1)
-                logid = parts[0]
-                original_content = parts[1] if len(parts) > 1 else ""
-                log_raw_data[logid] = original_content
-                log_count += 1
+        # Count log lines
+        log_count = len([line for line in chunk_data if line.strip()])
         
         # Add metadata
         parsed.update({
@@ -100,7 +90,6 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             "@chunk_analysis_end_utc": chunk_end_time,
             "@processing_result": "success",
             "@log_count": log_count,
-            "@log_raw_data": log_raw_data,
             "@processing_mode": processing_mode or "batch",
             "@access_mode": access_mode or "local"
         })
@@ -167,7 +156,7 @@ def _handle_processing_error(error, error_type, chunk_start_time, chunk_end_time
     if chunk_end_time is None:
         chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
     
-    log_count = sum(1 for line in chunk_data if line.strip().startswith("LOGID-"))
+    log_count = len([line for line in chunk_data if line.strip()])
     
     failure_data = {
         "@chunk_analysis_start_utc": chunk_start_time,
@@ -368,19 +357,10 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         print("Please check your configuration settings")
         return
     
-    # Function to create analysis prompt and convert chunk to LOGID format
+    # Function to create analysis prompt from raw chunk data
     def prepare_chunk_for_analysis(chunk, response_language):
-        # Add LOGID prefix to each line for consistency with batch mode
-        lines_with_logid = []
-        for line in chunk:
-            if line.strip():  # Skip empty lines
-                # Generate LOGID for the line
-                logid = f"LOGID-{hashlib.md5(line.strip().encode()).hexdigest().upper()}"
-                # Add LOGID prefix to the line
-                lines_with_logid.append(f"{logid} {line.strip()}")
-        
-        # Create prompt
-        logs = "\n".join(lines_with_logid)
+        # Create prompt with original log lines
+        logs = "\n".join(line.strip() for line in chunk if line.strip())  # Skip empty lines
         model_schema = analysis_schema_class.model_json_schema()
         prompt = prompt_template.format(
             logs=logs, 
@@ -388,7 +368,7 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
             response_language=response_language
         )
         
-        return prompt, lines_with_logid
+        return prompt, chunk
     
     # Start real-time monitoring
     try:
@@ -410,7 +390,7 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
                 print_chunk_contents(chunk)
                 
                 # Prepare chunk for analysis 
-                prompt, lines_with_logid = prepare_chunk_for_analysis(chunk, config["response_language"])
+                prompt, chunk_lines = prepare_chunk_for_analysis(chunk, config["response_language"])
                 
                 # Process chunk using common function
                 success, parsed_data = process_log_chunk(
@@ -421,7 +401,7 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
                     chunk_end_time=None,
                     elasticsearch_index=log_type,
                     chunk_number=chunk_counter,
-                    chunk_data=lines_with_logid,  # Pass LOGID formatted data
+                    chunk_data=chunk_lines,  # Pass original chunk data
                     llm_provider=llm_provider,
                     llm_model=llm_model_name,
                     processing_mode="realtime",
