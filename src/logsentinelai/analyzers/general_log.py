@@ -49,7 +49,7 @@ class LogEvent(BaseModel):
     requires_human_review: bool = Field(description="Whether human review is required")
 
 class EventStatistics(BaseModel):
-    total_events: int = Field(description="Total number of events")
+    total_events: int = Field(description="Total number of events detected")
     security_events: int = Field(description="Number of SECURITY events")
     error_events: int = Field(description="Number of ERROR events")
     warning_events: int = Field(description="Number of WARNING events")
@@ -64,6 +64,8 @@ class EventStatistics(BaseModel):
     user_action_events: int = Field(description="Number of USER_ACTION events")
     business_logic_events: int = Field(description="Number of BUSINESS_LOGIC events")
     unknown_events: int = Field(description="Number of UNKNOWN events")
+
+class SeverityBreakdown(BaseModel):
     critical_events: int = Field(description="Number of CRITICAL severity events")
     high_events: int = Field(description="Number of HIGH severity events")
     medium_events: int = Field(description="Number of MEDIUM severity events")
@@ -77,8 +79,9 @@ class LogAnalysis(BaseModel):
     timestamp_patterns: List[str] = Field(description="Identified timestamp formats")
     common_fields: List[str] = Field(description="Common fields found across logs")
     log_sources: List[str] = Field(description="Identified log sources/applications")
-    # Statistics (nested model)
-    statistics: EventStatistics
+    # Statistics (nested models)
+    statistics_event: EventStatistics
+    statistics_severity: SeverityBreakdown
     # Analysis metadata
     unique_sources: int = Field(description="Number of unique log sources detected")
     requires_human_review_count: int = Field(description="Number of events requiring human review")

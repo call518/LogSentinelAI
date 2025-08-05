@@ -234,14 +234,15 @@ KEY REQUIREMENTS:
 - For normal traffic: Create comprehensive INFO events with entity analysis
 
 STATISTICS REQUIREMENTS:
-- Fill the statistics object with accurate counts based on your analysis:
+- Fill the statistics_event object with accurate category counts:
   * total_events: Total number of events detected
   * Category counts: security_events, error_events, warning_events, performance_events, access_events, authentication_events, authorization_events, network_events, database_events, application_events, system_events, user_action_events, business_logic_events, unknown_events
+- Fill the statistics_severity object with accurate severity counts:
   * Severity counts: critical_events, high_events, medium_events, low_events, info_events
 - Fill analysis metadata fields separately:
   * unique_sources: Number of unique log sources/applications detected
   * requires_human_review_count: Number of events requiring human review
-- Ensure statistics object and metadata fields accurately reflect your event analysis for monitoring insights
+- Ensure all statistics objects and metadata fields accurately reflect your event analysis for monitoring insights
 
 LANGUAGE: {response_language}
 
