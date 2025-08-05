@@ -84,7 +84,7 @@ def main():
             analysis_title=analysis_title,
             chunk_size=args.chunk_size,
             log_path=args.log_path,
-            processing_mode=args.processing_mode,
+            only_sampling_mode=args.only_sampling_mode,
             sampling_threshold=args.sampling_threshold,
             remote_mode=remote_mode,
             ssh_config=ssh_config

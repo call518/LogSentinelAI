@@ -30,7 +30,7 @@ class RealtimeLogMonitor:
         self.ssh_monitor = None
         
         # Sampling configuration
-        self.processing_mode = self.realtime_config["processing_mode"]
+        self.only_sampling_mode = self.realtime_config["only_sampling_mode"]
         self.sampling_threshold = self.realtime_config["sampling_threshold"]
         
         # Position tracking
@@ -89,11 +89,11 @@ class RealtimeLogMonitor:
         print(f"Log Type:         {self.log_type}")
         print(f"Access Mode:      {self.access_mode.upper()}")
         print(f"Monitoring:       {self.log_path}")
-        print(f"Mode:             {self.processing_mode.upper()}")
-        if self.processing_mode == "full":
+        print(f"Mode:             {'SAMPLING-ONLY' if self.only_sampling_mode else 'FULL'}")
+        if not self.only_sampling_mode:
             unit = 'lines'
             print(f"Auto-sampling:    {self.sampling_threshold} {unit} threshold")
-        elif self.processing_mode == "sampling":
+        else:
             unit = 'lines'
             print(f"Sampling:         Always keep latest {self.chunk_size} {unit}")
         print(f"Poll Interval:    {self.realtime_config['polling_interval']}s")
@@ -346,17 +346,18 @@ class RealtimeLogMonitor:
         self.pending_lines.extend(new_lines)
         
         # Determine effective processing mode and apply auto-sampling logic
-        effective_mode = self.processing_mode
         should_sample = False
         
-        if self.processing_mode == "sampling":
+        if self.only_sampling_mode:
             should_sample = True
             effective_mode = "sampling"
-        elif self.processing_mode == "full" and len(self.pending_lines) > self.sampling_threshold:
+        elif len(self.pending_lines) > self.sampling_threshold:
             print(f"AUTO-SWITCH: Pending lines ({len(self.pending_lines)}) exceed threshold ({self.sampling_threshold})")
             print("SWITCHING TO SAMPLING MODE")
             should_sample = True
             effective_mode = "sampling"
+        else:
+            effective_mode = "full"
         
         # Status update with correct effective mode
         if len(new_lines) > 0 or self.pending_lines:

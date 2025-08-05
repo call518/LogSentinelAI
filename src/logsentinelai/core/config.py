@@ -48,7 +48,7 @@ REALTIME_CONFIG = {
     "max_lines_per_batch": int(os.getenv("REALTIME_MAX_LINES_PER_BATCH", "50")),
     "position_file_dir": os.getenv("REALTIME_POSITION_FILE_DIR", ".positions"),
     "buffer_time": int(os.getenv("REALTIME_BUFFER_TIME", "2")),
-    "processing_mode": os.getenv("REALTIME_PROCESSING_MODE", "full"),
+    "only_sampling_mode": os.getenv("REALTIME_ONLY_SAMPLING_MODE", "false").lower() == "true",
     "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
 }
 

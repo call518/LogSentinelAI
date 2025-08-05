@@ -282,7 +282,7 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
             print("-" * 50)
 
 def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_template, analysis_title: str,
-                                 chunk_size=None, log_path=None, processing_mode=None, sampling_threshold=None,
+                                 chunk_size=None, log_path=None, only_sampling_mode=None, sampling_threshold=None,
                                  remote_mode=None, ssh_config=None, remote_log_path=None):
     """
     Generic real-time analysis function for all log types
@@ -294,7 +294,7 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         analysis_title: Title to display in output header
         chunk_size: Override default chunk size
         log_path: Override default log file path (local mode only)
-        processing_mode: Processing mode (full/sampling)
+        only_sampling_mode: Force sampling mode if True
         sampling_threshold: Sampling threshold
         remote_mode: "local" or "ssh"
         ssh_config: SSH configuration dict
@@ -305,9 +305,9 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
     print("=" * 70)
     
     # Override environment variables if specified
-    if processing_mode:
+    if only_sampling_mode:
         import os
-        os.environ["REALTIME_PROCESSING_MODE"] = processing_mode
+        os.environ["REALTIME_ONLY_SAMPLING_MODE"] = "true"
     if sampling_threshold:
         import os
         os.environ["REALTIME_SAMPLING_THRESHOLD"] = str(sampling_threshold)
@@ -483,8 +483,8 @@ def create_argument_parser(description: str):
                        help='SSH password (if no key file provided)')
     
     # Real-time processing configuration
-    parser.add_argument('--processing-mode', choices=['full', 'sampling'], default=None,
-                       help='Real-time processing mode: full (process all) or sampling (latest only)')
+    parser.add_argument('--only-sampling-mode', action='store_true',
+                       help='Force sampling mode (always keep latest chunks only, no auto-switching)')
     parser.add_argument('--sampling-threshold', type=int, default=None,
                        help='Auto-switch to sampling if accumulated lines exceed this (only for full mode)')
     
