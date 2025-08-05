@@ -7,8 +7,8 @@ LOG PARSING CRITICAL:
 - FIRST identify and separate individual log entries based on log format patterns
 - Analyze each separated log entry independently  
 - Group related log entries only if they represent the same security event
-- IMPORTANT: In log_raw_data field, provide COMPLETE parsed log events, NOT individual lines
-- Example: If input has 10 lines but represents 3 complete log events, log_raw_data should contain exactly 3 items
+- IMPORTANT: In log_raw_data field, provide relevant log events related to detected security events, NOT individual lines
+- Not required to include all logs from chunk, only those related to events
 - For multiline logs: combine all related lines into a single string with newline characters
 
 THREAT ASSESSMENT:
@@ -73,8 +73,8 @@ LOG PARSING CRITICAL:
 - FIRST identify and separate individual log entries based on log format patterns
 - Analyze each separated log entry independently
 - Group related log entries only if they represent the same server error event
-- IMPORTANT: In log_raw_data field, provide COMPLETE parsed log events, NOT individual lines
-- Example: If input has 10 lines but represents 3 complete log events, log_raw_data should contain exactly 3 items
+- IMPORTANT: In log_raw_data field, provide relevant log events related to detected events, NOT individual lines
+- Not required to include all logs from chunk, only those related to events
 - For multiline logs: combine all related lines into a single string with newline characters
 
 FOCUS: Server Configuration → Application Runtime → Security → System Issues
@@ -111,11 +111,7 @@ RULES:
 - Config errors = MEDIUM/HIGH by severity
 - Single file errors = INFO
 - Focus on actionable server administration intelligence
-
-LOG_RAW_DATA EXAMPLES:
-Input: 10 lines like "[timestamp] error\nscript not found\nscript not found\n[timestamp] error2"
-Output: Should be fewer items representing complete events, e.g.:
-["[Mon Feb 27 05:41:06 2006] [error] [client 212.34.140.103] File does not exist: /var/www/html/xmlsrv\nscript not found or unable to stat\nscript not found or unable to stat", "[Mon Feb 27 05:41:07 2006] [error] [client 212.34.140.103] File does not exist: /var/www/html/phpgroupware"]
+- log_raw_data should include relevant events related to detected issues
 
 STATISTICS: total_event, event_by_level{{}}, event_by_type{{}}.
 
@@ -136,8 +132,8 @@ LOG PARSING CRITICAL:
 - FIRST identify and separate individual log entries based on log format patterns
 - Analyze each separated log entry independently
 - Group related log entries only if they represent the same security event
-- IMPORTANT: In log_raw_data field, provide COMPLETE parsed log events, NOT individual lines
-- Example: If input has 10 lines but represents 3 complete log events, log_raw_data should contain exactly 3 items
+- IMPORTANT: In log_raw_data field, provide relevant log events related to detected events, NOT individual lines
+- Not required to include all logs from chunk, only those related to events
 - For multiline logs: combine all related lines into a single string with newline characters
 
 SEVERITY:

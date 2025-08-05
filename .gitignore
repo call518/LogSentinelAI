@@ -1,5 +1,6 @@
 .venv/
 .vscode*
+.github/copilot-instructions.md
 dist/
 build/
 *.egg-info
