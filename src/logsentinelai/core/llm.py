@@ -74,6 +74,12 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         # Ollama doesn't support temperature and top_p in outlines
         return model(prompt, model_class)
     elif provider == "gemini":
+        # Gemini API에서 additionalProperties is not supported 오류가 발생하는 이유는 outlines 라이브러리의 Gemini 구현에서 Pydantic 모델의 스키마 변환 과정에서 문제가 있기 때문.
+        # outlines 문서에서는 Gemini가 구조화된 출력을 지원한다고 하지만, 실제로는 다음과 같은 제한사항이 있음:
+        # - Gemini API 제한: Google의 Gemini API는 OpenAI처럼 완전한 JSON Schema를 지원하지 않음.
+        # - outlines 라이브러리 구현: Gemini용 outlines 구현이 아직 완전하지 않을 수 있음.
+        # - 스키마 변환 문제: Pydantic 모델을 Gemini가 이해할 수 있는 형태로 변환하는 과정에서 additionalProperties 같은 속성이 지원되지 않음.
+        # 현재 코드에서 Gemini는 model_class 없이 raw 텍스트를 반환하고, 프롬프트 엔지니어링을 통해 JSON 형태로 응답을 받음.
         response = model(prompt, max_output_tokens=2048, temperature=LLM_TEMPERATURE)
         
         # Clean up response - remove markdown code blocks if present
