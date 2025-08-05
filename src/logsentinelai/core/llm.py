@@ -7,6 +7,8 @@ import os
 import outlines
 import ollama
 import openai
+import json
+from pydantic import ValidationError
 from google import genai
 from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P
 
@@ -79,7 +81,7 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         # - Gemini API 제한: Google의 Gemini API는 OpenAI처럼 완전한 JSON Schema를 지원하지 않음.
         # - outlines 라이브러리 구현: Gemini용 outlines 구현이 아직 완전하지 않을 수 있음.
         # - 스키마 변환 문제: Pydantic 모델을 Gemini가 이해할 수 있는 형태로 변환하는 과정에서 additionalProperties 같은 속성이 지원되지 않음.
-        # 현재 코드에서 Gemini는 model_class 없이 raw 텍스트를 반환하고, 프롬프트 엔지니어링을 통해 JSON 형태로 응답을 받음.
+        # 현재 코드에서 Gemini는 model_class 없이 raw 텍스트를 반환하고, 프롬프트 엔지니어링을 통해 JSON 형태로 응답을 받고, 이를 Pydantic 모델로 검증하는 방식으로 동작함. (아래 try문 참조)
         response = model(prompt, max_output_tokens=2048, temperature=LLM_TEMPERATURE)
         
         # Clean up response - remove markdown code blocks if present
@@ -96,7 +98,24 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
             
         cleaned_response = cleaned_response.strip()
         
-        return cleaned_response
+        # Validate Gemini response with Pydantic model (Using model_class)
+        try:
+            # Attempt JSON parsing
+            parsed_json = json.loads(cleaned_response)
+            # Validate with Pydantic model
+            validated_data = model_class.model_validate(parsed_json)
+            # Convert validated data back to JSON string for return
+            return validated_data.model_dump_json()
+        except json.JSONDecodeError as e:
+            print(f"\n❌ [GEMINI JSON ERROR] Invalid JSON format in response")
+            print(f"Error: {e}")
+            print(f"Raw response:\n{cleaned_response}")
+            raise ValueError(f"❌ [GEMINI JSON ERROR] Invalid JSON format in response: {e}")
+        except ValidationError as e:
+            print(f"\n❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema")
+            print(f"Error: {e}")
+            print(f"Raw response:\n{cleaned_response}")
+            raise ValueError(f"❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
     else:
         # OpenAI and vLLM support temperature and top_p
         return model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P)
