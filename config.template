@@ -52,7 +52,7 @@ LLM_TEMPERATURE=0.1
 
 # Top-p: Controls diversity via nucleus sampling (0.1-1.0)
 # Lower values = more focused, Higher values = more diverse
-LLM_TOP_P=0.5
+LLM_TOP_P=0.3
 
 # Show Prompt: Display the full prompt sent to LLM before processing (true/false)
 # Set to true to see the complete prompt for debugging and transparency
