@@ -144,23 +144,21 @@ RESPONSE_LANGUAGE=korean   # 또는 english
 # 분석 모드
 ANALYSIS_MODE=batch        # batch/realtime
 
-# 로그 파일 경로(배치/실시간)
+# 로그 파일 경로(--log-path 미지정시 기본값)
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_SERVER=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_HTTPD_SERVER=/var/log/apache2/error.log
-LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
+LOG_PATH_GENERAL_LOG=sample-logs/general.log
 
 # chunk size(분석 단위)
 CHUNK_SIZE_HTTPD_ACCESS=10
 CHUNK_SIZE_HTTPD_SERVER=10
 CHUNK_SIZE_LINUX_SYSTEM=10
+CHUNK_SIZE_GENERAL_LOG=10
 
 # 실시간 모드 옵션
 REALTIME_POLLING_INTERVAL=5
 REALTIME_MAX_LINES_PER_BATCH=50
-REALTIME_POSITION_FILE_DIR=.positions
 REALTIME_BUFFER_TIME=2
 REALTIME_PROCESSING_MODE=full     # full/sampling
 REALTIME_SAMPLING_THRESHOLD=100
@@ -433,6 +431,12 @@ logsentinelai-linux-system --chunk-size 10  # CLI 옵션이 우선 적용
 
 
 ### 11.2 실시간 모드 자동 샘플링 동작 및 원리
+
+> **실시간 모드 주요 특징**  
+> - 파일의 **현재 끝(End of File)에서부터 시작**하여 새로 추가되는 로그만 처리  
+> - 기존에 존재하던 로그는 분석 대상에서 제외 (완전한 실시간 모니터링)  
+> - 프로그램 중단 후 재시작해도 과거 로그는 처리하지 않음 (항상 현재 시점부터 시작)
+
 ```bash
 logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-threshold 100
 # 대량 로그 유입 시 자동 샘플링 전환 확인

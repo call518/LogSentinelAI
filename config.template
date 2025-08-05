@@ -73,19 +73,11 @@ ANALYSIS_MODE=batch
 # =============================================================================
 # Log File Paths
 # =============================================================================
-# Batch Mode: Static log files for complete analysis
-# CLI Override: Use --log-path argument to override these paths
-# Example: python analysis-linux-system-log.py --log-path /custom/path/messages.log
+# Default log file paths used when --log-path is not specified
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_SERVER=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-
-# Real-time Mode: Live log files to monitor
-# CLI Override: Use --log-path argument to override these paths
-# Example: python analysis-linux-system-log.py --mode realtime --log-path /var/log/custom.log
-LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_HTTPD_SERVER=/var/log/apache2/error.log
-LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
+LOG_PATH_GENERAL_LOG=/var/log/secure
 
 # =============================================================================
 # Chunk Size Configuration (entries per chunk)
@@ -101,6 +93,7 @@ LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
 CHUNK_SIZE_HTTPD_ACCESS=10
 CHUNK_SIZE_HTTPD_SERVER=10
 CHUNK_SIZE_LINUX_SYSTEM=10
+CHUNK_SIZE_GENERAL_LOG=10
 
 # =============================================================================
 # Elasticsearch Configuration
@@ -130,12 +123,6 @@ REMOTE_SSH_PASSWORD=
 # SSH Connection Timeout (seconds)
 REMOTE_SSH_TIMEOUT=10
 
-# Remote Log File Paths (only used when REMOTE_LOG_MODE=ssh)
-# Override these paths to match remote server's log locations
-REMOTE_LOG_PATH_HTTPD_ACCESS=/var/log/apache2/access.log
-REMOTE_LOG_PATH_HTTPD_SERVER=/var/log/apache2/error.log
-REMOTE_LOG_PATH_LINUX_SYSTEM=/var/log/messages
-
 # Polling interval for checking new log entries (seconds)
 # - How often to check log files for new content
 # - Lower values: More responsive, higher CPU usage
@@ -150,9 +137,6 @@ REALTIME_POLLING_INTERVAL=5
 # - Remaining lines are processed in subsequent polling cycles
 # - Recommended: 20-100 depending on system resources and log volume
 REALTIME_MAX_LINES_PER_BATCH=50
-
-# Position file directory for tracking file read positions
-REALTIME_POSITION_FILE_DIR=.positions
 
 # Buffer time to wait for complete log lines (seconds)
 # - Prevents processing incomplete log lines that are still being written

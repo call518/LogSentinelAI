@@ -33,36 +33,20 @@ class RealtimeLogMonitor:
         self.only_sampling_mode = self.realtime_config["only_sampling_mode"]
         self.sampling_threshold = self.realtime_config["sampling_threshold"]
         
-        # Position tracking
-        self.position_file_dir = self.realtime_config["position_file_dir"]
-        self.position_file = os.path.join(
-            self.position_file_dir, 
-            f"{log_type}_position.txt"
-        )
-        
-        # Create position file directory
-        os.makedirs(self.position_file_dir, exist_ok=True)
-        
         # Buffer management
         self.line_buffer = []
         self.pending_lines = []
         
-        # File tracking for rotation detection
-        self.last_position = 0
-        self.last_inode = None
-        self.last_size = 0
-        
-        # Temporary position tracking (for lines read but not yet processed)
-        self.temp_position = 0
-        self.temp_inode = None
-        self.temp_size = 0
+        # File state tracking (for rotation detection only)
+        self.current_file_size = 0
+        self.current_inode = None
         
         # Initialize SSH monitor if needed
         if self.access_mode == "ssh":
             self._initialize_ssh_monitor()
         
-        # Load position and file info
-        self._load_position_and_file_info()
+        # Initialize file state
+        self._initialize_file_state()
         
         # Display initialization info
         self._print_initialization_info()
@@ -86,6 +70,29 @@ class RealtimeLogMonitor:
             print("💡 Please check your SSH configuration")
             raise
     
+    def _initialize_file_state(self):
+        """파일 상태 초기화 - 현재 파일 끝에서 시작"""
+        try:
+            if self.access_mode == "ssh":
+                if self.ssh_monitor:
+                    self.current_file_size = self.ssh_monitor.get_file_size()
+                    self.current_inode = self.ssh_monitor.get_file_inode()
+                    print(f"📍 Starting from end of remote file (size: {self.current_file_size})")
+            else:
+                if os.path.exists(self.log_path):
+                    file_stat = os.stat(self.log_path)
+                    self.current_file_size = file_stat.st_size
+                    self.current_inode = file_stat.st_ino
+                    print(f"📍 Starting from end of local file (size: {self.current_file_size})")
+                else:
+                    print(f"WARNING: Log file does not exist: {self.log_path}")
+                    self.current_file_size = 0
+                    self.current_inode = None
+        except Exception as e:
+            print(f"WARNING: Error accessing log file: {e}")
+            self.current_file_size = 0
+            self.current_inode = None
+    
     def _print_initialization_info(self):
         """Display initialization information"""
         print("=" * 80)
@@ -104,182 +111,80 @@ class RealtimeLogMonitor:
         print(f"Poll Interval:    {self.realtime_config['polling_interval']}s")
         unit = 'lines'
         print(f"Chunk Size:       {self.chunk_size} {unit}")
+        print(f"Starting Mode:    NEW LOGS ONLY (realtime)")
         print("=" * 80)
     
-    def _load_position_and_file_info(self):
-        """Load last read position and file info from position file"""
-        try:
-            if os.path.exists(self.position_file):
-                with open(self.position_file, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
-                    parts = content.split(':')
-                    if len(parts) >= 1:
-                        self.last_position = int(parts[0])
-                    if len(parts) >= 2:
-                        self.last_inode = int(parts[1]) if parts[1] != 'None' else None
-                    if len(parts) >= 3:
-                        self.last_size = int(parts[2])
-                    
-                    print(f"Loaded state: position={self.last_position}, inode={self.last_inode}, size={self.last_size}")
-                    
-                    # Verify current file matches saved state
-                    self._verify_file_state()
-                    return
-        except (ValueError, IOError) as e:
-            print(f"WARNING: Error loading position file: {e}")
-        
-        # Initialize from file end if no position file exists
-        self._initialize_from_file_end()
-    
-    def _verify_file_state(self):
-        """Verify current file state matches saved state"""
-        if self.access_mode == "ssh":
-            if self.ssh_monitor:
-                current_size = self.ssh_monitor.get_file_size()
-                current_inode = self.ssh_monitor.get_file_inode()
-                
-                if self.last_inode and current_inode and current_inode != self.last_inode:
-                    print(f"NOTICE: Remote log rotation detected")
-                    self._reset_position()
-                elif current_size < self.last_position:
-                    print(f"NOTICE: Remote file truncated")
-                    self._reset_position()
-                
-                if current_inode:
-                    self.last_inode = current_inode
-                self.last_size = current_size
-                self._save_position_and_file_info()
-        else:
-            if os.path.exists(self.log_path):
-                current_stat = os.stat(self.log_path)
-                current_inode = current_stat.st_ino
-                current_size = current_stat.st_size
-                
-                if self.last_inode and current_inode != self.last_inode:
-                    print(f"NOTICE: Local log rotation detected")
-                    self._reset_position()
-                elif current_size < self.last_position:
-                    print(f"NOTICE: Local file truncated")
-                    self._reset_position()
-    
-    def _reset_position(self):
-        """Reset position to beginning of file"""
-        self.last_position = 0
-        self.temp_position = 0
-        self.line_buffer = []
-        self.pending_lines = []  # Also clear pending lines on reset
-        self._save_position_and_file_info()
-    
-    def _initialize_from_file_end(self):
-        """Initialize position from file end for first-time setup"""
-        try:
-            if self.access_mode == "ssh":
-                if self.ssh_monitor:
-                    current_size = self.ssh_monitor.get_file_size()
-                    current_inode = self.ssh_monitor.get_file_inode()
-                    
-                    # Start from file end for real-time monitoring
-                    self.last_position = current_size
-                    print(f"📍 Starting from end of remote file: position={self.last_position}")
-                    
-                    self.last_inode = current_inode
-                    self.last_size = current_size
-                    self._save_position_and_file_info()
-            else:
-                if os.path.exists(self.log_path):
-                    file_stat = os.stat(self.log_path)
-                    current_size = file_stat.st_size
-                    
-                    # Start from file end for real-time monitoring
-                    self.last_position = current_size
-                    print(f"📍 Starting from end of file: position={self.last_position}")
-                    
-                    self.last_inode = file_stat.st_ino
-                    self.last_size = current_size
-                    self._save_position_and_file_info()
-                else:
-                    print(f"WARNING: Local log file does not exist: {self.log_path}")
-                    self.last_position = 0
-                    self.last_inode = None
-                    self.last_size = 0
-        except Exception as e:
-            print(f"WARNING: Error accessing log file: {e}")
-            self.last_position = 0
-            self.last_inode = None
-            self.last_size = 0
-    
-    def _save_position_and_file_info(self):
-        """Save current read position and file info to position file"""
-        try:
-            with open(self.position_file, 'w', encoding='utf-8') as f:
-                f.write(f"{self.last_position}:{self.last_inode}:{self.last_size}")
-        except IOError as e:
-            print(f"WARNING: Error saving position: {e}")
-    
     def _read_new_lines(self) -> List[str]:
-        """Read new lines from log file since last position"""
+        """새로운 로그 라인들을 읽어옴 (현재 파일 크기에서 증가분만)"""
         if self.access_mode == "ssh":
             return self._read_remote_new_lines()
         else:
             return self._read_local_new_lines()
     
     def _read_local_new_lines(self) -> List[str]:
-        """Read new lines from local log file"""
+        """로컬 파일에서 새로운 로그 라인들을 읽어옴"""
         try:
             if not os.path.exists(self.log_path):
                 print(f"WARNING: Log file does not exist: {self.log_path}")
                 return []
             
-            # Get current file stats
+            # 현재 파일 상태 확인
             file_stat = os.stat(self.log_path)
-            current_size = file_stat.st_size
-            current_inode = file_stat.st_ino
+            new_size = file_stat.st_size
+            new_inode = file_stat.st_ino
             
-            # Handle file rotation or truncation
-            if self.last_inode and current_inode != self.last_inode:
-                print(f"NOTICE: Log rotation detected")
-                self._reset_position()
-                self.last_inode = current_inode
-                self.last_size = current_size
-            elif current_size < self.last_position:
-                print(f"NOTICE: File truncated")
-                self._reset_position()
-                self.last_size = current_size
+            # 파일 회전이나 새 파일 감지
+            if self.current_inode and new_inode != self.current_inode:
+                print(f"NOTICE: Log rotation detected - starting fresh")
+                self.current_file_size = new_size  # 새 파일 끝에서 시작
+                self.current_inode = new_inode
+                self.line_buffer = []
+                return []
             
+            # 파일이 줄어든 경우 (truncated)
+            if new_size < self.current_file_size:
+                print(f"NOTICE: File truncated - starting fresh")
+                self.current_file_size = new_size
+                self.current_inode = new_inode
+                self.line_buffer = []
+                return []
+            
+            # 새로운 내용이 없는 경우
+            if new_size <= self.current_file_size:
+                return []
+            
+            # 새로운 내용 읽기
             with open(self.log_path, 'r', encoding='utf-8', errors='ignore') as f:
-                f.seek(self.last_position)
+                f.seek(self.current_file_size)
                 new_content = f.read()
-                new_position = f.tell()
                 
                 if not new_content:
                     return []
                 
-                # Split into lines and handle incomplete lines
+                # 라인으로 분할하고 불완전한 라인 처리
                 lines = new_content.split('\n')
                 
                 if new_content.endswith('\n'):
-                    complete_lines = lines[:-1]  # Remove empty last element
+                    complete_lines = lines[:-1]  # 마지막 빈 요소 제거
                     incomplete_line = ""
                 else:
-                    complete_lines = lines[:-1]  # All but last incomplete line
-                    incomplete_line = lines[-1]  # Save incomplete line
+                    complete_lines = lines[:-1]  # 마지막 불완전한 라인 제외
+                    incomplete_line = lines[-1]  # 불완전한 라인 저장
                 
-                # Prepend buffered content to first line
+                # 버퍼된 내용과 첫 번째 라인 합치기
                 if self.line_buffer and complete_lines:
                     complete_lines[0] = self.line_buffer[0] + complete_lines[0]
                 
-                # Store temporary position for later update (when chunk is successfully processed)
-                if complete_lines:
-                    # Calculate correct position: file position minus incomplete line bytes
+                # 파일 위치 업데이트 (불완전한 라인 제외)
+                if complete_lines or not incomplete_line:
                     incomplete_bytes = len(incomplete_line.encode('utf-8')) if incomplete_line else 0
-                    self.temp_position = new_position - incomplete_bytes
-                    self.temp_size = current_size
-                    self.temp_inode = current_inode
+                    self.current_file_size = new_size - incomplete_bytes
+                    self.current_inode = new_inode
                 
-                # Update line buffer
+                # 라인 버퍼 업데이트
                 self.line_buffer = [incomplete_line] if incomplete_line else []
                 
-                # Filter out empty lines
+                # 빈 라인 필터링
                 complete_lines = [line.strip() for line in complete_lines if line.strip()]
                 return complete_lines
                 
@@ -288,38 +193,40 @@ class RealtimeLogMonitor:
             return []
     
     def _read_remote_new_lines(self) -> List[str]:
-        """Read new lines from remote log file via SSH"""
+        """SSH로 원격 파일에서 새로운 로그 라인들을 읽어옴"""
         try:
             if not self.ssh_monitor:
                 print(f"WARNING: SSH monitor not initialized")
                 return []
             
-            current_size = self.ssh_monitor.get_file_size()
-            current_inode = self.ssh_monitor.get_file_inode()
+            new_size = self.ssh_monitor.get_file_size()
+            new_inode = self.ssh_monitor.get_file_inode()
             
-            # Handle file rotation or truncation
-            if self.last_inode and current_inode and current_inode != self.last_inode:
-                print(f"NOTICE: Remote log rotation detected")
-                self._reset_position()
-                self.last_inode = current_inode
-                self.last_size = current_size
-            elif current_size < self.last_position:
-                print(f"NOTICE: Remote file truncated")
-                self._reset_position()
-                self.last_size = current_size
-            
-            # No new content
-            if current_size <= self.last_position:
+            # 파일 회전이나 새 파일 감지
+            if self.current_inode and new_inode and new_inode != self.current_inode:
+                print(f"NOTICE: Remote log rotation detected - starting fresh")
+                self.current_file_size = new_size  # 새 파일 끝에서 시작
+                self.current_inode = new_inode
                 return []
             
-            # Read new lines from remote file
-            new_lines = self.ssh_monitor.read_from_position(self.last_position)
+            # 파일이 줄어든 경우 (truncated)
+            if new_size < self.current_file_size:
+                print(f"NOTICE: Remote file truncated - starting fresh")
+                self.current_file_size = new_size
+                self.current_inode = new_inode
+                return []
+            
+            # 새로운 내용이 없는 경우
+            if new_size <= self.current_file_size:
+                return []
+            
+            # 새로운 라인들 읽기
+            new_lines = self.ssh_monitor.read_from_position(self.current_file_size)
             
             if new_lines:
-                # Store temporary position for later update (when chunk is successfully processed)
-                self.temp_position = current_size
-                self.temp_size = current_size
-                self.temp_inode = current_inode
+                # 파일 위치 업데이트
+                self.current_file_size = new_size
+                self.current_inode = new_inode
             
             return new_lines
             
@@ -329,27 +236,27 @@ class RealtimeLogMonitor:
     
     def get_new_log_chunks(self) -> Generator[List[str], None, None]:
         """
-        Generator that yields chunks of new log lines
+        새로운 로그 청크를 반환하는 제너레이터
         
         Yields:
-            List[str]: Chunk of new log lines
+            List[str]: 새로운 로그 라인들의 청크
         """
-        # Regular line-based processing
+        # 새로운 라인 읽기
         new_lines = self._read_new_lines()
         
         if not new_lines and not self.pending_lines:
             return
         
-        # Limit lines per batch
+        # 배치당 라인 수 제한
         max_lines = self.realtime_config["max_lines_per_batch"]
         if len(new_lines) > max_lines:
             print(f"WARNING: Too many new lines ({len(new_lines)}), limiting to {max_lines}")
             new_lines = new_lines[:max_lines]
         
-        # Add to pending buffer
+        # 대기 중인 버퍼에 추가
         self.pending_lines.extend(new_lines)
         
-        # Determine effective processing mode and apply auto-sampling logic
+        # 처리 모드 결정 및 자동 샘플링 로직 적용
         should_sample = False
         
         if self.only_sampling_mode:
@@ -363,7 +270,7 @@ class RealtimeLogMonitor:
         else:
             effective_mode = "full"
         
-        # Status update with correct effective mode
+        # 상태 업데이트
         if len(new_lines) > 0 or self.pending_lines:
             if len(new_lines) > 0:
                 status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines (+{len(new_lines)} new)"
@@ -371,45 +278,35 @@ class RealtimeLogMonitor:
                 status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines"
             print(f"STATUS: {status_msg}")
         
-        # Apply sampling if needed
+        # 필요한 경우 샘플링 적용
         if should_sample and len(self.pending_lines) > self.chunk_size:
             discarded_count = len(self.pending_lines) - self.chunk_size
             self.pending_lines = self.pending_lines[-self.chunk_size:]
             if discarded_count > 0:
                 print(f"SAMPLING: Discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
         
-        # Yield complete chunks
+        # 완전한 청크들 반환
         while len(self.pending_lines) >= self.chunk_size:
             chunk = self.pending_lines[:self.chunk_size]
             self.pending_lines = self.pending_lines[self.chunk_size:]
             print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
             yield chunk
     
-    def _update_position_for_chunk(self):
-        """Update position when a chunk is successfully processed"""
-        if hasattr(self, 'temp_position') and self.temp_position and self.temp_position > self.last_position:
-            print(f"📍 Updating position: {self.last_position} -> {self.temp_position}")
-            self.last_position = self.temp_position
-            if hasattr(self, 'temp_inode') and self.temp_inode:
-                self.last_inode = self.temp_inode
-            if hasattr(self, 'temp_size') and self.temp_size:
-                self.last_size = self.temp_size
-            self._save_position_and_file_info()
-    
     def mark_chunk_processed(self, processed_lines: List[str]):
         """
-        Mark a chunk as processed and update position accordingly
+        청크가 처리되었음을 표시 (실시간 모드에서는 특별한 처리 불필요)
         
         Args:
-            processed_lines: The lines that were processed in the chunk
+            processed_lines: 처리된 라인들
         """
-        # Update position only after chunk is successfully processed
-        self._update_position_for_chunk()
+        # 실시간 모드에서는 별도의 position 업데이트가 불필요
+        # 파일 크기는 새 라인을 읽을 때마다 자동으로 업데이트됨
+        pass
     
     def save_state_on_exit(self):
-        """Save current state when exiting (no pending lines to save in simple mode)"""
-        print(f"💾 Saving current position: {self.last_position}")
-        # Position is already saved, nothing extra needed in simple mode
+        """종료시 상태 저장 (실시간 모드에서는 불필요)"""
+        print("💾 Realtime mode - no state to save")
+        # 실시간 모드에서는 항상 파일 끝에서 시작하므로 상태 저장 불필요
 
 def create_realtime_monitor(log_type: str, 
                           chunk_size=None, 

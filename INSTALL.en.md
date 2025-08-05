@@ -134,23 +134,21 @@ RESPONSE_LANGUAGE=korean   # or english
 # Analysis mode
 ANALYSIS_MODE=batch        # batch/realtime
 
-# Log file paths (batch/realtime)
+# Log file paths (defaults when --log-path not specified)
 LOG_PATH_HTTPD_ACCESS=sample-logs/access-10k.log
 LOG_PATH_HTTPD_SERVER=sample-logs/apache-10k.log
 LOG_PATH_LINUX_SYSTEM=sample-logs/linux-2k.log
-LOG_PATH_REALTIME_HTTPD_ACCESS=/var/log/apache2/access.log
-LOG_PATH_REALTIME_HTTPD_SERVER=/var/log/apache2/error.log
-LOG_PATH_REALTIME_LINUX_SYSTEM=/var/log/messages
+LOG_PATH_GENERAL_LOG=sample-logs/general.log
 
 # chunk size (analysis unit)
 CHUNK_SIZE_HTTPD_ACCESS=10
 CHUNK_SIZE_HTTPD_SERVER=10
 CHUNK_SIZE_LINUX_SYSTEM=10
+CHUNK_SIZE_GENERAL_LOG=10
 
 # Realtime mode options
 REALTIME_POLLING_INTERVAL=5
 REALTIME_MAX_LINES_PER_BATCH=50
-REALTIME_POSITION_FILE_DIR=.positions
 REALTIME_BUFFER_TIME=2
 REALTIME_PROCESSING_MODE=full     # full/sampling
 REALTIME_SAMPLING_THRESHOLD=100
@@ -416,6 +414,12 @@ logsentinelai-linux-system --chunk-size 10  # CLI option takes precedence
 ```
 
 ### 11.2 Realtime Mode Auto Sampling Operation & Principle
+
+> **Realtime Mode Key Features**  
+> - Starts from the **current End of File (EOF)** and processes only newly added logs  
+> - Existing logs in the file are excluded from analysis (true real-time monitoring)  
+> - Even after program interruption and restart, past logs are not processed (always starts from current time)
+
 ```bash
 logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-threshold 100
 # Check auto-switch to sampling mode on heavy log inflow

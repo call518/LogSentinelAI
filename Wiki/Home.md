@@ -284,18 +284,25 @@ logsentinelai-httpd-access \
 
 ## Real-time Monitoring
 
+### Real-time Mode Behavior
+Real-time monitoring in LogSentinelAI works with **new logs only**:
+- Starts monitoring from the **current end of the log file**
+- Only processes **newly added log entries** after the monitoring starts
+- **Past logs are never processed** - this ensures true real-time behavior
+- If monitoring is stopped and restarted, it continues from the current file position (not from where it was previously stopped)
+
 ### Monitor Mode
 ```bash
 # Monitor Apache logs in real-time
-logsentinelai-httpd-access /var/log/apache2/access.log --monitor
+logsentinelai-httpd-access --mode realtime
 
-# With sampling (analyze every 100th entry)
-logsentinelai-httpd-access /var/log/apache2/access.log --monitor --sample-rate 100
+# With custom sampling threshold
+logsentinelai-httpd-access --mode realtime --sampling-threshold 200
 ```
 
 ### Monitoring Features
 - **Live Analysis**: Process logs as they're written
-- **Sampling**: Reduce load on high-traffic systems
+- **Sampling**: Reduce load on high-traffic systems  
 - **Real-time Alerts**: Immediate threat detection
 - **Continuous Indexing**: Stream to Elasticsearch
 

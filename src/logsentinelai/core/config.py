@@ -28,7 +28,7 @@ LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
 RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
 ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
 
-# Log Paths Configuration
+# Log Paths Configuration - Simple defaults
 LOG_PATHS = {
     "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
     "httpd_server": os.getenv("LOG_PATH_HTTPD_SERVER", "sample-logs/apache-10k.log"),
@@ -36,19 +36,10 @@ LOG_PATHS = {
     "general_log": os.getenv("LOG_PATH_GENERAL_LOG", "sample-logs/general.log")
 }
 
-# Realtime log paths configuration 
-LOG_PATHS_REALTIME = {
-    "httpd_access": os.getenv("LOG_PATH_REALTIME_HTTPD_ACCESS", "/var/log/apache2/access.log"),
-    "httpd_server": os.getenv("LOG_PATH_REALTIME_HTTPD_SERVER", "/var/log/apache2/error.log"),
-    "linux_system": os.getenv("LOG_PATH_REALTIME_LINUX_SYSTEM", "/var/log/messages"),
-    "general_log": os.getenv("LOG_PATH_REALTIME_GENERAL_LOG", "/var/log/general.log")
-}
-
 # Real-time Monitoring Configuration
 REALTIME_CONFIG = {
     "polling_interval": int(os.getenv("REALTIME_POLLING_INTERVAL", "5")),
     "max_lines_per_batch": int(os.getenv("REALTIME_MAX_LINES_PER_BATCH", "50")),
-    "position_file_dir": os.getenv("REALTIME_POSITION_FILE_DIR", ".positions"),
     "buffer_time": int(os.getenv("REALTIME_BUFFER_TIME", "2")),
     "only_sampling_mode": os.getenv("REALTIME_ONLY_SAMPLING_MODE", "false").lower() == "true",
     "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
@@ -63,14 +54,6 @@ DEFAULT_REMOTE_SSH_CONFIG = {
     "key_path": os.getenv("REMOTE_SSH_KEY_PATH", ""),
     "password": os.getenv("REMOTE_SSH_PASSWORD", ""),
     "timeout": int(os.getenv("REMOTE_SSH_TIMEOUT", "10"))
-}
-
-# Remote SSH configuration for log paths
-DEFAULT_REMOTE_LOG_PATHS = {
-    "httpd_access": os.getenv("REMOTE_LOG_PATH_HTTPD_ACCESS", "/var/log/apache2/access.log"),
-    "httpd_server": os.getenv("REMOTE_LOG_PATH_HTTPD_SERVER", "/var/log/apache2/error.log"),
-    "linux_system": os.getenv("REMOTE_LOG_PATH_LINUX_SYSTEM", "/var/log/messages"),
-    "general_log": os.getenv("REMOTE_LOG_PATH_GENERAL_LOG", "/var/log/general.log")
 }
 
 # Default Chunk Sizes
@@ -115,11 +98,11 @@ def get_analysis_config(log_type, chunk_size=None, analysis_mode=None,
     mode = analysis_mode if analysis_mode is not None else ANALYSIS_MODE
     access_mode = remote_mode if remote_mode is not None else DEFAULT_REMOTE_SSH_CONFIG["mode"]
     
-    # Get log path based on access mode
+    # Get log path - use simple LOG_PATHS for all cases
     if access_mode == "ssh":
-        log_path = remote_log_path or DEFAULT_REMOTE_LOG_PATHS.get(log_type, "")
+        log_path = remote_log_path or LOG_PATHS.get(log_type, "")
     else:
-        log_path = LOG_PATHS_REALTIME.get(log_type, "") if mode == "realtime" else LOG_PATHS.get(log_type, "")
+        log_path = LOG_PATHS.get(log_type, "")
     
     # SSH configuration
     if access_mode == "ssh":
