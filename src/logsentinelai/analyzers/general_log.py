@@ -48,14 +48,7 @@ class LogEvent(BaseModel):
     recommended_actions: list[str] = Field(description="Recommended actions based on this event")
     requires_human_review: bool = Field(description="Whether human review is required")
 
-class LogAnalysis(BaseModel):
-    events: list[LogEvent] = Field(description="List of detected log events")
-    # Log pattern information (flattened from LogPatternInfo)
-    detected_formats: List[str] = Field(description="Detected log formats in the chunk (e.g., 'Apache Combined', 'JSON', 'Syslog', 'Custom')")
-    timestamp_patterns: List[str] = Field(description="Identified timestamp formats")
-    common_fields: List[str] = Field(description="Common fields found across logs")
-    log_sources: List[str] = Field(description="Identified log sources/applications")
-    # Statistics (flattened from Statistics model)
+class EventStatistics(BaseModel):
     total_events: int = Field(description="Total number of events")
     security_events: int = Field(description="Number of SECURITY events")
     error_events: int = Field(description="Number of ERROR events")
@@ -78,6 +71,16 @@ class LogAnalysis(BaseModel):
     info_events: int = Field(description="Number of INFO severity events")
     unique_sources: int = Field(description="Number of unique log sources detected")
     requires_human_review_count: int = Field(description="Number of events requiring human review")
+
+class LogAnalysis(BaseModel):
+    events: list[LogEvent] = Field(description="List of detected log events")
+    # Log pattern information (flattened from LogPatternInfo)
+    detected_formats: List[str] = Field(description="Detected log formats in the chunk (e.g., 'Apache Combined', 'JSON', 'Syslog', 'Custom')")
+    timestamp_patterns: List[str] = Field(description="Identified timestamp formats")
+    common_fields: List[str] = Field(description="Common fields found across logs")
+    log_sources: List[str] = Field(description="Identified log sources/applications")
+    # Statistics (nested model)
+    statistics: EventStatistics
     # Summary fields
     analysis_summary: str = Field(description="Overall analysis summary")
     recommendations: list[str] = Field(description="General recommendations for log monitoring")

@@ -234,12 +234,13 @@ KEY REQUIREMENTS:
 - For normal traffic: Create comprehensive INFO events with entity analysis
 
 STATISTICS REQUIREMENTS:
-- Count total_events as total number of events detected
-- Count events by each category: security_events, error_events, warning_events, performance_events, access_events, authentication_events, authorization_events, network_events, database_events, application_events, system_events, user_action_events, business_logic_events, unknown_events
-- Count events by each severity: critical_events, high_events, medium_events, low_events, info_events
-- Count unique_sources as number of unique log sources detected
-- Count requires_human_review_count as number of events requiring human review
-- Provide actionable insights for log monitoring improvement
+- Fill the statistics object with accurate counts based on your analysis:
+  * total_events: Total number of events detected
+  * Category counts: security_events, error_events, warning_events, performance_events, access_events, authentication_events, authorization_events, network_events, database_events, application_events, system_events, user_action_events, business_logic_events, unknown_events
+  * Severity counts: critical_events, high_events, medium_events, low_events, info_events
+  * unique_sources: Number of unique log sources/applications detected
+  * requires_human_review_count: Number of events requiring human review
+- Ensure statistics object accurately reflects your event analysis for monitoring insights
 
 LANGUAGE: {response_language}
 
