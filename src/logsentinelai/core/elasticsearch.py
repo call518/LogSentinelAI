@@ -3,9 +3,11 @@ Elasticsearch integration module
 Handles connection, indexing, and data transmission to Elasticsearch
 """
 import datetime
+import json
 from typing import Dict, Any, Optional
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError, RequestError
+from rich import print_json
 from .config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
 
 def get_elasticsearch_client() -> Optional[Elasticsearch]:
@@ -49,9 +51,6 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
     Returns:
         bool: Whether transmission was successful
     """
-    client = get_elasticsearch_client()
-    if not client:
-        return False
     
     try:
         # Generate document identification ID
@@ -68,6 +67,17 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
             "@document_id": doc_id
         }
         
+        # Print final ES input data
+        print("\n✅ [Final ES Input JSON]")
+        print("-" * 30)
+        print_json(json.dumps(enriched_data, ensure_ascii=False, indent=2))
+        print()
+        
+        # Get Elasticsearch client
+        client = get_elasticsearch_client()
+        if not client:
+            return False
+        
         # Index document in Elasticsearch
         response = client.index(
             index=ELASTICSEARCH_INDEX,
@@ -75,6 +85,8 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
             document=enriched_data
         )
         
+        # Check response status
+        print(f"✅ Sending data to Elasticsearch index '{ELASTICSEARCH_INDEX}' with ID '{doc_id}'")
         if response.get('result') in ['created', 'updated']:
             print(f"✅ Elasticsearch transmission successful: {doc_id}")
             return True

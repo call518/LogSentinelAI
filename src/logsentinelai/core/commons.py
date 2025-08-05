@@ -105,11 +105,8 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # Validate with Pydantic model
         model_class.model_validate(parsed)
 
-        # Enrich with GeoIP and print final data before ES input
+        # Enrich with GeoIP
         enriched_data = enrich_source_ips_with_geoip(parsed)
-        print("\n✅ [Final ES Input JSON]")
-        print("-" * 30)
-        print_json(json.dumps(enriched_data, ensure_ascii=False, indent=4))
 
         # Send to Elasticsearch
         print(f"\nSending data to Elasticsearch...")
