@@ -35,6 +35,7 @@ class SecurityEvent(BaseModel):
     severity: SeverityLevel
     description: str = Field(description="Detailed event description, including a brief summary of region statistics for related logs")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
+    event_message: str = Field(description="Event message")
     url_pattern: str = Field(description="Related URL pattern")
     http_method: str = Field(description="HTTP method")
     source_ips: list[str] = Field(description="Complete list of ALL source IP addresses found in this chunk - NEVER leave empty")
