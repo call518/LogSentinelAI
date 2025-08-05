@@ -69,8 +69,6 @@ class EventStatistics(BaseModel):
     medium_events: int = Field(description="Number of MEDIUM severity events")
     low_events: int = Field(description="Number of LOW severity events")
     info_events: int = Field(description="Number of INFO severity events")
-    unique_sources: int = Field(description="Number of unique log sources detected")
-    requires_human_review_count: int = Field(description="Number of events requiring human review")
 
 class LogAnalysis(BaseModel):
     events: list[LogEvent] = Field(description="List of detected log events")
@@ -81,6 +79,9 @@ class LogAnalysis(BaseModel):
     log_sources: List[str] = Field(description="Identified log sources/applications")
     # Statistics (nested model)
     statistics: EventStatistics
+    # Analysis metadata
+    unique_sources: int = Field(description="Number of unique log sources detected")
+    requires_human_review_count: int = Field(description="Number of events requiring human review")
     # Summary fields
     analysis_summary: str = Field(description="Overall analysis summary")
     recommendations: list[str] = Field(description="General recommendations for log monitoring")
