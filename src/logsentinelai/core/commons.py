@@ -409,6 +409,9 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
                 if success:
                     print("✅ Real-time analysis completed successfully")
                     
+                    # Mark chunk as processed (this updates the position)
+                    monitor.mark_chunk_processed(chunk_lines)
+                    
                     # Show high severity events summary
                     if parsed_data and 'events' in parsed_data:
                         event_count = len(parsed_data['events'])
@@ -435,6 +438,9 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
             
     except KeyboardInterrupt:
         print("\n\n🛑 Real-time monitoring stopped by user")
+        # Save current position (pending lines will be reprocessed on restart)
+        if 'monitor' in locals():
+            monitor.save_state_on_exit()
         print("Position saved. You can resume monitoring from where you left off.")
     except FileNotFoundError:
         print(f"ERROR: Log file not found: {config['log_path']}")

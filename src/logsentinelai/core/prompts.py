@@ -190,15 +190,6 @@ FORMAT DETECTION:
 - Security Logs: Firewall, IDS/IPS, authentication systems
 - Custom Formats: Any structured or semi-structured log format
 
-ENTITY EXTRACTION:
-- IP Addresses (source, destination, any IPs in logs)
-- Timestamps (detect and normalize various formats)
-- User identifiers (usernames, session IDs, API keys)
-- Error codes and status codes
-- URLs, file paths, database tables
-- Process names, service names, application names
-- Any domain-specific entities
-
 SEVERITY ASSESSMENT:
 - CRITICAL: Active security breaches, system failures, data corruption, unauthorized access
 - HIGH: Clear attack patterns, significant errors, performance degradation, security violations
@@ -225,7 +216,6 @@ MANDATORY EVENT CREATION RULES:
 - NEVER LEAVE events ARRAY EMPTY - This is strictly forbidden
 - ALWAYS create at least 1 event per chunk, even for completely normal logs
 - For normal operations: Create INFO level events documenting patterns and entities
-- Every event MUST include extracted_entities with ALL relevant information found
 - For INFO events: Document log patterns, source analysis, and monitoring insights
 
 PATTERN ANALYSIS REQUIREMENTS:
@@ -234,20 +224,6 @@ PATTERN ANALYSIS REQUIREMENTS:
 - Identify common fields across different log entries
 - Determine log sources/applications generating the logs
 - Analyze traffic patterns, error rates, and trends
-
-EXTRACTED ENTITIES FORMAT:
-Use this structure for extracted_entities field:
-{{
-  "ip_addresses": ["1.2.3.4", "5.6.7.8"],
-  "usernames": ["admin", "user123"],
-  "timestamps": ["2023-01-01T10:00:00Z"],
-  "status_codes": ["200", "404", "500"],
-  "urls": ["/api/login", "/dashboard"],
-  "error_codes": ["ERR001", "TIMEOUT"],
-  "services": ["nginx", "mysql", "app-server"],
-  "session_ids": ["sess_abc123"],
-  "custom_fields": {{"key": "value"}}
-}}
 
 KEY REQUIREMENTS:
 - Include complete source IP analysis for security monitoring
@@ -258,9 +234,11 @@ KEY REQUIREMENTS:
 - For normal traffic: Create comprehensive INFO events with entity analysis
 
 STATISTICS REQUIREMENTS:
-- Count events by category and severity
-- Identify unique sources and patterns
-- Track events requiring human review
+- Count total_events as total number of events detected
+- Count events by each category: security_events, error_events, warning_events, performance_events, access_events, authentication_events, authorization_events, network_events, database_events, application_events, system_events, user_action_events, business_logic_events, unknown_events
+- Count events by each severity: critical_events, high_events, medium_events, low_events, info_events
+- Count unique_sources as number of unique log sources detected
+- Count requires_human_review_count as number of events requiring human review
 - Provide actionable insights for log monitoring improvement
 
 LANGUAGE: {response_language}

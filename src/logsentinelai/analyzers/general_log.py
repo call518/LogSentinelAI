@@ -44,28 +44,41 @@ class LogEvent(BaseModel):
     description: str = Field(description="Detailed event description")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence level (0.0-1.0)")
     source_ips: list[str] = Field(description="Complete list of ALL source IP addresses found in this chunk - NEVER leave empty")
-    extracted_entities: Dict[str, Any] = Field(description="Key entities extracted from logs (IPs, usernames, timestamps, error codes, etc.)")
     pattern_type: Optional[str] = Field(description="Detected log pattern type (e.g., 'Apache Access', 'JSON API', 'Syslog', 'Database', etc.)")
     recommended_actions: list[str] = Field(description="Recommended actions based on this event")
     requires_human_review: bool = Field(description="Whether human review is required")
 
-class LogPatternInfo(BaseModel):
+class LogAnalysis(BaseModel):
+    events: list[LogEvent] = Field(description="List of detected log events")
+    # Log pattern information (flattened from LogPatternInfo)
     detected_formats: List[str] = Field(description="Detected log formats in the chunk (e.g., 'Apache Combined', 'JSON', 'Syslog', 'Custom')")
     timestamp_patterns: List[str] = Field(description="Identified timestamp formats")
     common_fields: List[str] = Field(description="Common fields found across logs")
     log_sources: List[str] = Field(description="Identified log sources/applications")
-
-class Statistics(BaseModel):
+    # Statistics (flattened from Statistics model)
     total_events: int = Field(description="Total number of events")
-    events_by_category: Dict[str, int] = Field(description="Event count by category")
-    events_by_severity: Dict[str, int] = Field(description="Event count by severity")
+    security_events: int = Field(description="Number of SECURITY events")
+    error_events: int = Field(description="Number of ERROR events")
+    warning_events: int = Field(description="Number of WARNING events")
+    performance_events: int = Field(description="Number of PERFORMANCE events")
+    access_events: int = Field(description="Number of ACCESS events")
+    authentication_events: int = Field(description="Number of AUTHENTICATION events")
+    authorization_events: int = Field(description="Number of AUTHORIZATION events")
+    network_events: int = Field(description="Number of NETWORK events")
+    database_events: int = Field(description="Number of DATABASE events")
+    application_events: int = Field(description="Number of APPLICATION events")
+    system_events: int = Field(description="Number of SYSTEM events")
+    user_action_events: int = Field(description="Number of USER_ACTION events")
+    business_logic_events: int = Field(description="Number of BUSINESS_LOGIC events")
+    unknown_events: int = Field(description="Number of UNKNOWN events")
+    critical_events: int = Field(description="Number of CRITICAL severity events")
+    high_events: int = Field(description="Number of HIGH severity events")
+    medium_events: int = Field(description="Number of MEDIUM severity events")
+    low_events: int = Field(description="Number of LOW severity events")
+    info_events: int = Field(description="Number of INFO severity events")
     unique_sources: int = Field(description="Number of unique log sources detected")
     requires_human_review_count: int = Field(description="Number of events requiring human review")
-
-class LogAnalysis(BaseModel):
-    events: list[LogEvent] = Field(description="List of detected log events")
-    log_patterns: LogPatternInfo = Field(description="Information about detected log patterns")
-    statistics: Statistics = Field(description="Analysis statistics")
+    # Summary fields
     analysis_summary: str = Field(description="Overall analysis summary")
     recommendations: list[str] = Field(description="General recommendations for log monitoring")
 

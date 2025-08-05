@@ -52,6 +52,11 @@ class RealtimeLogMonitor:
         self.last_inode = None
         self.last_size = 0
         
+        # Temporary position tracking (for lines read but not yet processed)
+        self.temp_position = 0
+        self.temp_inode = None
+        self.temp_size = 0
+        
         # Initialize SSH monitor if needed
         if self.access_mode == "ssh":
             self._initialize_ssh_monitor()
@@ -160,6 +165,7 @@ class RealtimeLogMonitor:
     def _reset_position(self):
         """Reset position to beginning of file"""
         self.last_position = 0
+        self.temp_position = 0
         self.line_buffer = []
         self.pending_lines = []  # Also clear pending lines on reset
         self._save_position_and_file_info()
@@ -262,18 +268,16 @@ class RealtimeLogMonitor:
                 if self.line_buffer and complete_lines:
                     complete_lines[0] = self.line_buffer[0] + complete_lines[0]
                 
-                # Update position correctly
-                if complete_lines or not incomplete_line:
+                # Store temporary position for later update (when chunk is successfully processed)
+                if complete_lines:
                     # Calculate correct position: file position minus incomplete line bytes
                     incomplete_bytes = len(incomplete_line.encode('utf-8')) if incomplete_line else 0
-                    self.last_position = new_position - incomplete_bytes
+                    self.temp_position = new_position - incomplete_bytes
+                    self.temp_size = current_size
+                    self.temp_inode = current_inode
                 
                 # Update line buffer
                 self.line_buffer = [incomplete_line] if incomplete_line else []
-                
-                # Save updated position and file info
-                self.last_size = current_size
-                self._save_position_and_file_info()
                 
                 # Filter out empty lines
                 complete_lines = [line.strip() for line in complete_lines if line.strip()]
@@ -312,10 +316,10 @@ class RealtimeLogMonitor:
             new_lines = self.ssh_monitor.read_from_position(self.last_position)
             
             if new_lines:
-                # Update position (rough estimate)
-                self.last_position = current_size
-                self.last_size = current_size
-                self._save_position_and_file_info()
+                # Store temporary position for later update (when chunk is successfully processed)
+                self.temp_position = current_size
+                self.temp_size = current_size
+                self.temp_inode = current_inode
             
             return new_lines
             
@@ -381,6 +385,17 @@ class RealtimeLogMonitor:
             print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
             yield chunk
     
+    def _update_position_for_chunk(self):
+        """Update position when a chunk is successfully processed"""
+        if hasattr(self, 'temp_position') and self.temp_position and self.temp_position > self.last_position:
+            print(f"📍 Updating position: {self.last_position} -> {self.temp_position}")
+            self.last_position = self.temp_position
+            if hasattr(self, 'temp_inode') and self.temp_inode:
+                self.last_inode = self.temp_inode
+            if hasattr(self, 'temp_size') and self.temp_size:
+                self.last_size = self.temp_size
+            self._save_position_and_file_info()
+    
     def mark_chunk_processed(self, processed_lines: List[str]):
         """
         Mark a chunk as processed and update position accordingly
@@ -388,10 +403,13 @@ class RealtimeLogMonitor:
         Args:
             processed_lines: The lines that were processed in the chunk
         """
-        # This method should be called after a chunk is successfully processed
-        # The position is already correctly updated in _read_local_new_lines
-        # We just need to ensure it's saved
-        self._save_position_and_file_info()
+        # Update position only after chunk is successfully processed
+        self._update_position_for_chunk()
+    
+    def save_state_on_exit(self):
+        """Save current state when exiting (no pending lines to save in simple mode)"""
+        print(f"💾 Saving current position: {self.last_position}")
+        # Position is already saved, nothing extra needed in simple mode
 
 def create_realtime_monitor(log_type: str, 
                           chunk_size=None, 
