@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from google import genai
 
 from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
-from .config import LOG_LEVEL
+from .commons import LOG_LEVEL
 from .commons import setup_logger
 import logging
 
@@ -90,8 +90,8 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
     """
     provider = llm_provider or LLM_PROVIDER
     # 파일 로깅만: 콘솔 출력(print)은 그대로 유지
-    logger.info(f"[FILE LOG] Generating response with provider={provider}")
-    logger.debug(f"[FILE LOG] Prompt: {prompt}")
+    logger.info(f"Generating response with provider={provider}")
+    logger.debug(f"Prompt: {prompt}")
     
     if provider == "gemini":
         # Gemini API에서 additionalProperties is not supported 오류가 발생하는 이유는 outlines 라이브러리의 Gemini 구현에서 Pydantic 모델의 스키마 변환 과정에서 문제가 있기 때문.
@@ -102,7 +102,7 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         # 현재 코드에서 Gemini는 model_class 없이 raw 텍스트를 반환하고, 프롬프트 엔지니어링을 통해 JSON 형태로 응답을 받고, 이를 Pydantic 모델로 검증하는 방식으로 동작함. (아래 try문 참조)
         try:
             response = model(prompt, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
-            logger.debug(f"[FILE LOG] Raw Gemini response: {response}")
+            logger.debug(f"Raw Gemini response: {response}")
             cleaned_response = response.strip()
             # Remove markdown code blocks
             if cleaned_response.startswith('```json'):
@@ -112,37 +112,37 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
             if cleaned_response.endswith('```'):
                 cleaned_response = cleaned_response[:-3]
             cleaned_response = cleaned_response.strip()
-            logger.debug(f"[FILE LOG] Cleaned Gemini response: {cleaned_response}")
+            logger.debug(f"Cleaned Gemini response: {cleaned_response}")
             # Validate Gemini response with Pydantic model (Using model_class)
             parsed_json = json.loads(cleaned_response)
             validated_data = model_class.model_validate(parsed_json)
-            logger.info("[FILE LOG] Gemini response validated successfully.")
+            logger.info("Gemini response validated successfully.")
             return validated_data.model_dump_json()
         except json.JSONDecodeError as e:
             print(f"\n❌ [GEMINI JSON ERROR] Invalid JSON format in response")
             print(f"Error: {e}")
             print(f"Raw response:\n{cleaned_response}")
-            logger.error(f"[FILE LOG] [GEMINI JSON ERROR] Invalid JSON format in response: {e}")
-            logger.debug(f"[FILE LOG] Raw response: {cleaned_response}")
+            logger.error(f"[GEMINI JSON ERROR] Invalid JSON format in response: {e}")
+            logger.debug(f"Raw response: {cleaned_response}")
             raise ValueError(f"❌ [GEMINI JSON ERROR] Invalid JSON format in response: {e}")
         except ValidationError as e:
             print(f"\n❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema")
             print(f"Error: {e}")
             print(f"Raw response:\n{cleaned_response}")
-            logger.error(f"[FILE LOG] [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
-            logger.debug(f"[FILE LOG] Raw response: {cleaned_response}")
+            logger.error(f"[GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
+            logger.debug(f"Raw response: {cleaned_response}")
             raise ValueError(f"❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
     else:
         # For Ollama, vLLM, OpenAI
         try:
             response = model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
-            logger.debug(f"[FILE LOG] Raw response: {response}")
+            logger.debug(f"Raw response: {response}")
             cleaned_response = response.strip()
-            logger.info("[FILE LOG] Response generated and cleaned.")
+            logger.info("Response generated and cleaned.")
             return cleaned_response
         except Exception as e:
             print(f"❌ [LLM ERROR] Error during response generation: {e}")
-            logger.exception(f"[FILE LOG] Error during response generation: {e}")
+            logger.exception(f"Error during response generation: {e}")
             raise
         
 

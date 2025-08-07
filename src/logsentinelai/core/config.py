@@ -2,11 +2,15 @@
 Configuration module for LogSentinelAI
 Centralizes all configuration constants and environment variable handling
 """
+
 import os
 from dotenv import load_dotenv
 
+
+
 # .env 파일 로드
 load_dotenv(dotenv_path="config")
+
 
 # LLM Configuration
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
@@ -28,13 +32,16 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
 
 
+
 # Logging Configuration
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = os.getenv("LOG_FILE", "logsentinelai.log")
 
+
 # Common Analysis Configuration
 RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
 ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
+
 
 # Log Paths Configuration - Simple defaults
 LOG_PATHS = {
@@ -44,6 +51,7 @@ LOG_PATHS = {
     "general_log": os.getenv("LOG_PATH_GENERAL_LOG", "sample-logs/general.log")
 }
 
+
 # Real-time Monitoring Configuration
 REALTIME_CONFIG = {
     "polling_interval": int(os.getenv("REALTIME_POLLING_INTERVAL", "5")),
@@ -52,6 +60,7 @@ REALTIME_CONFIG = {
     "only_sampling_mode": os.getenv("REALTIME_ONLY_SAMPLING_MODE", "false").lower() == "true",
     "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
 }
+
 
 # Default Remote SSH Configuration
 DEFAULT_REMOTE_SSH_CONFIG = {
@@ -64,6 +73,7 @@ DEFAULT_REMOTE_SSH_CONFIG = {
     "timeout": int(os.getenv("REMOTE_SSH_TIMEOUT", "10"))
 }
 
+
 # Default Chunk Sizes
 LOG_CHUNK_SIZES = {
     "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
@@ -71,6 +81,7 @@ LOG_CHUNK_SIZES = {
     "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10")),
     "general_log": int(os.getenv("CHUNK_SIZE_GENERAL_LOG", "10"))
 }
+
 
 # GeoIP Configuration
 GEOIP_CONFIG = {
@@ -80,6 +91,7 @@ GEOIP_CONFIG = {
     "cache_size": int(os.getenv("GEOIP_CACHE_SIZE", "1000")),
     "include_private_ips": os.getenv("GEOIP_INCLUDE_PRIVATE_IPS", "false").lower() == "true"
 }
+
 
 # Elasticsearch Configuration
 ELASTICSEARCH_HOST = os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")

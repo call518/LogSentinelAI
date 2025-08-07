@@ -6,9 +6,13 @@ This module provides the core functionality for log analysis,
 including batch and real-time processing capabilities.
 """
 
+
 import logging
 import os
-from .config import LOG_FILE
+
+# 로깅 환경변수 설정 (공통 관리)
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_FILE = os.getenv("LOG_FILE", "logsentinelai.log")
 
 def setup_logger(name="logsentinelai", level=logging.INFO):
     """
@@ -16,12 +20,8 @@ def setup_logger(name="logsentinelai", level=logging.INFO):
     """
     logger = logging.getLogger(name)
     if not logger.hasHandlers():
-        formatter = logging.Formatter('[%(asctime)s][%(levelname)s] %(name)s: %(message)s')
-        # Always add console handler
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
-        # If LOG_FILE is set and not empty, add file handler
+        # 로그 포맷: [시간][레벨][이름]: 메시지
+        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(name)s: %(message)s')
         if LOG_FILE:
             file_handler = logging.FileHandler(LOG_FILE)
             file_handler.setFormatter(formatter)

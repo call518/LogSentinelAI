@@ -13,7 +13,7 @@ from .config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWO
 from .commons import setup_logger
 import logging
 
-from .config import LOG_LEVEL
+from .commons import LOG_LEVEL
 logger = setup_logger("logsentinelai.elasticsearch", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
 
 def get_elasticsearch_client() -> Optional[Elasticsearch]:
@@ -62,7 +62,7 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
         doc_id = f"{log_type}_{timestamp}"
         if chunk_id is not None:
             doc_id += f"_chunk_{chunk_id}"
-        
+
         # Add metadata
         enriched_data = {
             **data,
@@ -70,37 +70,43 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
             "@log_type": log_type,
             "@document_id": doc_id
         }
-        
-        # Print final ES input data
+
+        # Print final ES input data (콘솔)
         print("\n✅ [Final ES Input JSON]")
         print("-" * 30)
         print_json(json.dumps(enriched_data, ensure_ascii=False, indent=2))
         print()
-        
+        logger.debug(f"Final ES Input JSON: {json.dumps(enriched_data, ensure_ascii=False)}")
+
         # Get Elasticsearch client
         client = get_elasticsearch_client()
         if not client:
+            logger.error(f"Elasticsearch client not available.")
             return False
-        
+
         # Index document in Elasticsearch
         response = client.index(
             index=ELASTICSEARCH_INDEX,
             id=doc_id,
             document=enriched_data
         )
-        
-        # Check response status
+
+        # Check response status (콘솔)
         print(f"✅ Sending data to Elasticsearch index '{ELASTICSEARCH_INDEX}' with ID '{doc_id}'")
         if response.get('result') in ['created', 'updated']:
             print(f"✅ Elasticsearch transmission successful: {doc_id}")
+            logger.info(f"Elasticsearch transmission successful: {doc_id}")
             return True
         else:
             print(f"❌ Elasticsearch transmission failed: {response}")
+            logger.error(f"Elasticsearch transmission failed: {response}")
             return False
-    
+
     except RequestError as e:
         print(f"❌ Elasticsearch request error: {e}")
+        logger.error(f"Elasticsearch request error: {e}")
         return False
     except Exception as e:
         print(f"❌ Error occurred during Elasticsearch transmission: {e}")
+        logger.exception(f"Error occurred during Elasticsearch transmission: {e}")
         return False

@@ -1,3 +1,8 @@
+from ..core.commons import setup_logger, LOG_LEVEL
+import logging
+
+# 파일 로깅만 추가 (콘솔 출력은 기존 print 코드 그대로 유지)
+logger = setup_logger("logsentinelai.analyzers.linux_system", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
 from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Optional
@@ -68,15 +73,20 @@ def main():
     """Main function with argument parsing"""
     parser = create_argument_parser('Linux System Log Analysis')
     args = parser.parse_args()
-    
+
+    logger.info("Linux System Log Analysis started.")
+    logger.debug(f"Parsed arguments: {args}")
+
     # SSH 설정 파싱
     ssh_config = handle_ssh_arguments(args)
     remote_mode = "ssh" if ssh_config else "local"
-    
+    logger.info(f"Remote mode: {remote_mode}")
+
     log_type = "linux_system"
     analysis_title = "Linux System Log Analysis"
-    
+
     if args.mode == 'realtime':
+        logger.info("Running in real-time analysis mode.")
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
@@ -90,6 +100,7 @@ def main():
             ssh_config=ssh_config
         )
     else:
+        logger.info("Running in batch analysis mode.")
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
