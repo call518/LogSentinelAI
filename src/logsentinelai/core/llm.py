@@ -30,10 +30,11 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
         llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
     
     if llm_provider == "ollama":
-        client = ollama.Client(
-            host=LLM_API_HOSTS["ollama"],
+        client = openai.Client(
+            base_url=LLM_API_HOSTS["ollama"],
+            api_key="dummy"
         )
-        model = outlines.from_ollama(client, llm_model_name)
+        model = outlines.from_openai(client, llm_model_name)
     elif llm_provider == "vllm":
         client = openai.OpenAI(
             base_url=LLM_API_HOSTS["vllm"],
@@ -72,10 +73,7 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
     """
     provider = llm_provider or LLM_PROVIDER
     
-    if provider == "ollama":
-        # Ollama doesn't support temperature and top_p in outlines
-        return model(prompt, model_class)
-    elif provider == "gemini":
+    if provider == "gemini":
         # Gemini API에서 additionalProperties is not supported 오류가 발생하는 이유는 outlines 라이브러리의 Gemini 구현에서 Pydantic 모델의 스키마 변환 과정에서 문제가 있기 때문.
         # outlines 문서에서는 Gemini가 구조화된 출력을 지원한다고 하지만, 실제로는 다음과 같은 제한사항이 있음:
         # - Gemini API 제한: Google의 Gemini API는 OpenAI처럼 완전한 JSON Schema를 지원하지 않음.
@@ -117,7 +115,7 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
             print(f"Raw response:\n{cleaned_response}")
             raise ValueError(f"❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
     else:
-        # OpenAI and vLLM support temperature and top_p
+        # For Ollama, vLLM, OpenAI
         return model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
 
 def wait_on_failure(delay_seconds=30):

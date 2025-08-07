@@ -36,8 +36,8 @@ LLM_MODEL_GEMINI=gemini-1.5-pro
 LLM_MODEL_OPENAI=gpt-4.1-nano
 
 # LLM API Host Configuration
-# Ollama API host (default: http://127.0.0.1:11434)
-LLM_API_HOST_OLLAMA=http://127.0.0.1:11434
+# Ollama API host with OpenAI API compatibility (default: http://127.0.0.1:11434/v1)
+LLM_API_HOST_OLLAMA=http://127.0.0.1:11434/v1
 
 # vLLM API host (default: http://127.0.0.1:5000/v1)
 LLM_API_HOST_VLLM=http://127.0.0.1:5000/v1

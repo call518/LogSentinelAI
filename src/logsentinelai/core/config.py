@@ -17,7 +17,7 @@ LLM_MODELS = {
     "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-1.5-pro")
 }
 LLM_API_HOSTS = {
-    "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434"),
+    "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434/v1"),
     "vllm": os.getenv("LLM_API_HOST_VLLM", "http://127.0.0.1:5000/v1"),
     "openai": os.getenv("LLM_API_HOST_OPENAI", "https://api.openai.com/v1")
 }
