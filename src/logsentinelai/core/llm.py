@@ -48,10 +48,9 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
         )
         model = outlines.from_openai(client, llm_model_name)
     elif llm_provider == "gemini":
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment variables. Please set it in your config file.")
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(
+            api_key=os.getenv("GEMINI_API_KEY")
+        )
         model = outlines.from_gemini(client, llm_model_name)
     else:
         raise ValueError("Unsupported LLM provider. Use 'ollama', 'vllm', 'openai', or 'gemini'.")
