@@ -14,6 +14,9 @@ except ImportError:
     GEOIP_AVAILABLE = False
 
 from .config import GEOIP_CONFIG
+from .commons import setup_logger, LOG_LEVEL
+
+logger = setup_logger("logsentinelai.core.geoip", LOG_LEVEL)
 
 class GeoIPLookup:
     """GeoIP lookup utility for enriching IP addresses with city and geo_point information"""
@@ -52,6 +55,7 @@ class GeoIPLookup:
             
         except Exception as e:
             print(f"WARNING: Failed to initialize GeoIP database: {e}")
+            logger.error(f"Failed to initialize GeoIP database: {e}")
             self.enabled = False
     
     def _auto_download_database(self) -> bool:
@@ -63,6 +67,7 @@ class GeoIPLookup:
             return download_geoip_database(output_dir)
         except (ImportError, Exception) as e:
             print(f"WARNING: Auto-download failed: {e}")
+            logger.error(f"GeoIP database auto-download failed: {e}")
             return False
     
     def _is_private_ip(self, ip_str: str) -> bool:
@@ -127,6 +132,7 @@ class GeoIPLookup:
             return city_info
         except Exception as e:
             print(f"WARNING: GeoIP lookup failed for {ip_str}: {e}")
+            logger.error(f"GeoIP lookup failed for {ip_str}: {e}")
             return {"ip": ip_str, "country_code": "ERROR", "country_name": "Lookup Failed"}
     
     def close(self):

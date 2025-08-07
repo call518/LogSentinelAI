@@ -20,11 +20,16 @@ import gzip
 import shutil
 from pathlib import Path
 
+# 로깅 설정 추가
+from ..core.commons import setup_logger, LOG_LEVEL
+logger = setup_logger("logsentinelai.utils.geoip_downloader", LOG_LEVEL)
+
 try:
     import requests
 except ImportError:
     print("❌ ERROR: requests library not found")
     print("💡 Please install dependencies: pip install -r requirements.txt")
+    logger.error("requests library not found - missing dependency")
     sys.exit(1)
 
 
@@ -91,12 +96,15 @@ def download_geoip_database(output_dir: str = None) -> bool:
                 break
             except requests.RequestException as e:
                 print(f"\n❌ Source {i} failed: {e}")
+                logger.error(f"GeoIP download source {i} failed: {e}")
                 if temp_file.exists():
                     temp_file.unlink()
                 if i == len(database_urls):
                     print("\n❌ All download sources failed")
+                    logger.error("All GeoIP download sources failed")
                     return False
                 print(f"🔄 Trying next source...")
+                logger.warning(f"Trying next GeoIP download source after failure: {e}")
                 continue
         # Verify final database file
         if not final_file.exists():
@@ -119,9 +127,11 @@ def download_geoip_database(output_dir: str = None) -> bool:
         return True
     except requests.RequestException as e:
         print(f"\n❌ Download failed: {e}")
+        logger.error(f"GeoIP database download failed: {e}")
         return False
     except Exception as e:
         print(f"\n❌ Error: {e}")
+        logger.exception(f"Unexpected error during GeoIP database download: {e}")
         return False
 
 

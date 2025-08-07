@@ -6,6 +6,9 @@ import os
 from typing import Dict, Any, List, Generator
 from .config import get_analysis_config
 from .ssh import RemoteSSHLogMonitor
+from .commons import setup_logger, LOG_LEVEL
+
+logger = setup_logger("logsentinelai.core.monitoring", LOG_LEVEL)
 
 class RealtimeLogMonitor:
     """Real-time log file monitoring and analysis"""
@@ -18,6 +21,9 @@ class RealtimeLogMonitor:
             log_type: Type of log to monitor
             config: Configuration dictionary from get_analysis_config()
         """
+        logger.info(f"Initializing RealtimeLogMonitor for log_type: {log_type}")
+        logger.debug(f"Monitor configuration: {config}")
+        
         self.log_type = log_type
         self.log_path = config["log_path"]
         self.chunk_size = config["chunk_size"]
@@ -50,46 +56,63 @@ class RealtimeLogMonitor:
         
         # Display initialization info
         self._print_initialization_info()
+        
+        logger.info(f"RealtimeLogMonitor initialized successfully for {self.log_type}")
+        logger.debug(f"Final monitor state - access_mode: {self.access_mode}, log_path: {self.log_path}, chunk_size: {self.chunk_size}")
     
     def _initialize_ssh_monitor(self):
         """SSH 원격 모니터 초기화"""
+        logger.info("Initializing SSH monitor")
+        logger.debug(f"SSH config: {self.ssh_config}")
+        
         try:
             if not self.log_path:
                 raise ValueError(f"No remote log path configured for {self.log_type}")
             
+            logger.debug(f"Creating RemoteSSHLogMonitor for path: {self.log_path}")
             self.ssh_monitor = RemoteSSHLogMonitor(self.ssh_config, self.log_path)
             
             print("🔗 Testing SSH connection...")
+            logger.info("Testing SSH connection")
             if self.ssh_monitor.test_connection():
                 print("✅ SSH connection successful")
+                logger.info("SSH connection test successful")
             else:
                 raise ConnectionError("SSH connection test failed")
                 
         except Exception as e:
             print(f"❌ SSH initialization failed: {e}")
             print("💡 Please check your SSH configuration")
+            logger.error(f"SSH monitoring initialization failed: {e}")
             raise
     
     def _initialize_file_state(self):
         """파일 상태 초기화 - 현재 파일 끝에서 시작"""
+        logger.info(f"Initializing file state for {self.access_mode} mode")
+        logger.debug(f"Log path: {self.log_path}")
+        
         try:
             if self.access_mode == "ssh":
                 if self.ssh_monitor:
                     self.current_file_size = self.ssh_monitor.get_file_size()
                     self.current_inode = self.ssh_monitor.get_file_inode()
                     print(f"📍 Starting from end of remote file (size: {self.current_file_size})")
+                    logger.info(f"Remote file state initialized - size: {self.current_file_size}, inode: {self.current_inode}")
             else:
                 if os.path.exists(self.log_path):
                     file_stat = os.stat(self.log_path)
                     self.current_file_size = file_stat.st_size
                     self.current_inode = file_stat.st_ino
                     print(f"📍 Starting from end of local file (size: {self.current_file_size})")
+                    logger.info(f"Local file state initialized - size: {self.current_file_size}, inode: {self.current_inode}")
                 else:
                     print(f"WARNING: Log file does not exist: {self.log_path}")
+                    logger.warning(f"Log file does not exist: {self.log_path}")
                     self.current_file_size = 0
                     self.current_inode = None
         except Exception as e:
             print(f"WARNING: Error accessing log file: {e}")
+            logger.error(f"Error accessing log file during initialization: {e}")
             self.current_file_size = 0
             self.current_inode = None
     
@@ -116,6 +139,8 @@ class RealtimeLogMonitor:
     
     def _read_new_lines(self) -> List[str]:
         """새로운 로그 라인들을 읽어옴 (현재 파일 크기에서 증가분만)"""
+        logger.debug("Reading new lines from log file")
+        
         if self.access_mode == "ssh":
             return self._read_remote_new_lines()
         else:
@@ -123,9 +148,12 @@ class RealtimeLogMonitor:
     
     def _read_local_new_lines(self) -> List[str]:
         """로컬 파일에서 새로운 로그 라인들을 읽어옴"""
+        logger.debug(f"Reading local new lines from: {self.log_path}")
+        
         try:
             if not os.path.exists(self.log_path):
                 print(f"WARNING: Log file does not exist: {self.log_path}")
+                logger.warning(f"Log file does not exist: {self.log_path}")
                 return []
             
             # 현재 파일 상태 확인
@@ -133,9 +161,12 @@ class RealtimeLogMonitor:
             new_size = file_stat.st_size
             new_inode = file_stat.st_ino
             
+            logger.debug(f"File state check - current_size: {self.current_file_size}, new_size: {new_size}, current_inode: {self.current_inode}, new_inode: {new_inode}")
+            
             # 파일 회전이나 새 파일 감지
             if self.current_inode and new_inode != self.current_inode:
                 print(f"NOTICE: Log rotation detected - starting fresh")
+                logger.info(f"Log rotation detected - inode changed from {self.current_inode} to {new_inode}")
                 self.current_file_size = new_size  # 새 파일 끝에서 시작
                 self.current_inode = new_inode
                 self.line_buffer = []
@@ -144,6 +175,7 @@ class RealtimeLogMonitor:
             # 파일이 줄어든 경우 (truncated)
             if new_size < self.current_file_size:
                 print(f"NOTICE: File truncated - starting fresh")
+                logger.info(f"File truncated - size changed from {self.current_file_size} to {new_size}")
                 self.current_file_size = new_size
                 self.current_inode = new_inode
                 self.line_buffer = []
@@ -151,6 +183,7 @@ class RealtimeLogMonitor:
             
             # 새로운 내용이 없는 경우
             if new_size <= self.current_file_size:
+                logger.debug("No new content in file")
                 return []
             
             # 새로운 내용 읽기
@@ -159,7 +192,10 @@ class RealtimeLogMonitor:
                 new_content = f.read()
                 
                 if not new_content:
+                    logger.debug("No new content found after seeking")
                     return []
+                
+                logger.debug(f"Read {len(new_content)} new characters from file")
                 
                 # 라인으로 분할하고 불완전한 라인 처리
                 lines = new_content.split('\n')
@@ -186,25 +222,38 @@ class RealtimeLogMonitor:
                 
                 # 빈 라인 필터링
                 complete_lines = [line.strip() for line in complete_lines if line.strip()]
+                
+                if complete_lines:
+                    logger.debug(f"Processed {len(complete_lines)} complete new lines")
+                else:
+                    logger.debug("No complete lines found after filtering")
+                    
                 return complete_lines
                 
         except IOError as e:
             print(f"WARNING: Error reading local log file: {e}")
+            logger.error(f"Error reading local log file: {e}")
             return []
     
     def _read_remote_new_lines(self) -> List[str]:
         """SSH로 원격 파일에서 새로운 로그 라인들을 읽어옴"""
+        logger.debug(f"Reading remote new lines from: {self.log_path}")
+        
         try:
             if not self.ssh_monitor:
                 print(f"WARNING: SSH monitor not initialized")
+                logger.warning("SSH monitor not initialized")
                 return []
             
             new_size = self.ssh_monitor.get_file_size()
             new_inode = self.ssh_monitor.get_file_inode()
             
+            logger.debug(f"Remote file state check - current_size: {self.current_file_size}, new_size: {new_size}, current_inode: {self.current_inode}, new_inode: {new_inode}")
+            
             # 파일 회전이나 새 파일 감지
             if self.current_inode and new_inode and new_inode != self.current_inode:
                 print(f"NOTICE: Remote log rotation detected - starting fresh")
+                logger.info(f"Remote log rotation detected - inode changed from {self.current_inode} to {new_inode}")
                 self.current_file_size = new_size  # 새 파일 끝에서 시작
                 self.current_inode = new_inode
                 return []
@@ -212,12 +261,14 @@ class RealtimeLogMonitor:
             # 파일이 줄어든 경우 (truncated)
             if new_size < self.current_file_size:
                 print(f"NOTICE: Remote file truncated - starting fresh")
+                logger.info(f"Remote file truncated - size changed from {self.current_file_size} to {new_size}")
                 self.current_file_size = new_size
                 self.current_inode = new_inode
                 return []
             
             # 새로운 내용이 없는 경우
             if new_size <= self.current_file_size:
+                logger.debug("No new content in remote file")
                 return []
             
             # 새로운 라인들 읽기
@@ -227,11 +278,15 @@ class RealtimeLogMonitor:
                 # 파일 위치 업데이트
                 self.current_file_size = new_size
                 self.current_inode = new_inode
+                logger.debug(f"Read {len(new_lines)} new lines from remote file")
+            else:
+                logger.debug("No new lines received from remote file")
             
             return new_lines
             
         except Exception as e:
             print(f"WARNING: Error reading remote log file: {e}")
+            logger.error(f"Error reading remote log file: {e}")
             return []
     
     def get_new_log_chunks(self) -> Generator[List[str], None, None]:
@@ -241,20 +296,27 @@ class RealtimeLogMonitor:
         Yields:
             List[str]: 새로운 로그 라인들의 청크
         """
+        logger.debug("Getting new log chunks")
+        
         # 새로운 라인 읽기
         new_lines = self._read_new_lines()
         
         if not new_lines and not self.pending_lines:
+            logger.debug("No new lines and no pending lines")
             return
         
         # 배치당 라인 수 제한
         max_lines = self.realtime_config["max_lines_per_batch"]
         if len(new_lines) > max_lines:
             print(f"WARNING: Too many new lines ({len(new_lines)}), limiting to {max_lines}")
+            logger.warning(f"Too many new lines ({len(new_lines)}), limiting to {max_lines}")
             new_lines = new_lines[:max_lines]
         
         # 대기 중인 버퍼에 추가
         self.pending_lines.extend(new_lines)
+        
+        if new_lines:
+            logger.info(f"Added {len(new_lines)} new lines to buffer, total pending: {len(self.pending_lines)}")
         
         # 처리 모드 결정 및 자동 샘플링 로직 적용
         should_sample = False
@@ -262,13 +324,16 @@ class RealtimeLogMonitor:
         if self.only_sampling_mode:
             should_sample = True
             effective_mode = "sampling"
+            logger.debug("Using sampling mode (always-on)")
         elif len(self.pending_lines) > self.sampling_threshold:
             print(f"AUTO-SWITCH: Pending lines ({len(self.pending_lines)}) exceed threshold ({self.sampling_threshold})")
             print("SWITCHING TO SAMPLING MODE")
+            logger.info(f"Auto-switching to sampling mode - pending lines ({len(self.pending_lines)}) exceed threshold ({self.sampling_threshold})")
             should_sample = True
             effective_mode = "sampling"
         else:
             effective_mode = "full"
+            logger.debug("Using full processing mode")
         
         # 상태 업데이트
         if len(new_lines) > 0 or self.pending_lines:
@@ -284,12 +349,15 @@ class RealtimeLogMonitor:
             self.pending_lines = self.pending_lines[-self.chunk_size:]
             if discarded_count > 0:
                 print(f"SAMPLING: Discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
+                logger.info(f"Sampling applied - discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
         
         # 완전한 청크들 반환
         while len(self.pending_lines) >= self.chunk_size:
             chunk = self.pending_lines[:self.chunk_size]
             self.pending_lines = self.pending_lines[self.chunk_size:]
             print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
+            logger.info(f"Yielding chunk with {len(chunk)} lines, {len(self.pending_lines)} lines remaining")
+            logger.debug(f"Chunk content preview: {chunk[:3]}..." if len(chunk) > 3 else f"Chunk content: {chunk}")
             yield chunk
     
     def mark_chunk_processed(self, processed_lines: List[str]):
@@ -301,11 +369,13 @@ class RealtimeLogMonitor:
         """
         # 실시간 모드에서는 별도의 position 업데이트가 불필요
         # 파일 크기는 새 라인을 읽을 때마다 자동으로 업데이트됨
+        logger.debug(f"Marked {len(processed_lines)} lines as processed")
         pass
     
     def save_state_on_exit(self):
         """종료시 상태 저장 (실시간 모드에서는 불필요)"""
         print("💾 Realtime mode - no state to save")
+        logger.info("Realtime mode shutdown - no state to save")
         # 실시간 모드에서는 항상 파일 끝에서 시작하므로 상태 저장 불필요
 
 def create_realtime_monitor(log_type: str, 
@@ -326,6 +396,9 @@ def create_realtime_monitor(log_type: str,
     Returns:
         RealtimeLogMonitor: Initialized monitor instance
     """
+    logger.info(f"Creating realtime monitor for log_type: {log_type}")
+    logger.debug(f"Parameters - chunk_size: {chunk_size}, remote_mode: {remote_mode}, remote_log_path: {remote_log_path}")
+    
     # Get configuration
     config = get_analysis_config(
         log_type=log_type,
@@ -336,4 +409,6 @@ def create_realtime_monitor(log_type: str,
         remote_log_path=remote_log_path
     )
     
-    return RealtimeLogMonitor(log_type, config)
+    monitor = RealtimeLogMonitor(log_type, config)
+    logger.info(f"Realtime monitor created successfully for {log_type}")
+    return monitor
