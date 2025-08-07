@@ -54,6 +54,11 @@ LLM_TEMPERATURE=0.1
 # Lower values = more focused, Higher values = more diverse
 LLM_TOP_P=0.3
 
+# Max Tokens: Maximum number of tokens to generate in response
+# Controls response length and prevents infinite generation
+# Recommended: 1024-4096 for log analysis depending on complexity
+LLM_MAX_TOKENS=2048
+
 # Show Prompt: Display the full prompt sent to LLM before processing (true/false)
 # Set to true to see the complete prompt for debugging and transparency
 # Useful for debugging prompt issues and understanding what's sent to the LLM

@@ -10,7 +10,7 @@ import openai
 import json
 from pydantic import ValidationError
 from google import genai
-from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P
+from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
 
 def initialize_llm_model(llm_provider=None, llm_model_name=None):
     """
@@ -82,7 +82,7 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         # - outlines 라이브러리 구현: Gemini용 outlines 구현이 아직 완전하지 않을 수 있음.
         # - 스키마 변환 문제: Pydantic 모델을 Gemini가 이해할 수 있는 형태로 변환하는 과정에서 additionalProperties 같은 속성이 지원되지 않음.
         # 현재 코드에서 Gemini는 model_class 없이 raw 텍스트를 반환하고, 프롬프트 엔지니어링을 통해 JSON 형태로 응답을 받고, 이를 Pydantic 모델로 검증하는 방식으로 동작함. (아래 try문 참조)
-        response = model(prompt, max_output_tokens=2048, temperature=LLM_TEMPERATURE)
+        response = model(prompt, max_output_tokens=LLM_MAX_TOKENS, temperature=LLM_TEMPERATURE)
         
         # Clean up response - remove markdown code blocks if present
         cleaned_response = response.strip()
@@ -118,7 +118,7 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
             raise ValueError(f"❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
     else:
         # OpenAI and vLLM support temperature and top_p
-        return model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P)
+        return model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
 
 def wait_on_failure(delay_seconds=30):
     """

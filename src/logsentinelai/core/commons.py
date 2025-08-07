@@ -12,8 +12,7 @@ from typing import Dict, Any, Optional, List
 
 # Import from modularized components
 from .config import (
-    get_analysis_config, LLM_PROVIDER, LLM_MODELS, 
-    LLM_TEMPERATURE, LLM_TOP_P
+    get_analysis_config, LLM_PROVIDER, LLM_MODELS
 )
 from .llm import initialize_llm_model, generate_with_model, wait_on_failure
 from .elasticsearch import send_to_elasticsearch_raw
