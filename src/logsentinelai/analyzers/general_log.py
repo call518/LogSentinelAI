@@ -93,16 +93,23 @@ def main():
     # Create argument parser
     parser = create_argument_parser("General Log Analysis")
     args = parser.parse_args()
-    
+
+    # 파일 로깅 설정 (콘솔 출력은 기존대로 print 사용)
+    from ..core.commons import setup_logger, LOG_LEVEL
+    logger = setup_logger(__name__, LOG_LEVEL)
+
     # Handle SSH configuration
     ssh_config = handle_ssh_arguments(args)
     remote_mode = "ssh" if ssh_config else "local"
-    
+
     # Run analysis based on mode
     log_type = "general_log"
     analysis_title = "General Log Analysis"
-    
+
+    logger.info(f"Starting {analysis_title} (mode: {args.mode}, log_path: {args.log_path}, remote_mode: {remote_mode})")
+
     if args.mode == "batch":
+        logger.debug("Running in batch mode.")
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
@@ -113,7 +120,9 @@ def main():
             remote_mode=remote_mode,
             ssh_config=ssh_config
         )
+        logger.info("Batch analysis completed.")
     elif args.mode == "realtime":
+        logger.debug("Running in realtime mode.")
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
@@ -126,6 +135,7 @@ def main():
             remote_mode=remote_mode,
             ssh_config=ssh_config
         )
+        logger.info("Realtime analysis completed.")
 
 if __name__ == "__main__":
     main()

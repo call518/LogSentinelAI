@@ -65,15 +65,22 @@ def main():
     """Main function with argument parsing"""
     parser = create_argument_parser('HTTPD Access Log Analysis')
     args = parser.parse_args()
-    
+
+    # 파일 로깅 설정 (콘솔 출력은 기존대로 print 사용)
+    from ..core.commons import setup_logger, LOG_LEVEL
+    logger = setup_logger(__name__, LOG_LEVEL)
+
     # SSH 설정 파싱
     ssh_config = handle_ssh_arguments(args)
     remote_mode = "ssh" if ssh_config else "local"
-    
+
     log_type = "httpd_access"
     analysis_title = "HTTPD Access Log Analysis"
-    
+
+    logger.info(f"Starting {analysis_title} (mode: {args.mode}, log_path: {args.log_path}, remote_mode: {remote_mode})")
+
     if args.mode == 'realtime':
+        logger.debug("Running in realtime mode.")
         run_generic_realtime_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
@@ -86,7 +93,9 @@ def main():
             remote_mode=remote_mode,
             ssh_config=ssh_config
         )
+        logger.info("Realtime analysis completed.")
     else:
+        logger.debug("Running in batch mode.")
         run_generic_batch_analysis(
             log_type=log_type,
             analysis_schema_class=LogAnalysis,
@@ -96,6 +105,7 @@ def main():
             remote_mode=remote_mode,
             ssh_config=ssh_config
         )
+        logger.info("Batch analysis completed.")
 
 
 if __name__ == "__main__":
