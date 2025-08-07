@@ -10,7 +10,6 @@ LogSentinelAI는 **Declarative Extraction (선언적 추출)** 방식으로 LLM�
 
 ![System Architecture](img/system-architecture.png)
 
-이 다이어그램은 LogSentinelAI의 전체 아키텍처를 보여줍니다:
 - **Log Sources (로그 소스)**: 로컬 파일, 원격 SSH, HTTP 접근 로그, Apache 에러 로그, 시스템 로그, TCPDump 등 다양한 로그 소스로부터 데이터를 수집합니다.
 - **LogSentinelAI Core (핵심 처리 모듈)**: 사용자 정의 스키마(Pydantic 모델)를 기반으로 로그 구조를 선언적으로 정의하면, LLM을 통해 해당 데이터를 자동으로 추출 및 구조화합니다. 추출된 결과는 Pydantic을 통해 유효성 검사를 거칩니다.
 - **LLM Provider (LLM 공급자)**: OpenAI, vLLM, Ollama 등 다양한 외부 또는 로컬 LLM과 연동하여, 선언된 구조에 따라 로그를 해석하고 JSON 형태로 변환합니다.

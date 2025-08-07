@@ -10,7 +10,6 @@ LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security 
 
 ![System Architecture](img/system-architecture.png)
 
-This diagram illustrates the overall architecture of LogSentinelAI:
 - **Log Sources**: Logs are collected from various sources, including local files, remote SSH connections, HTTP endpoints, Apache error logs, system logs, and TCPDump outputs.
 - **LogSentinelAI Core**: Handles parsing and extraction using a declarative approach. Log structures are defined using Pydantic models, and the actual extraction is performed by LLMs. The system validates and structures the extracted data.
 - **LLM Provider**: Integrates with external or local LLMs (e.g., OpenAI, vLLM, Ollama) to interpret and transform raw logs into structured JSON, based on user-defined schemas.
