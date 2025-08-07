@@ -8,7 +8,13 @@ from typing import Dict, Any, Optional
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError, RequestError
 from rich import print_json
+
 from .config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
+from .commons import setup_logger
+import logging
+
+from .config import LOG_LEVEL
+logger = setup_logger("logsentinelai.elasticsearch", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
 
 def get_elasticsearch_client() -> Optional[Elasticsearch]:
     """
@@ -24,19 +30,17 @@ def get_elasticsearch_client() -> Optional[Elasticsearch]:
             verify_certs=False,
             ssl_show_warn=False
         )
-        
         if client.ping():
-            print(f"✅ Elasticsearch connection successful: {ELASTICSEARCH_HOST}")
+            logger.info(f"Elasticsearch connection successful: {ELASTICSEARCH_HOST}")
             return client
         else:
-            print(f"❌ Elasticsearch ping failed: {ELASTICSEARCH_HOST}")
+            logger.error(f"Elasticsearch ping failed: {ELASTICSEARCH_HOST}")
             return None
-            
     except ConnectionError as e:
-        print(f"❌ Elasticsearch connection error: {e}")
+        logger.error(f"Elasticsearch connection error: {e}")
         return None
     except Exception as e:
-        print(f"❌ Elasticsearch client creation error: {e}")
+        logger.error(f"Elasticsearch client creation error: {e}")
         return None
 
 def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None) -> bool:

@@ -1,5 +1,17 @@
 # LogSentinelAI Configuration File
 
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+
+# LOG_LEVEL: Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+# Example: LOG_LEVEL=INFO
+LOG_LEVEL=INFO
+
+# LOG_FILE: Path to log file (leave empty for console only)
+# Example: LOG_FILE=logsentinelai.log
+LOG_FILE=logsentinelai.log
+
 # ===============================================================================
 # API Keys
 # =============================================================================

@@ -10,7 +10,13 @@ import openai
 import json
 from pydantic import ValidationError
 from google import genai
+
 from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
+from .config import LOG_LEVEL
+from .commons import setup_logger
+import logging
+
+logger = setup_logger("logsentinelai.llm", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
 
 def initialize_llm_model(llm_provider=None, llm_model_name=None):
     """
@@ -28,35 +34,46 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
         llm_provider = LLM_PROVIDER
     if llm_model_name is None:
         llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
-    
-    if llm_provider == "ollama":
-        client = openai.OpenAI(
-            base_url=LLM_API_HOSTS["ollama"],
-            api_key="dummy"
-        )
-        model = outlines.from_openai(client, llm_model_name)
-    elif llm_provider == "vllm":
-        client = openai.OpenAI(
-            base_url=LLM_API_HOSTS["vllm"],
-            api_key="dummy"
-        )
-        model = outlines.from_openai(client, llm_model_name)
-    elif llm_provider == "openai":
-        client = openai.OpenAI(
-            base_url=LLM_API_HOSTS["openai"],
-            api_key=os.getenv("OPENAI_API_KEY")
-        )
-        model = outlines.from_openai(client, llm_model_name)
-    elif llm_provider == "gemini":
-        client = openai.OpenAI(
-            base_url=LLM_API_HOSTS["gemini"],
-            api_key=os.getenv("GEMINI_API_KEY")
-        )
-        model = outlines.from_openai(client, llm_model_name)
-    else:
-        raise ValueError("Unsupported LLM provider. Use 'ollama', 'vllm', 'openai', or 'gemini'.")
-    
-    return model
+
+    logger.info(f"Initializing LLM model: provider={llm_provider}, model={llm_model_name}")
+
+    try:
+        if llm_provider == "ollama":
+            logger.debug("Creating Ollama client and model.")
+            client = openai.OpenAI(
+                base_url=LLM_API_HOSTS["ollama"],
+                api_key="dummy"
+            )
+            model = outlines.from_openai(client, llm_model_name)
+        elif llm_provider == "vllm":
+            logger.debug("Creating vLLM client and model.")
+            client = openai.OpenAI(
+                base_url=LLM_API_HOSTS["vllm"],
+                api_key="dummy"
+            )
+            model = outlines.from_openai(client, llm_model_name)
+        elif llm_provider == "openai":
+            logger.debug("Creating OpenAI client and model.")
+            client = openai.OpenAI(
+                base_url=LLM_API_HOSTS["openai"],
+                api_key=os.getenv("OPENAI_API_KEY")
+            )
+            model = outlines.from_openai(client, llm_model_name)
+        elif llm_provider == "gemini":
+            logger.debug("Creating Gemini client and model.")
+            client = openai.OpenAI(
+                base_url=LLM_API_HOSTS["gemini"],
+                api_key=os.getenv("GEMINI_API_KEY")
+            )
+            model = outlines.from_openai(client, llm_model_name)
+        else:
+            logger.error(f"Unsupported LLM provider: {llm_provider}")
+            raise ValueError("Unsupported LLM provider. Use 'ollama', 'vllm', 'openai', or 'gemini'.")
+        logger.info(f"LLM model initialized: provider={llm_provider}, model={llm_model_name}")
+        return model
+    except Exception as e:
+        logger.exception(f"Failed to initialize LLM model: {e}")
+        raise
 
 def generate_with_model(model, prompt, model_class, llm_provider=None):
     """
@@ -72,6 +89,9 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         Generated response
     """
     provider = llm_provider or LLM_PROVIDER
+    # 파일 로깅만: 콘솔 출력(print)은 그대로 유지
+    logger.info(f"[FILE LOG] Generating response with provider={provider}")
+    logger.debug(f"[FILE LOG] Prompt: {prompt}")
     
     if provider == "gemini":
         # Gemini API에서 additionalProperties is not supported 오류가 발생하는 이유는 outlines 라이브러리의 Gemini 구현에서 Pydantic 모델의 스키마 변환 과정에서 문제가 있기 때문.
@@ -80,47 +100,50 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         # - outlines 라이브러리 구현: Gemini용 outlines 구현이 아직 완전하지 않을 수 있음.
         # - 스키마 변환 문제: Pydantic 모델을 Gemini가 이해할 수 있는 형태로 변환하는 과정에서 additionalProperties 같은 속성이 지원되지 않음.
         # 현재 코드에서 Gemini는 model_class 없이 raw 텍스트를 반환하고, 프롬프트 엔지니어링을 통해 JSON 형태로 응답을 받고, 이를 Pydantic 모델로 검증하는 방식으로 동작함. (아래 try문 참조)
-        response = model(prompt, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
-        
-        # Clean up response by removing leading/trailing whitespace
-        cleaned_response = response.strip()
-        
-        # Remove markdown code blocks
-        if cleaned_response.startswith('```json'):
-            cleaned_response = cleaned_response[7:]  # Remove ```json
-        elif cleaned_response.startswith('```'):
-            cleaned_response = cleaned_response[3:]   # Remove ```
-            
-        if cleaned_response.endswith('```'):
-            cleaned_response = cleaned_response[:-3]  # Remove trailing ```
-            
-        cleaned_response = cleaned_response.strip()
-        
-        # Validate Gemini response with Pydantic model (Using model_class)
         try:
-            # Attempt JSON parsing
+            response = model(prompt, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
+            logger.debug(f"[FILE LOG] Raw Gemini response: {response}")
+            cleaned_response = response.strip()
+            # Remove markdown code blocks
+            if cleaned_response.startswith('```json'):
+                cleaned_response = cleaned_response[7:]
+            elif cleaned_response.startswith('```'):
+                cleaned_response = cleaned_response[3:]
+            if cleaned_response.endswith('```'):
+                cleaned_response = cleaned_response[:-3]
+            cleaned_response = cleaned_response.strip()
+            logger.debug(f"[FILE LOG] Cleaned Gemini response: {cleaned_response}")
+            # Validate Gemini response with Pydantic model (Using model_class)
             parsed_json = json.loads(cleaned_response)
-            # Validate with Pydantic model
             validated_data = model_class.model_validate(parsed_json)
-            # Convert validated data back to JSON string for return
+            logger.info("[FILE LOG] Gemini response validated successfully.")
             return validated_data.model_dump_json()
         except json.JSONDecodeError as e:
             print(f"\n❌ [GEMINI JSON ERROR] Invalid JSON format in response")
             print(f"Error: {e}")
             print(f"Raw response:\n{cleaned_response}")
+            logger.error(f"[FILE LOG] [GEMINI JSON ERROR] Invalid JSON format in response: {e}")
+            logger.debug(f"[FILE LOG] Raw response: {cleaned_response}")
             raise ValueError(f"❌ [GEMINI JSON ERROR] Invalid JSON format in response: {e}")
         except ValidationError as e:
             print(f"\n❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema")
             print(f"Error: {e}")
             print(f"Raw response:\n{cleaned_response}")
+            logger.error(f"[FILE LOG] [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
+            logger.debug(f"[FILE LOG] Raw response: {cleaned_response}")
             raise ValueError(f"❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
     else:
         # For Ollama, vLLM, OpenAI
-        response = model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
-        
-        # Clean up response by removing leading/trailing whitespace
-        cleaned_response = response.strip()
-        return cleaned_response
+        try:
+            response = model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
+            logger.debug(f"[FILE LOG] Raw response: {response}")
+            cleaned_response = response.strip()
+            logger.info("[FILE LOG] Response generated and cleaned.")
+            return cleaned_response
+        except Exception as e:
+            print(f"❌ [LLM ERROR] Error during response generation: {e}")
+            logger.exception(f"[FILE LOG] Error during response generation: {e}")
+            raise
         
 
 def wait_on_failure(delay_seconds=30):
@@ -131,5 +154,7 @@ def wait_on_failure(delay_seconds=30):
         delay_seconds: Number of seconds to wait (default: 30)
     """
     print(f"⏳ Waiting {delay_seconds} seconds before processing next chunk...")
+    logger.warning(f"Waiting {delay_seconds} seconds before processing next chunk due to failure...")
     time.sleep(delay_seconds)
     print("Wait completed, continuing with next chunk.")
+    logger.info("Wait completed, continuing with next chunk.")

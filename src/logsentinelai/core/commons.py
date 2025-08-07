@@ -5,6 +5,29 @@ Main analysis functions and common interfaces for log processing
 This module provides the core functionality for log analysis,
 including batch and real-time processing capabilities.
 """
+
+import logging
+import os
+from .config import LOG_FILE
+
+def setup_logger(name="logsentinelai", level=logging.INFO):
+    """
+    Set up and return a logger with the specified name and level.
+    """
+    logger = logging.getLogger(name)
+    if not logger.hasHandlers():
+        formatter = logging.Formatter('[%(asctime)s][%(levelname)s] %(name)s: %(message)s')
+        # Always add console handler
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+        # If LOG_FILE is set and not empty, add file handler
+        if LOG_FILE:
+            file_handler = logging.FileHandler(LOG_FILE)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+    logger.setLevel(level)
+    return logger
 import json
 from rich import print_json
 import datetime

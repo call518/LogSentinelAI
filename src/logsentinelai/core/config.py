@@ -26,6 +26,12 @@ LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
 LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
+
+
+# Logging Configuration
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_FILE = os.getenv("LOG_FILE", "logsentinelai.log")
+
 # Common Analysis Configuration
 RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
 ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")

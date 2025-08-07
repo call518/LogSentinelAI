@@ -5,12 +5,21 @@ LogSentinelAI Command Line Interface
 Main entry point for the LogSentinelAI package.
 """
 
+
 import sys
 import argparse
 from typing import Optional
 
+# Logging setup
+from logsentinelai.core.config import LOG_LEVEL
+from logsentinelai.core.commons import setup_logger
+import logging
+
+logger = setup_logger("logsentinelai.cli", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
+
 def main() -> None:
     """Main CLI entry point"""
+    logger.info("LogSentinelAI CLI started.")
     epilog_text = (
         """
 Examples:
