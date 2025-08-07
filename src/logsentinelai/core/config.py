@@ -19,7 +19,8 @@ LLM_MODELS = {
 LLM_API_HOSTS = {
     "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434/v1"),
     "vllm": os.getenv("LLM_API_HOST_VLLM", "http://127.0.0.1:5000/v1"),
-    "openai": os.getenv("LLM_API_HOST_OPENAI", "https://api.openai.com/v1")
+    "openai": os.getenv("LLM_API_HOST_OPENAI", "https://api.openai.com/v1"),
+    "gemini": os.getenv("LLM_API_HOST_GEMINI", "https://generativelanguage.googleapis.com/v1beta/openai/")
 }
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))

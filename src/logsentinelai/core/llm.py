@@ -30,7 +30,7 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
         llm_model_name = LLM_MODELS.get(llm_provider, "unknown")
     
     if llm_provider == "ollama":
-        client = openai.Client(
+        client = openai.OpenAI(
             base_url=LLM_API_HOSTS["ollama"],
             api_key="dummy"
         )
@@ -48,10 +48,11 @@ def initialize_llm_model(llm_provider=None, llm_model_name=None):
         )
         model = outlines.from_openai(client, llm_model_name)
     elif llm_provider == "gemini":
-        client = genai.Client(
+        client = openai.OpenAI(
+            base_url=LLM_API_HOSTS["gemini"],
             api_key=os.getenv("GEMINI_API_KEY")
         )
-        model = outlines.from_gemini(client, llm_model_name)
+        model = outlines.from_openai(client, llm_model_name)
     else:
         raise ValueError("Unsupported LLM provider. Use 'ollama', 'vllm', 'openai', or 'gemini'.")
     
@@ -79,9 +80,9 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         # - outlines 라이브러리 구현: Gemini용 outlines 구현이 아직 완전하지 않을 수 있음.
         # - 스키마 변환 문제: Pydantic 모델을 Gemini가 이해할 수 있는 형태로 변환하는 과정에서 additionalProperties 같은 속성이 지원되지 않음.
         # 현재 코드에서 Gemini는 model_class 없이 raw 텍스트를 반환하고, 프롬프트 엔지니어링을 통해 JSON 형태로 응답을 받고, 이를 Pydantic 모델로 검증하는 방식으로 동작함. (아래 try문 참조)
-        response = model(prompt, max_output_tokens=LLM_MAX_TOKENS, temperature=LLM_TEMPERATURE)
+        response = model(prompt, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
         
-        # Clean up response - remove markdown code blocks if present
+        # Clean up response by removing leading/trailing whitespace
         cleaned_response = response.strip()
         
         # Remove markdown code blocks
@@ -115,7 +116,12 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
             raise ValueError(f"❌ [GEMINI SCHEMA ERROR] Response doesn't match required schema: {e}")
     else:
         # For Ollama, vLLM, OpenAI
-        return model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
+        response = model(prompt, model_class, temperature=LLM_TEMPERATURE, top_p=LLM_TOP_P, max_tokens=LLM_MAX_TOKENS)
+        
+        # Clean up response by removing leading/trailing whitespace
+        cleaned_response = response.strip()
+        return cleaned_response
+        
 
 def wait_on_failure(delay_seconds=30):
     """

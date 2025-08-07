@@ -35,15 +35,20 @@ LLM_MODEL_GEMINI=gemini-1.5-pro
 #LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OPENAI=gpt-4.1-nano
 
-# LLM API Host Configuration
-# Ollama API host with OpenAI API compatibility (default: http://127.0.0.1:11434/v1)
+# Ollama API Host Configuration (default: http://127.0.0.1:11434/v1)
+# (OpenAI API compatibility)
 LLM_API_HOST_OLLAMA=http://127.0.0.1:11434/v1
 
 # vLLM API host (default: http://127.0.0.1:5000/v1)
+# (OpenAI API compatibility)
 LLM_API_HOST_VLLM=http://127.0.0.1:5000/v1
 
 # OpenAI API host (default: https://api.openai.com/v1)
 LLM_API_HOST_OPENAI=https://api.openai.com/v1
+
+# Gemini API host
+# (OpenAI API compatibility)
+LLM_API_HOST_GEMINI=https://generativelanguage.googleapis.com/v1beta/openai/
 
 # LLM Generation Parameters
 # Temperature: Controls randomness (0.0 = deterministic, 1.0 = very random)
