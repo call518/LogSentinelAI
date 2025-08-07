@@ -74,42 +74,53 @@ def main():
     parser = create_argument_parser('Linux System Log Analysis')
     args = parser.parse_args()
 
-    logger.info("Linux System Log Analysis started.")
-    logger.debug(f"Parsed arguments: {args}")
+    try:
+        logger.info("Linux System Log Analysis started.")
+        logger.debug(f"Parsed arguments: {args}")
 
-    # SSH 설정 파싱
-    ssh_config = handle_ssh_arguments(args)
-    remote_mode = "ssh" if ssh_config else "local"
-    logger.info(f"Remote mode: {remote_mode}")
+        # SSH 설정 파싱
+        ssh_config = handle_ssh_arguments(args)
+        remote_mode = "ssh" if ssh_config else "local"
+        logger.info(f"Remote mode: {remote_mode}")
 
-    log_type = "linux_system"
-    analysis_title = "Linux System Log Analysis"
+        log_type = "linux_system"
+        analysis_title = "Linux System Log Analysis"
 
-    if args.mode == 'realtime':
-        logger.info("Running in real-time analysis mode.")
-        run_generic_realtime_analysis(
-            log_type=log_type,
-            analysis_schema_class=LogAnalysis,
-            prompt_template=get_linux_system_prompt(),
-            analysis_title=analysis_title,
-            chunk_size=args.chunk_size,
-            log_path=args.log_path,
-            only_sampling_mode=args.only_sampling_mode,
-            sampling_threshold=args.sampling_threshold,
-            remote_mode=remote_mode,
-            ssh_config=ssh_config
-        )
-    else:
-        logger.info("Running in batch analysis mode.")
-        run_generic_batch_analysis(
-            log_type=log_type,
-            analysis_schema_class=LogAnalysis,
-            prompt_template=get_linux_system_prompt(),
-            analysis_title=analysis_title,
-            log_path=args.log_path,
-            remote_mode=remote_mode,
-            ssh_config=ssh_config
-        )
+        if args.mode == 'realtime':
+            logger.info("Running in real-time analysis mode.")
+            run_generic_realtime_analysis(
+                log_type=log_type,
+                analysis_schema_class=LogAnalysis,
+                prompt_template=get_linux_system_prompt(),
+                analysis_title=analysis_title,
+                chunk_size=args.chunk_size,
+                log_path=args.log_path,
+                only_sampling_mode=args.only_sampling_mode,
+                sampling_threshold=args.sampling_threshold,
+                remote_mode=remote_mode,
+                ssh_config=ssh_config
+            )
+            logger.info("Realtime analysis completed.")
+        else:
+            logger.info("Running in batch analysis mode.")
+            run_generic_batch_analysis(
+                log_type=log_type,
+                analysis_schema_class=LogAnalysis,
+                prompt_template=get_linux_system_prompt(),
+                analysis_title=analysis_title,
+                log_path=args.log_path,
+                remote_mode=remote_mode,
+                ssh_config=ssh_config
+            )
+            logger.info("Batch analysis completed.")
+    except KeyboardInterrupt:
+        logger.info("Linux system log analysis interrupted by user")
+        print("\nAnalysis interrupted by user")
+        return 0
+    except Exception as e:
+        logger.exception(f"Unexpected error in Linux system log analysis: {e}")
+        print(f"ERROR: Unexpected error: {e}")
+        return 1
 
 
 if __name__ == "__main__":

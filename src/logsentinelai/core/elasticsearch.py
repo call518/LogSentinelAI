@@ -10,11 +10,10 @@ from elasticsearch.exceptions import ConnectionError, RequestError
 from rich import print_json
 
 from .config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
-from .commons import setup_logger
+from .commons import setup_logger, LOG_LEVEL
 import logging
 
-from .commons import LOG_LEVEL
-logger = setup_logger("logsentinelai.elasticsearch", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
+logger = setup_logger("logsentinelai.elasticsearch", LOG_LEVEL)
 
 def get_elasticsearch_client() -> Optional[Elasticsearch]:
     """
@@ -56,6 +55,8 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
         bool: Whether transmission was successful
     """
     
+    logger.debug(f"send_to_elasticsearch_raw called with log_type={log_type}, chunk_id={chunk_id}")
+    
     try:
         # Generate document identification ID
         timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
@@ -76,7 +77,10 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
         print("-" * 30)
         print_json(json.dumps(enriched_data, ensure_ascii=False, indent=2))
         print()
-        logger.debug(f"Final ES Input JSON: {json.dumps(enriched_data, ensure_ascii=False)}")
+        
+        # DEBUG 레벨에서 ES 전송 직전 최종 JSON 로깅 (더 상세한 정보 포함)
+        logger.debug(f"ES transmission for chunk {chunk_id} - Document ID: {doc_id}")
+        logger.debug(f"Final ES JSON data (chunk {chunk_id}):\n{json.dumps(enriched_data, ensure_ascii=False, indent=2)}")
 
         # Get Elasticsearch client
         client = get_elasticsearch_client()

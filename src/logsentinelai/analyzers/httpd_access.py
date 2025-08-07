@@ -70,42 +70,51 @@ def main():
     from ..core.commons import setup_logger, LOG_LEVEL
     logger = setup_logger(__name__, LOG_LEVEL)
 
-    # SSH 설정 파싱
-    ssh_config = handle_ssh_arguments(args)
-    remote_mode = "ssh" if ssh_config else "local"
+    try:
+        # SSH 설정 파싱
+        ssh_config = handle_ssh_arguments(args)
+        remote_mode = "ssh" if ssh_config else "local"
 
-    log_type = "httpd_access"
-    analysis_title = "HTTPD Access Log Analysis"
+        log_type = "httpd_access"
+        analysis_title = "HTTPD Access Log Analysis"
 
-    logger.info(f"Starting {analysis_title} (mode: {args.mode}, log_path: {args.log_path}, remote_mode: {remote_mode})")
+        logger.info(f"Starting {analysis_title} (mode: {args.mode}, log_path: {args.log_path}, remote_mode: {remote_mode})")
 
-    if args.mode == 'realtime':
-        logger.debug("Running in realtime mode.")
-        run_generic_realtime_analysis(
-            log_type=log_type,
-            analysis_schema_class=LogAnalysis,
-            prompt_template=get_httpd_access_prompt(),
-            analysis_title=analysis_title,
-            chunk_size=args.chunk_size,
-            log_path=args.log_path,
-            only_sampling_mode=args.only_sampling_mode,
-            sampling_threshold=args.sampling_threshold,
-            remote_mode=remote_mode,
-            ssh_config=ssh_config
-        )
-        logger.info("Realtime analysis completed.")
-    else:
-        logger.debug("Running in batch mode.")
-        run_generic_batch_analysis(
-            log_type=log_type,
-            analysis_schema_class=LogAnalysis,
-            prompt_template=get_httpd_access_prompt(),
-            analysis_title=analysis_title,
-            log_path=args.log_path,
-            remote_mode=remote_mode,
-            ssh_config=ssh_config
-        )
-        logger.info("Batch analysis completed.")
+        if args.mode == 'realtime':
+            logger.debug("Running in realtime mode.")
+            run_generic_realtime_analysis(
+                log_type=log_type,
+                analysis_schema_class=LogAnalysis,
+                prompt_template=get_httpd_access_prompt(),
+                analysis_title=analysis_title,
+                chunk_size=args.chunk_size,
+                log_path=args.log_path,
+                only_sampling_mode=args.only_sampling_mode,
+                sampling_threshold=args.sampling_threshold,
+                remote_mode=remote_mode,
+                ssh_config=ssh_config
+            )
+            logger.info("Realtime analysis completed.")
+        else:
+            logger.debug("Running in batch mode.")
+            run_generic_batch_analysis(
+                log_type=log_type,
+                analysis_schema_class=LogAnalysis,
+                prompt_template=get_httpd_access_prompt(),
+                analysis_title=analysis_title,
+                log_path=args.log_path,
+                remote_mode=remote_mode,
+                ssh_config=ssh_config
+            )
+            logger.info("Batch analysis completed.")
+    except KeyboardInterrupt:
+        logger.info("HTTPD access log analysis interrupted by user")
+        print("\nAnalysis interrupted by user")
+        return 0
+    except Exception as e:
+        logger.exception(f"Unexpected error in HTTPD access log analysis: {e}")
+        print(f"ERROR: Unexpected error: {e}")
+        return 1
 
 
 if __name__ == "__main__":

@@ -4,12 +4,17 @@ Centralizes all configuration constants and environment variable handling
 """
 
 import os
+import logging
 from dotenv import load_dotenv
-
-
 
 # .env 파일 로드
 load_dotenv(dotenv_path="config")
+
+# commons.py에서 로깅 설정 가져오기 (순환 참조 해결됨)
+from .commons import setup_logger, LOG_LEVEL
+
+logger = setup_logger(__name__, LOG_LEVEL)
+logger.info("Loading configuration from .env file")
 
 
 # LLM Configuration
@@ -33,9 +38,8 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
 
 
-# Logging Configuration
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-LOG_FILE = os.getenv("LOG_FILE", "logsentinelai.log")
+# Logging Configuration - managed by commons.py
+# LOG_LEVEL and LOG_FILE are imported from commons
 
 
 # Common Analysis Configuration
@@ -115,27 +119,41 @@ def get_analysis_config(log_type, chunk_size=None, analysis_mode=None,
     Returns:
         dict: Configuration containing log_path, chunk_size, response_language, analysis_mode, ssh_config
     """
+    logger.info(f"Getting analysis configuration for log_type: {log_type}")
+    
     mode = analysis_mode if analysis_mode is not None else ANALYSIS_MODE
     access_mode = remote_mode if remote_mode is not None else DEFAULT_REMOTE_SSH_CONFIG["mode"]
+    
+    logger.debug(f"Configuration parameters - mode: {mode}, access_mode: {access_mode}")
     
     # Get log path - use simple LOG_PATHS for all cases
     if access_mode == "ssh":
         log_path = remote_log_path or LOG_PATHS.get(log_type, "")
+        logger.info(f"SSH mode: using log path: {log_path}")
     else:
         log_path = LOG_PATHS.get(log_type, "")
+        logger.info(f"Local mode: using log path: {log_path}")
     
     # SSH configuration
     if access_mode == "ssh":
         final_ssh_config = {**DEFAULT_REMOTE_SSH_CONFIG, **(ssh_config or {}), "mode": "ssh"}
+        logger.info(f"SSH configuration prepared: {final_ssh_config}")
     else:
         final_ssh_config = {"mode": "local"}
+        logger.debug("Local mode configuration prepared")
     
-    return {
+    final_chunk_size = chunk_size if chunk_size is not None else LOG_CHUNK_SIZES.get(log_type, 3)
+    logger.info(f"Final configuration - chunk_size: {final_chunk_size}, response_language: {RESPONSE_LANGUAGE}")
+    
+    config = {
         "log_path": log_path,
-        "chunk_size": chunk_size if chunk_size is not None else LOG_CHUNK_SIZES.get(log_type, 3),
+        "chunk_size": final_chunk_size,
         "response_language": RESPONSE_LANGUAGE,
         "analysis_mode": mode,
         "access_mode": access_mode,
         "ssh_config": final_ssh_config,
         "realtime_config": REALTIME_CONFIG if mode == "realtime" else None
     }
+    
+    logger.info("Analysis configuration prepared successfully")
+    return config

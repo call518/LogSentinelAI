@@ -11,11 +11,9 @@ import argparse
 from typing import Optional
 
 # Logging setup
-from logsentinelai.core.config import LOG_LEVEL
-from logsentinelai.core.commons import setup_logger
-import logging
+from logsentinelai.core.commons import setup_logger, LOG_LEVEL
 
-logger = setup_logger("logsentinelai.cli", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
+logger = setup_logger("logsentinelai.cli", LOG_LEVEL)
 
 def main() -> None:
     """Main CLI entry point"""
@@ -135,23 +133,28 @@ For detailed help on each command, use: <command> --help
     )
     
     args = parser.parse_args()
-    
+
     if not args.command:
         parser.print_help()
+        logger.warning("No command provided. Showing help.")
         return
-    
+
+    logger.info(f"Command selected: {args.command}")
+
     # Route to appropriate analyzer
     if args.command == "httpd-access":
+        logger.debug("Routing to httpd_access analyzer.")
         from .analyzers.httpd_access import main as httpd_access_main
-        # Convert args to sys.argv format expected by analyzer
         sys.argv = ["logsentinelai-httpd-access"]
         if hasattr(args, 'log_path') and args.log_path:
             sys.argv.extend(["--log-path", args.log_path])
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
         httpd_access_main()
-    
+        logger.info("httpd_access analysis completed.")
+
     elif args.command == "linux-system":
+        logger.debug("Routing to linux_system analyzer.")
         from .analyzers.linux_system import main as linux_system_main
         sys.argv = ["logsentinelai-linux-system"]
         if hasattr(args, 'log_path') and args.log_path:
@@ -159,8 +162,10 @@ For detailed help on each command, use: <command> --help
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
         linux_system_main()
-    
+        logger.info("linux_system analysis completed.")
+
     elif args.command == "general-log":
+        logger.debug("Routing to general_log analyzer.")
         from .analyzers.general_log import main as general_log_main
         sys.argv = ["logsentinelai-general-log"]
         if hasattr(args, 'log_path') and args.log_path:
@@ -168,14 +173,19 @@ For detailed help on each command, use: <command> --help
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
         general_log_main()
-    
+        logger.info("general_log analysis completed.")
+
     elif args.command == "geoip-download":
+        logger.debug("Routing to geoip_downloader.")
         from .utils.geoip_downloader import main as geoip_main
         geoip_main()
+        logger.info("GeoIP database download completed.")
     elif args.command == "geoip-lookup":
+        logger.debug("Routing to geoip_lookup.")
         from .utils.geoip_lookup import main as geoip_lookup_main
         sys.argv = ["geoip-lookup", args.ip]
         geoip_lookup_main()
+        logger.info(f"GeoIP lookup completed for IP: {args.ip}")
 
 if __name__ == "__main__":
     main()
