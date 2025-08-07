@@ -6,7 +6,7 @@ Linux system logs, and other log types to identify security threats and stores t
 as structured data in Elasticsearch for visualization and analysis.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.0.0"
 __author__ = "JungJungIn"
 __email__ = "call518@gmail.com"
 
