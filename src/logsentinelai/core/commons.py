@@ -179,7 +179,7 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             parsed["@token_size_input"] = token_in
         if token_out is not None:
             parsed["@token_size_output"] = token_out
-        parsed["@token_size_total"] = (token_in + token_out) if (token_in is not None and token_out is not None) else None
+        # Removed @token_size_total as requested
 
         # Validate with Pydantic model
         model_class.model_validate(parsed)
