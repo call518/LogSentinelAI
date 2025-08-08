@@ -155,10 +155,34 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         # Count log lines
         log_count = len([line for line in chunk_data if line.strip()])
 
+        # Compute elapsed analysis time in seconds (start/end are ISO strings with 'Z')
+        elapsed_seconds = None
+        try:
+            start_dt = None
+            end_dt = None
+            if isinstance(chunk_start_time, str):
+                start_dt = datetime.datetime.fromisoformat(chunk_start_time.replace('Z', '+00:00'))
+            elif isinstance(chunk_start_time, datetime.datetime):
+                start_dt = chunk_start_time
+            if isinstance(chunk_end_time, str):
+                end_dt = datetime.datetime.fromisoformat(chunk_end_time.replace('Z', '+00:00'))
+            elif isinstance(chunk_end_time, datetime.datetime):
+                end_dt = chunk_end_time
+            if start_dt and end_dt:
+                elapsed_seconds = int((end_dt - start_dt).total_seconds())
+        except Exception:
+            elapsed_seconds = None
+
+        # Log the computed elapsed time for observability
+        logger.info(
+            f"Chunk {chunk_number} analysis elapsed time: {elapsed_seconds}s (start={chunk_start_time}, end={chunk_end_time})"
+        )
+
         # Add metadata
         parsed.update({
             "@chunk_analysis_start_utc": chunk_start_time,
             "@chunk_analysis_end_utc": chunk_end_time,
+            "@chunk_analysis_elapsed_time": elapsed_seconds,
             "@processing_result": "success",
             "@log_count": log_count,
             "@processing_mode": processing_mode or "batch",
@@ -239,9 +263,33 @@ def _handle_processing_error(error, error_type, chunk_start_time, chunk_end_time
 
     log_count = len([line for line in chunk_data if line.strip()])
 
+    # Compute elapsed analysis time in seconds for failure as well
+    elapsed_seconds = None
+    try:
+        start_dt = None
+        end_dt = None
+        if isinstance(chunk_start_time, str):
+            start_dt = datetime.datetime.fromisoformat(chunk_start_time.replace('Z', '+00:00'))
+        elif isinstance(chunk_start_time, datetime.datetime):
+            start_dt = chunk_start_time
+        if isinstance(chunk_end_time, str):
+            end_dt = datetime.datetime.fromisoformat(chunk_end_time.replace('Z', '+00:00'))
+        elif isinstance(chunk_end_time, datetime.datetime):
+            end_dt = chunk_end_time
+        if start_dt and end_dt:
+            elapsed_seconds = int((end_dt - start_dt).total_seconds())
+    except Exception:
+        elapsed_seconds = None
+
+    # Log the computed elapsed time for the failure path
+    logger.info(
+        f"Chunk {chunk_number} analysis elapsed time (failure): {elapsed_seconds}s (start={chunk_start_time}, end={chunk_end_time})"
+    )
+
     failure_data = {
         "@chunk_analysis_start_utc": chunk_start_time,
         "@chunk_analysis_end_utc": chunk_end_time,
+        "@chunk_analysis_elapsed_time": elapsed_seconds,
         "@processing_result": "failed",
         "@error_type": error_type,
         "@error_message": str(error)[:200],
