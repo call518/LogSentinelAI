@@ -10,6 +10,7 @@ including batch and real-time processing capabilities.
 import logging
 import os
 from dotenv import load_dotenv
+from contextvars import ContextVar
 
 # .env 파일 로드 (config 파일에서 환경변수 읽기)
 load_dotenv(dotenv_path="config")
@@ -18,17 +19,37 @@ load_dotenv(dotenv_path="config")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = os.getenv("LOG_FILE", "logsentinelai.log")
 
+# Add context for @log_type so every log line can include it in the header
+LOG_TYPE_CTX: ContextVar[str] = ContextVar("log_type", default="unknown")
+
+def set_log_type(log_type: str):
+    """Set current @log_type context used by the logging filter."""
+    try:
+        LOG_TYPE_CTX.set(str(log_type) if log_type else "unknown")
+    except Exception:
+        LOG_TYPE_CTX.set("unknown")
+
 def setup_logger(name="logsentinelai", level=LOG_LEVEL):
     """
     Set up and return a logger with the specified name and level.
     """
     logger = logging.getLogger(name)
     if not logger.hasHandlers():
-        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] (%(name)s) %(message)s')
+        # Include @log_type right after LOG_LEVEL in the header
+        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(log_type)s] (%(name)s) %(message)s')
         if LOG_FILE:
             file_handler = logging.FileHandler(LOG_FILE)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
+        # Inject @log_type into each record
+        class LogTypeFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord) -> bool:
+                try:
+                    record.log_type = LOG_TYPE_CTX.get()
+                except Exception:
+                    record.log_type = "unknown"
+                return True
+        logger.addFilter(LogTypeFilter())
     logger.setLevel(getattr(logging, str(level).upper(), logging.INFO))
     return logger
 
@@ -63,6 +84,8 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
     Returns:
         bool: Whether transmission was successful
     """
+    # Ensure @log_type is set for this send path
+    set_log_type(log_type)
     # Enrich with GeoIP information before sending
     enriched_data = enrich_source_ips_with_geoip(analysis_data)
     logger.info(f"Sending data to Elasticsearch (log_type={log_type}, chunk_id={chunk_id})")
@@ -93,6 +116,10 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         (success: bool, parsed_data: dict or None)
     """
     try:
+        # Make sure @log_type context is set within this processing scope
+        if elasticsearch_index:
+            set_log_type(elasticsearch_index)
+
         # Generate response using LLM
         review = generate_with_model(model, prompt, model_class, llm_provider)
 
@@ -261,6 +288,8 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
         ssh_config: Custom SSH configuration dict
         remote_log_path: Custom remote log path
     """
+    # Set @log_type context for this run
+    set_log_type(log_type)
     logger.info(f"Starting batch analysis for {log_type} ({analysis_title})")
     print("=" * 70)
     print(f"LogSentinelAI - {analysis_title} (Batch Mode)")
@@ -413,6 +442,8 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         ssh_config: SSH configuration dict
         remote_log_path: Remote log file path
     """
+    # Set @log_type context for this run
+    set_log_type(log_type)
     logger.info(f"Starting real-time analysis for {log_type} ({analysis_title})")
     print("=" * 70)
     print(f"LogSentinelAI - {analysis_title} (Real-time Mode)")
