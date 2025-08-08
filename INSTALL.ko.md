@@ -206,7 +206,28 @@ cd LogSentinelAI/sample-logs
 ls *.log  # 다양한 샘플 로그 확인
 ```
 
+### Tip: 더 많은 공개 샘플 로그 활용
+여러 로그 타입/포맷을 폭넓게 테스트하려면 아래 공개 저장소를 활용하세요.
+- GitHub: https://github.com/SoftManiaTech/sample_log_files
+
+LogSentinelAI와 함께 사용하는 방법 예시:
+```bash
+# 공개 샘플 로그 저장소 클론
+cd ~
+git clone https://github.com/SoftManiaTech/sample_log_files.git
+
+# 예: Linux System 분석기에 적용
+logsentinelai-linux-system --log-path ~/sample_log_files/linux/example.log
+
+# 예: HTTP Access 분석기에 적용
+logsentinelai-httpd-access --log-path ~/sample_log_files/web/apache_access.log
+```
+참고:
+- 일부 샘플은 현재 제공 분석기 스키마/프롬프트와 포맷이 다를 수 있으므로, 필요 시 보완해 주세요
+- 매우 큰 파일 실험 시 `--chunk-size`로 배치 크기를 조정해 최적화할 수 있습니다
+
 ---
+
 
 ## 8. Elasticsearch & Kibana 설치 및 연동(선택)
 
@@ -609,3 +630,4 @@ REALTIME_POLLING_INTERVAL=2
 # 일반 모니터링 (효율성 우선)
 REALTIME_SAMPLING_THRESHOLD=100
 REALTIME_POLLING_INTERVAL=10
+```

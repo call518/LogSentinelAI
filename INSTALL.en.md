@@ -194,6 +194,26 @@ cd LogSentinelAI/sample-logs
 ls *.log  # Check various sample logs
 ```
 
+### Tip: Use More Public Sample Logs
+For testing additional log types and formats, leverage this public repository:
+- GitHub: https://github.com/SoftManiaTech/sample_log_files
+
+How to use with LogSentinelAI:
+```bash
+# Clone the public sample logs repository
+cd ~
+git clone https://github.com/SoftManiaTech/sample_log_files.git
+
+# Example: test Linux system analyzer on a selected file
+logsentinelai-linux-system --log-path ~/sample_log_files/linux/example.log
+
+# Example: test HTTP access analyzer on an access log sample
+logsentinelai-httpd-access --log-path ~/sample_log_files/web/apache_access.log
+```
+Notes:
+- Some samples may have formats not fully covered by current analyzers; adjust prompts/schemas accordingly
+- Use `--chunk-size` to tune batch size when experimenting with very large files
+
 ---
 
 ## 8. Install & Integrate Elasticsearch & Kibana (Optional)

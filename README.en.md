@@ -125,6 +125,17 @@ Jun 15 02:04:59 combo sshd(pam_unix)[20892]: authentication failure; logname= ui
 Jun 15 02:04:59 combo sshd(pam_unix)[20893]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=220-135-151-1.hinet-ip.hinet.net  user=root
 ```
 
+### More Public Sample Logs
+
+To test more log types and formats, you can leverage this public sample logs repository:
+
+- GitHub: https://github.com/SoftManiaTech/sample_log_files
+
+How to use with LogSentinelAI:
+- Clone and pick appropriate files for your analyzer
+- Use `--log-path` to point the analyzer CLI at the chosen file
+- Some formats may require adapting analyzer prompts/schemas
+
 ## Installation Guide
 
 For installation, environment setup, CLI usage, Elasticsearch/Kibana integration, and all practical guides for LogSentinelAI, please refer to the installation documentation below.
