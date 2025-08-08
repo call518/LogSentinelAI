@@ -48,6 +48,7 @@ from .elasticsearch import send_to_elasticsearch_raw
 from .geoip import enrich_source_ips_with_geoip
 from .utils import chunked_iterable, print_chunk_contents
 from .monitoring import RealtimeLogMonitor, create_realtime_monitor
+from .token_utils import count_tokens
 
 def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None, chunk: Optional[List] = None) -> bool:
     """
@@ -69,7 +70,7 @@ def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id
 
 def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_time, 
                      elasticsearch_index, chunk_number, chunk_data, llm_provider=None, llm_model=None,
-                     processing_mode=None, log_path=None, access_mode=None):
+                     processing_mode=None, log_path=None, access_mode=None, token_size_input: int | None = None):
     """
     Common function to process log chunks
     
@@ -110,6 +111,20 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
         except Exception as e:
             print(f"(Failed to pretty-print LLM response: {e})\nRaw: {review}")
 
+        # Print LLM response token count (approximate) right after raw response output
+        try:
+            resp_tokens = count_tokens(review, llm_model)
+            print(f"✅ LLM response tokens (approx.): {resp_tokens}")
+            # Log token count with provider/model for traceability
+            logger.info(
+                f"LLM response tokens (approx.): {resp_tokens} (provider={llm_provider}, model={llm_model})"
+            )
+        except Exception:
+            resp_tokens = None
+            logger.warning(
+                f"Failed to count LLM response tokens (provider={llm_provider}, model={llm_model})"
+            )
+
         # Count log lines
         log_count = len([line for line in chunk_data if line.strip()])
 
@@ -130,6 +145,14 @@ def process_log_chunk(model, prompt, model_class, chunk_start_time, chunk_end_ti
             parsed["@llm_model"] = llm_model
         if log_path:
             parsed["@log_path"] = log_path
+        # Token sizes (for ES indexing)
+        token_in = int(token_size_input) if token_size_input is not None else None
+        token_out = int(resp_tokens) if resp_tokens is not None else None
+        if token_in is not None:
+            parsed["@token_size_input"] = token_in
+        if token_out is not None:
+            parsed["@token_size_output"] = token_out
+        parsed["@token_size_total"] = (token_in + token_out) if (token_in is not None and token_out is not None) else None
 
         # Validate with Pydantic model
         model_class.model_validate(parsed)
@@ -303,15 +326,31 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
                 model_schema = analysis_schema_class.model_json_schema()
                 prompt = prompt_template.format(logs=logs, model_schema=model_schema, response_language=response_language)
                 prompt = prompt.strip()
+
+                # Token count for prompt (approximate)
+                try:
+                    prompt_tokens = count_tokens(prompt, llm_model_name)
+                    # Log token count with provider/model for traceability
+                    logger.info(
+                        f"Prompt tokens (approx.): {prompt_tokens} (provider={llm_provider}, model={llm_model_name})"
+                    )
+                except Exception:
+                    prompt_tokens = None
+                    logger.warning(
+                        f"Failed to count prompt tokens (provider={llm_provider}, model={llm_model_name})"
+                    )
                 
                 # DEBUG 레벨에서 LLM에 전송될 최종 프롬프트 로깅
                 logger.debug(f"Final prompt for chunk {chunk_count}:\n{prompt}")
                 
-                if i == 0:
-                    print("\n[LLM Prompt Submitted]")
-                    print("-" * 50)
-                    print(prompt)
-                    print("-" * 50)
+                # Always print the final prompt for each chunk
+                print("\n[LLM Prompt Submitted]")
+                print("-" * 50)
+                print(prompt)
+                print("-" * 50)
+                # Print prompt token count right after the prompt output
+                if prompt_tokens is not None:
+                    print(f"✅ Prompt tokens (approx.): {prompt_tokens} (model: {llm_model_name})")
                 print(f"\n--- Chunk {i+1} ---")
                 print_chunk_contents(chunk)
                 
@@ -329,7 +368,8 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
                     llm_model=llm_model_name,
                     processing_mode="batch",
                     log_path=log_path,
-                    access_mode=config["access_mode"]
+                    access_mode=config["access_mode"],
+                    token_size_input=prompt_tokens,
                 )
                 
                 if success:
@@ -485,9 +525,31 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
                 
                 # Prepare chunk for analysis 
                 prompt, chunk_lines = prepare_chunk_for_analysis(chunk, config["response_language"])
+
+                # Token count for prompt (approximate)
+                try:
+                    prompt_tokens = count_tokens(prompt, llm_model_name)
+                    # Log token count with provider/model for traceability
+                    logger.info(
+                        f"Prompt tokens (approx.): {prompt_tokens} (provider={llm_provider}, model={llm_model_name})"
+                    )
+                except Exception:
+                    prompt_tokens = None
+                    logger.warning(
+                        f"Failed to count prompt tokens (provider={llm_provider}, model={llm_model_name})"
+                    )
                 
                 # DEBUG 레벨에서 실시간 분석용 최종 프롬프트 로깅
                 logger.debug(f"Final realtime prompt for chunk {chunk_counter}:\n{prompt}")
+                
+                # Always print the final prompt for each realtime chunk
+                print("\n[LLM Prompt Submitted]")
+                print("-" * 50)
+                print(prompt)
+                print("-" * 50)
+                # Print prompt token count right after the prompt output
+                if prompt_tokens is not None:
+                    print(f"✅ Prompt tokens (approx.): {prompt_tokens} (model: {llm_model_name})")
                 
                 # Process chunk using common function
                 success, parsed_data = process_log_chunk(
@@ -503,7 +565,8 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
                     llm_model=llm_model_name,
                     processing_mode="realtime",
                     log_path=config["log_path"],
-                    access_mode=config["access_mode"]
+                    access_mode=config["access_mode"],
+                    token_size_input=prompt_tokens,
                 )
                 
                 if success:
@@ -537,8 +600,7 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
                 print("-" * 50)
             
             # Sleep for polling interval
-            time.sleep(config["realtime_config"]["polling_interval"])
-            
+            time.sleep(config["realtime_config"]["polling_interval"])            
     except KeyboardInterrupt:
         logger.info("Real-time monitoring stopped by user (Ctrl+C)")
         print("\n\n🛑 Real-time monitoring stopped by user")

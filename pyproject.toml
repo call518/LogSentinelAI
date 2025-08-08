@@ -53,6 +53,7 @@ dependencies = [
     "tqdm>=4.67.1",
     "typing-extensions>=4.14.1",
     "google-genai>=1.28.0",
+    "tiktoken>=0.7.0",
 ]
 
 [project.optional-dependencies]
