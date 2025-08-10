@@ -12,10 +12,10 @@ import os
 from dotenv import load_dotenv
 from contextvars import ContextVar
 
-# .env 파일 로드 (config 파일에서 환경변수 읽기)
+# Load .env style config file (environment variables)
 load_dotenv(dotenv_path="config")
 
-# 로깅 환경변수 설정 (공통 관리)
+# Logging environment variable setup (shared)
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = os.getenv("LOG_FILE", "logsentinelai.log")
 
@@ -714,6 +714,10 @@ def create_argument_parser(description: str):
     import argparse
     parser = argparse.ArgumentParser(description=description)
     
+    # Config file override
+    parser.add_argument('--config', type=str, default=None,
+                       help='설정 파일 경로 (.env 형식). 미지정 시 /etc/logsentinelai.config → ./config 순으로 탐색')
+
     # Analysis mode
     parser.add_argument('--mode', choices=['batch', 'realtime'], default='batch',
                        help='Analysis mode: batch (default) or realtime')

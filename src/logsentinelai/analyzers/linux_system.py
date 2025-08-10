@@ -74,6 +74,10 @@ def main():
     parser = create_argument_parser('Linux System Log Analysis')
     args = parser.parse_args()
 
+    if getattr(args, 'config', None):
+        from ..core.config import apply_config
+        apply_config(args.config)
+
     try:
         logger.info("Linux System Log Analysis started.")
         logger.debug(f"Parsed arguments: {args}")

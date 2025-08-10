@@ -109,6 +109,13 @@ cd ~/LogSentinelAI  # 소스 설치 시
 curl -o config https://raw.githubusercontent.com/call518/LogSentinelAI/main/config.template
 nano config  # 또는 vim config
 # OPENAI_API_KEY 등 필수 항목 입력
+
+참고:
+- config 파일은 필수이며 제공된 `config.template`를 기반으로 작성하세요.
+- `--config` 미지정 시 런타임 검색 순서: `/etc/logsentinelai.config` → `./config`.
+- 어떤 경로에서도 찾지 못하면 안내 메시지를 출력하고 종료하니, 파일을 생성 후 다시 실행하세요.
+- 경로를 명시적으로 지정하려면: `--config /path/to/config`
+ - 명시적으로 `--config /path/to/config`를 지정했고 파일이 없으면 즉시 종료하며, fallback 검색은 수행되지 않습니다.
 ```
 
 ### config 주요 항목 예시

@@ -101,6 +101,13 @@ cd ~/LogSentinelAI  # If installed from source
 curl -o config https://raw.githubusercontent.com/call518/LogSentinelAI/main/config.template
 nano config  # or vim config
 # Enter required fields such as OPENAI_API_KEY
+
+Notes:
+- A config file is MANDATORY. Base it on the provided `config.template`.
+- Runtime search order (if `--config` not given): `/etc/logsentinelai.config` → `./config`.
+- If no file is found the program aborts with guidance; create one and re-run.
+- Override path explicitly: `--config /path/to/config`
+ - If an explicit `--config /path/to/config` is given and that file does not exist, the program aborts immediately (no fallback search).
 ```
 
 ### Example config main items

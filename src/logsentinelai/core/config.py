@@ -1,107 +1,201 @@
+"""LogSentinelAI configuration loader with dynamic --config override support.
+
+This module dynamically loads (and can reload) env-style configuration files so
+that a different config file can be specified at runtime via the --config option.
+
+Search order priority:
+1) Explicit path provided via --config (if exists)
+2) Default path /etc/logsentinelai.config (if exists)
+3) Local project path ./config (fallback)
 """
-Configuration module for LogSentinelAI
-Centralizes all configuration constants and environment variable handling
-"""
+
+from __future__ import annotations
 
 import os
 import logging
 from dotenv import load_dotenv
+import sys
 
-# .env 파일 로드
-load_dotenv(dotenv_path="config")
-
-# commons.py에서 로깅 설정 가져오기 (순환 참조 해결됨)
-from .commons import setup_logger, LOG_LEVEL
+# Attempt to import setup_logger / LOG_LEVEL from commons (avoid circular import issues)
+try:  # pragma: no cover - 보호적 로드
+    from .commons import setup_logger, LOG_LEVEL  # type: ignore
+except Exception:  # 초기 로드 단계에서 commons 미준비 가능
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")  # type: ignore
+    def setup_logger(name, level):  # minimal placeholder
+        logging.basicConfig(level=getattr(logging, level.upper(), logging.INFO))
+        return logging.getLogger(name)
 
 logger = setup_logger(__name__, LOG_LEVEL)
-logger.info("Loading configuration from .env file")
+
+# Global state (updated on reload)
+CONFIG_FILE_PATH: str | None = None
+
+# Public configuration values (reassigned on reload)
+LLM_PROVIDER: str = "openai"
+LLM_MODELS: dict[str, str] = {}
+LLM_API_HOSTS: dict[str, str] = {}
+LLM_TEMPERATURE: float = 0.1
+LLM_TOP_P: float = 0.5
+LLM_MAX_TOKENS: int = 2048
+RESPONSE_LANGUAGE: str = "korean"
+ANALYSIS_MODE: str = "batch"
+LOG_PATHS: dict[str, str] = {}
+REALTIME_CONFIG: dict[str, object] = {}
+DEFAULT_REMOTE_SSH_CONFIG: dict[str, object] = {}
+LOG_CHUNK_SIZES: dict[str, int] = {}
+GEOIP_CONFIG: dict[str, object] = {}
+ELASTICSEARCH_HOST: str = "http://localhost:9200"
+ELASTICSEARCH_USER: str = "elastic"
+ELASTICSEARCH_PASSWORD: str = "changeme"
+ELASTICSEARCH_INDEX: str = "logsentinelai-analysis"
 
 
-# LLM Configuration
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
-LLM_MODELS = {
-    "ollama": os.getenv("LLM_MODEL_OLLAMA", "qwen2.5-coder:3b"),
-    "vllm": os.getenv("LLM_MODEL_VLLM", "Qwen/Qwen2.5-1.5B-Instruct"),
-    "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini"),
-    "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-1.5-pro")
-}
-LLM_API_HOSTS = {
-    "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434/v1"),
-    "vllm": os.getenv("LLM_API_HOST_VLLM", "http://127.0.0.1:5000/v1"),
-    "openai": os.getenv("LLM_API_HOST_OPENAI", "https://api.openai.com/v1"),
-    "gemini": os.getenv("LLM_API_HOST_GEMINI", "https://generativelanguage.googleapis.com/v1beta/openai/")
-}
-LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
-LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
-LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+def _load_values() -> None:
+    """Load all global configuration values from environment variables into module globals."""
+    global LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
+    global RESPONSE_LANGUAGE, ANALYSIS_MODE, LOG_PATHS, REALTIME_CONFIG, DEFAULT_REMOTE_SSH_CONFIG
+    global LOG_CHUNK_SIZES, GEOIP_CONFIG, ELASTICSEARCH_HOST, ELASTICSEARCH_USER
+    global ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
+    LLM_MODELS = {
+        "ollama": os.getenv("LLM_MODEL_OLLAMA", "qwen2.5-coder:3b"),
+        "vllm": os.getenv("LLM_MODEL_VLLM", "Qwen/Qwen2.5-1.5B-Instruct"),
+        "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini"),
+        "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-1.5-pro")
+    }
+    LLM_API_HOSTS = {
+        "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434/v1"),
+        "vllm": os.getenv("LLM_API_HOST_VLLM", "http://127.0.0.1:5000/v1"),
+        "openai": os.getenv("LLM_API_HOST_OPENAI", "https://api.openai.com/v1"),
+        "gemini": os.getenv("LLM_API_HOST_GEMINI", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    }
+    try:
+        LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
+        LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
+        LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+    except ValueError:
+        logger.warning("Invalid numeric LLM parameter detected; using defaults")
+        LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS = 0.1, 0.5, 2048
+
+    RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
+    ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
+    LOG_PATHS = {
+        "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
+        "httpd_server": os.getenv("LOG_PATH_HTTPD_SERVER", "sample-logs/apache-10k.log"),
+        "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log"),
+        "general_log": os.getenv("LOG_PATH_GENERAL_LOG", "sample-logs/general.log")
+    }
+    REALTIME_CONFIG = {
+        "polling_interval": int(os.getenv("REALTIME_POLLING_INTERVAL", "5")),
+        "max_lines_per_batch": int(os.getenv("REALTIME_MAX_LINES_PER_BATCH", "50")),
+        "buffer_time": int(os.getenv("REALTIME_BUFFER_TIME", "2")),
+        "only_sampling_mode": os.getenv("REALTIME_ONLY_SAMPLING_MODE", "false").lower() == "true",
+        "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
+    }
+    DEFAULT_REMOTE_SSH_CONFIG = {
+        "mode": os.getenv("REMOTE_LOG_MODE", "local"),
+        "host": os.getenv("REMOTE_SSH_HOST", ""),
+        "port": int(os.getenv("REMOTE_SSH_PORT", "22")),
+        "user": os.getenv("REMOTE_SSH_USER", ""),
+        "key_path": os.getenv("REMOTE_SSH_KEY_PATH", ""),
+        "password": os.getenv("REMOTE_SSH_PASSWORD", ""),
+        "timeout": int(os.getenv("REMOTE_SSH_TIMEOUT", "10"))
+    }
+    LOG_CHUNK_SIZES = {
+        "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
+        "httpd_server": int(os.getenv("CHUNK_SIZE_HTTPD_SERVER", "10")),
+        "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10")),
+        "general_log": int(os.getenv("CHUNK_SIZE_GENERAL_LOG", "10"))
+    }
+    GEOIP_CONFIG = {
+        "enabled": os.getenv("GEOIP_ENABLED", "true").lower() == "true",
+        "database_path": os.getenv("GEOIP_DATABASE_PATH", "~/.logsentinelai/GeoLite2-City.mmdb"),
+        "fallback_country": os.getenv("GEOIP_FALLBACK_COUNTRY", "Unknown"),
+        "cache_size": int(os.getenv("GEOIP_CACHE_SIZE", "1000")),
+        "include_private_ips": os.getenv("GEOIP_INCLUDE_PRIVATE_IPS", "false").lower() == "true"
+    }
+    ELASTICSEARCH_HOST = os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")
+    ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER", "elastic")
+    ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "changeme")
+    ELASTICSEARCH_INDEX = os.getenv("ELASTICSEARCH_INDEX", "logsentinelai-analysis")
+
+    logger.info(f"Configuration loaded (config_file={CONFIG_FILE_PATH})")
 
 
+def apply_config(config_path: str | None) -> None:
+    """Apply (load) the configuration file and rebuild global settings.
+
+    Args:
+        config_path: Optional explicit path provided by --config. If None, search defaults.
+    """
+    global CONFIG_FILE_PATH
+    
+    # 1. --config로 명시된 경우: 해당 파일만 사용 (없으면 중단)
+    if config_path:
+        if not os.path.isfile(config_path):
+            guidance = (
+                f"\n❌ [ERROR] Explicit --config path '{config_path}' not found\n\n"
+                "💡 If you need a template, copy 'config.template' from the 'LogSentinelAI GitHub Repository' and edit it.\n\n"
+                "- Fallback search skipped because an explicit path was provided.\n"
+                "- Omit --config to use default search: /etc/logsentinelai.config → ./config)\n"
+            )
+            logger.error(guidance)
+            print(guidance, file=sys.stderr)
+            sys.exit(1)
+        CONFIG_FILE_PATH = config_path
+        display_path = config_path if os.path.isabs(config_path) else f"./{config_path.lstrip('./')}"
+        logger.info(f"[config] Using explicit config file: {display_path}")
+    else:
+        # 2. --config 미지정: 1순위=/etc/logsentinelai.config, 2순위=./config
+        # 1순위 체크
+        if os.path.isfile("/etc/logsentinelai.config"):
+            CONFIG_FILE_PATH = "/etc/logsentinelai.config"
+            logger.info("[config] (1/2) Found config file: /etc/logsentinelai.config")
+        # 2순위 체크 (1순위가 없을 때만)
+        else:
+            logger.info("[config] (1/2) Not found: /etc/logsentinelai.config")
+            if os.path.isfile("./config"):
+                CONFIG_FILE_PATH = "./config"
+                logger.info("[config] (2/2) Found config file: ./config")
+            else:
+                logger.info("[config] (2/2) Not found: ./config")
+        
+        # 둘 다 없으면 오류
+        if not CONFIG_FILE_PATH:
+            guidance = (
+                "\n❌ No configuration file detected\n"
+                "🔎 Searched: /etc/logsentinelai.config, ./config\n\n"
+                "📄 A config file is REQUIRED.\n"
+                "✅ Quick fix:\n"
+                "  1) Copy the provided template:  cp config.template ./config\n"
+                "  2) Edit the file (add API keys, paths, etc.)\n"
+                "  3) Run either:\n"
+                "       logsentinelai --config ./config <command>\n"
+                "     OR place it at /etc/logsentinelai.config for global use.\n\n"
+                "💡 You can also specify any custom path with: --config /path/to/config\n"
+                "📘 See INSTALL guide (section: Prepare Config File) for details.\n"
+            )
+            logger.error(guidance)
+            print(guidance, file=sys.stderr)
+            sys.exit(1)
+    
+    logger.info(f"[config] Selected config file: {CONFIG_FILE_PATH}")
+    
+    try:
+        load_dotenv(dotenv_path=CONFIG_FILE_PATH, override=True)
+    except Exception as exc:
+        logger.error(f"Failed loading config file {CONFIG_FILE_PATH}: {exc}")
+        print(f"ERROR: Failed loading config file {CONFIG_FILE_PATH}: {exc}", file=sys.stderr)
+        sys.exit(1)
+    _load_values()
 
 
-# Logging Configuration - managed by commons.py
-# LOG_LEVEL and LOG_FILE are imported from commons
+# Initial load when module is imported
+apply_config(None)
 
-
-# Common Analysis Configuration
-RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
-ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")
-
-
-# Log Paths Configuration - Simple defaults
-LOG_PATHS = {
-    "httpd_access": os.getenv("LOG_PATH_HTTPD_ACCESS", "sample-logs/access-10k.log"),
-    "httpd_server": os.getenv("LOG_PATH_HTTPD_SERVER", "sample-logs/apache-10k.log"),
-    "linux_system": os.getenv("LOG_PATH_LINUX_SYSTEM", "sample-logs/linux-2k.log"),
-    "general_log": os.getenv("LOG_PATH_GENERAL_LOG", "sample-logs/general.log")
-}
-
-
-# Real-time Monitoring Configuration
-REALTIME_CONFIG = {
-    "polling_interval": int(os.getenv("REALTIME_POLLING_INTERVAL", "5")),
-    "max_lines_per_batch": int(os.getenv("REALTIME_MAX_LINES_PER_BATCH", "50")),
-    "buffer_time": int(os.getenv("REALTIME_BUFFER_TIME", "2")),
-    "only_sampling_mode": os.getenv("REALTIME_ONLY_SAMPLING_MODE", "false").lower() == "true",
-    "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
-}
-
-
-# Default Remote SSH Configuration
-DEFAULT_REMOTE_SSH_CONFIG = {
-    "mode": os.getenv("REMOTE_LOG_MODE", "local"),
-    "host": os.getenv("REMOTE_SSH_HOST", ""),
-    "port": int(os.getenv("REMOTE_SSH_PORT", "22")),
-    "user": os.getenv("REMOTE_SSH_USER", ""),
-    "key_path": os.getenv("REMOTE_SSH_KEY_PATH", ""),
-    "password": os.getenv("REMOTE_SSH_PASSWORD", ""),
-    "timeout": int(os.getenv("REMOTE_SSH_TIMEOUT", "10"))
-}
-
-
-# Default Chunk Sizes
-LOG_CHUNK_SIZES = {
-    "httpd_access": int(os.getenv("CHUNK_SIZE_HTTPD_ACCESS", "10")),
-    "httpd_server": int(os.getenv("CHUNK_SIZE_HTTPD_SERVER", "10")),
-    "linux_system": int(os.getenv("CHUNK_SIZE_LINUX_SYSTEM", "10")),
-    "general_log": int(os.getenv("CHUNK_SIZE_GENERAL_LOG", "10"))
-}
-
-
-# GeoIP Configuration
-GEOIP_CONFIG = {
-    "enabled": os.getenv("GEOIP_ENABLED", "true").lower() == "true",
-    "database_path": os.getenv("GEOIP_DATABASE_PATH", "~/.logsentinelai/GeoLite2-City.mmdb"),
-    "fallback_country": os.getenv("GEOIP_FALLBACK_COUNTRY", "Unknown"),
-    "cache_size": int(os.getenv("GEOIP_CACHE_SIZE", "1000")),
-    "include_private_ips": os.getenv("GEOIP_INCLUDE_PRIVATE_IPS", "false").lower() == "true"
-}
-
-
-# Elasticsearch Configuration
-ELASTICSEARCH_HOST = os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")
-ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER", "elastic")
-ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "changeme")
-ELASTICSEARCH_INDEX = os.getenv("ELASTICSEARCH_INDEX", "logsentinelai-analysis")
+def get_config_file_path() -> str | None:
+    """Return the resolved configuration file path currently in use."""
+    return CONFIG_FILE_PATH
 
 def get_analysis_config(log_type, chunk_size=None, analysis_mode=None, 
                        remote_mode=None, ssh_config=None, remote_log_path=None):

@@ -59,6 +59,13 @@ For detailed help on each command, use: <command> --help
         version="LogSentinelAI v0.1.0"
     )
     
+    # Global config override
+    parser.add_argument(
+        "--config",
+        dest="global_config",
+    help="Path to config file (.env style). Overrides default search /etc/logsentinelai.config → ./config"
+    )
+
     subparsers = parser.add_subparsers(
         dest="command",
         help="Available analysis commands",
@@ -73,6 +80,11 @@ For detailed help on each command, use: <command> --help
     httpd_access_parser.add_argument(
         "--log-path",
         help="Path to log file"
+    )
+    httpd_access_parser.add_argument(
+        "--config",
+        dest="config",
+        help="Config file path (overrides global if both set)"
     )
     httpd_access_parser.add_argument(
         "--mode",
@@ -91,6 +103,11 @@ For detailed help on each command, use: <command> --help
         help="Path to log file"
     )
     linux_parser.add_argument(
+        "--config",
+        dest="config",
+        help="Config file path (overrides global if both set)"
+    )
+    linux_parser.add_argument(
         "--mode",
         choices=["batch", "realtime"],
         default="batch",
@@ -105,6 +122,11 @@ For detailed help on each command, use: <command> --help
     general_parser.add_argument(
         "--log-path",
         help="Path to log file"
+    )
+    general_parser.add_argument(
+        "--config",
+        dest="config",
+        help="Config file path (overrides global if both set)"
     )
     general_parser.add_argument(
         "--mode",
@@ -142,6 +164,15 @@ For detailed help on each command, use: <command> --help
     logger.info(f"Command selected: {args.command}")
 
     # Route to appropriate analyzer
+    # Apply global config early if provided
+    if getattr(args, 'global_config', None):
+        try:
+            from .core.config import apply_config
+            apply_config(args.global_config)
+            logger.info(f"Applied global config file: {args.global_config}")
+        except Exception as e:
+            logger.error(f"Failed applying global config: {e}")
+
     if args.command == "httpd-access":
         logger.debug("Routing to httpd_access analyzer.")
         from .analyzers.httpd_access import main as httpd_access_main
@@ -150,6 +181,8 @@ For detailed help on each command, use: <command> --help
             sys.argv.extend(["--log-path", args.log_path])
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
+        if getattr(args, 'config', None):
+            sys.argv.extend(["--config", args.config])
         httpd_access_main()
         logger.info("httpd_access analysis completed.")
 
@@ -161,6 +194,8 @@ For detailed help on each command, use: <command> --help
             sys.argv.extend(["--log-path", args.log_path])
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
+        if getattr(args, 'config', None):
+            sys.argv.extend(["--config", args.config])
         linux_system_main()
         logger.info("linux_system analysis completed.")
 
@@ -172,6 +207,8 @@ For detailed help on each command, use: <command> --help
             sys.argv.extend(["--log-path", args.log_path])
         if hasattr(args, 'mode') and args.mode:
             sys.argv.extend(["--mode", args.mode])
+        if getattr(args, 'config', None):
+            sys.argv.extend(["--config", args.config])
         general_log_main()
         logger.info("general_log analysis completed.")
 
