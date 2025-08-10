@@ -11,6 +11,7 @@ from rich import print_json
 
 from .config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
 from .commons import setup_logger, LOG_LEVEL
+from .utils import get_host_metadata
 import logging
 
 logger = setup_logger("logsentinelai.elasticsearch", LOG_LEVEL)
@@ -65,11 +66,13 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
             doc_id += f"_chunk_{chunk_id}"
 
         # Add metadata
+        host_metadata = get_host_metadata()
         enriched_data = {
             **data,
             "@timestamp": datetime.datetime.utcnow().isoformat(),
             "@log_type": log_type,
-            "@document_id": doc_id
+            "@document_id": doc_id,
+            **host_metadata
         }
 
         # Print final ES input data (콘솔)
