@@ -8,17 +8,10 @@
 
 - **운영체제**: RHEL 8/9, RockyLinux 8/9, CentOS 8/9, Ubuntu 20.04/22.04 (WSL2 포함)
 - **Python**: 3.11 이상 (3.12 권장)
-- **메모리**: 최소 4GB (LL# 실시간 모니터링 (로컬)
-logsentinelai-linux-system --mode realtime
-# SSH 원격 로그 분석
-logsentinelai-linu각 분석기에서 원하는 결과 구조만 선언하면, LLM이 자동으로 해당 구조에 맞는 결과를 반환해 주므로 별도의 파싱 작업이 필요 없습니다.
-
----mote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
-# 수동 GeoIP DB 다운로드/경로 지정
-logsentinelai-geoip-download --output-dir ~/.logsentinelai/시 8GB 이상 권장)
-- **디스크**: 2GB 이상 여유 공간
-- **네트워크**: PyPI, GitHub, OpenAI, Ollama/vLLM 등 외부 접속 필요
-- **(선택) Docker**: Elasticsearch/Kibana, vLLM, Ollama 등 컨테이너 실행 시 필요
+- **메모리**: 최소 4GB (로컬 LLM 활용 시 8GB 이상 권장)
+- **디스크**: 최소 2GB 이상 여유 공간
+- **네트워크**: PyPI, GitHub, OpenAI, Ollama/vLLM 등 외부 서비스 접속 가능
+- **(선택) Docker**: Elasticsearch/Kibana, vLLM, Ollama 컨테이너 실행 시 필요
 
 ---
 
