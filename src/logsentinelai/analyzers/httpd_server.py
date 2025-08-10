@@ -11,7 +11,7 @@ from ..core.commons import (
 )
 
 ### Install the required packages
-# uv add outlines ollama openai python-dotenv numpy elasticsearch
+# uv add outlines ollama openai python-dotenv elasticsearch
 
 #---------------------------------- Enums and Models ----------------------------------
 class SeverityLevel(str, Enum):

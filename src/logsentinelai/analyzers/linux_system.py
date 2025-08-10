@@ -16,7 +16,7 @@ from ..core.commons import (
 )
 
 ### Install the required packages
-# uv add outlines ollama openai python-dotenv numpy elasticsearch
+# uv add outlines ollama openai python-dotenv elasticsearch
 
 #---------------------- Linux System Log용 Enums 및 Models ----------------------
 class SeverityLevel(str, Enum):
