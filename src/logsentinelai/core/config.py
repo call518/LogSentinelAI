@@ -162,19 +162,21 @@ def apply_config(config_path: str | None) -> None:
         
         # 둘 다 없으면 오류
         if not CONFIG_FILE_PATH:
-            guidance = (
-                "\n❌ No configuration file detected\n"
-                "🔎 Searched: /etc/logsentinelai.config, ./config\n\n"
-                "📄 A config file is REQUIRED.\n"
-                "✅ Quick fix:\n"
-                "  1) Copy the provided template:  cp config.template ./config\n"
-                "  2) Edit the file (add API keys, paths, etc.)\n"
-                "  3) Run either:\n"
-                "       logsentinelai --config ./config <command>\n"
-                "     OR place it at /etc/logsentinelai.config for global use.\n\n"
-                "💡 You can also specify any custom path with: --config /path/to/config\n"
-                "📘 See INSTALL guide (section: Prepare Config File) for details.\n"
-            )
+            guidance = """
+❌ No configuration file detected
+🔎 Searched: /etc/logsentinelai.config, ./config
+
+📄 A config file is REQUIRED.
+✅ Quick fix:
+  1) Copy the provided template:  cp config.template ./config
+  2) Edit the file (add API keys, paths, etc.)
+  3) Run either:
+       logsentinelai --config ./config <command>
+     OR place it at /etc/logsentinelai.config for global use.
+
+💡 You can also specify any custom path with: --config /path/to/config
+📘 See INSTALL guide (section: Prepare Config File) for details.
+"""
             logger.error(guidance)
             print(guidance, file=sys.stderr)
             sys.exit(1)
