@@ -18,30 +18,20 @@ This document provides a detailed step-by-step guide for installing, configuring
 
 ### 2.1 Install uv
 ```bash
-# Install uv in Python 3.9+ environment
-python3 -m pip install --user uv
-# or
-pip3 install --user uv
-
-# Add PATH if needed
-export PATH="$HOME/.local/bin:$PATH"
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+After installation, ensure "$HOME/.local/bin" (default install path) is in your PATH:
+```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
-
-# Verify installation
 uv --version
 ```
 
 ### 2.2 Install Python 3.11+ & Create Virtual Environment
 ```bash
-# Install Python 3.11
 uv python install 3.11
-
-# Create and activate virtual environment
 uv venv --python=3.11 logsentinelai-venv
 source logsentinelai-venv/bin/activate
-
-# Ensure prompt changes to (logsentinelai-venv)
 ```
 
 ---

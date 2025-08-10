@@ -25,19 +25,14 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/시 8GB 이상 권장
 
 ## 2. uv 설치 및 가상환경 생성
 
-### 2.1 uv 설치
+### 2.1 uv 설치 (단일 명령)
 ```bash
-# Python 3.9+ 환경에서 uv 설치
-python3 -m pip install --user uv
-# 또는
-pip3 install --user uv
-
-# PATH 추가 (필요시)
-export PATH="$HOME/.local/bin:$PATH"
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+설치 후 기본 경로(`$HOME/.local/bin`)를 PATH에 추가:
+```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
-
-# 설치 확인
 uv --version
 ```
 
