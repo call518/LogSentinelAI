@@ -10,7 +10,7 @@ LOG_LEVEL=INFO
 
 # LOG_FILE: Path to log file (leave empty for console only)
 # Example: LOG_FILE=logsentinelai.log
-LOG_FILE=./logsentinelai.log
+LOG_FILE=/var/log/logsentinelai.log
 
 # ===============================================================================
 # API Keys
