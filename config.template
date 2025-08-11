@@ -176,6 +176,14 @@ REALTIME_BUFFER_TIME=2
 # Example: python analysis-linux-system-log.py --mode realtime --processing-mode sampling
 REALTIME_PROCESSING_MODE=full
 
+# Chunk pending timeout (seconds) for forcing pending logs to be processed
+# - Maximum time to wait for chunk_size logs to accumulate before processing
+# - If pending logs exist but chunk_size is not reached within this time, process anyway
+# - Prevents pending logs from waiting indefinitely in low-volume environments
+# - Set to 0 to disable timeout (wait indefinitely for full chunks)
+# - Recommended: 600-3600 seconds (10-60 minutes) depending on log volume and analysis urgency
+REALTIME_CHUNK_PENDING_TIMEOUT=600
+
 # Auto-sampling threshold (applies to full mode)
 # Automatically switch to sampling if accumulated lines exceed this number
 # - When pending lines exceed this threshold, automatically switch to sampling mode
@@ -191,16 +199,19 @@ REALTIME_SAMPLING_THRESHOLD=100
 # 3. Add these lines to pending buffer (internal queue)
 # 4. When pending buffer reaches CHUNK_SIZE lines, send to LLM for analysis
 # 5. If pending buffer exceeds REALTIME_SAMPLING_THRESHOLD, apply sampling
+# 6. If pending logs exist but CHUNK_SIZE not reached within REALTIME_CHUNK_PENDING_TIMEOUT seconds, force process anyway
 #
 # Example with current settings:
 # - Check file every 5 seconds
 # - Read max 50 lines per check
 # - Analyze when 10 lines accumulated (CHUNK_SIZE)
 # - Apply sampling if 100+ lines pending (REALTIME_SAMPLING_THRESHOLD)
+# - Force process pending logs after 1800 seconds (30 minutes) timeout (REALTIME_CHUNK_PENDING_TIMEOUT)
 
 # Note: Real-time monitoring will buffer new log lines until CHUNK_SIZE lines
 # are accumulated before sending to LLM for analysis. This improves efficiency
-# by avoiding single-line analysis calls.
+# by avoiding single-line analysis calls. However, if logs don't reach CHUNK_SIZE
+# within the timeout period, they will be processed anyway to prevent indefinite waiting.
 
 # =============================================================================
 # GeoIP Configuration

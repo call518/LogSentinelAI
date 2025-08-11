@@ -90,7 +90,8 @@ def _load_values() -> None:
         "max_lines_per_batch": int(os.getenv("REALTIME_MAX_LINES_PER_BATCH", "50")),
         "buffer_time": int(os.getenv("REALTIME_BUFFER_TIME", "2")),
         "only_sampling_mode": os.getenv("REALTIME_ONLY_SAMPLING_MODE", "false").lower() == "true",
-        "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100"))
+        "sampling_threshold": int(os.getenv("REALTIME_SAMPLING_THRESHOLD", "100")),
+        "chunk_pending_timeout": int(os.getenv("REALTIME_CHUNK_PENDING_TIMEOUT", "1800"))
     }
     DEFAULT_REMOTE_SSH_CONFIG = {
         "mode": os.getenv("REMOTE_LOG_MODE", "local"),

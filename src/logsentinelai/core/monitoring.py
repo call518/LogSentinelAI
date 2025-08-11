@@ -3,7 +3,8 @@ Real-time log monitoring module
 Handles continuous monitoring and processing of log files
 """
 import os
-from typing import Dict, Any, List, Generator
+import time
+from typing import Dict, Any, List, Generator, Optional
 from .config import get_analysis_config
 from .ssh import RemoteSSHLogMonitor
 from .commons import setup_logger, LOG_LEVEL
@@ -39,9 +40,13 @@ class RealtimeLogMonitor:
         self.only_sampling_mode = self.realtime_config["only_sampling_mode"]
         self.sampling_threshold = self.realtime_config["sampling_threshold"]
         
+        # Chunk pending timeout configuration
+        self.chunk_pending_timeout = self.realtime_config["chunk_pending_timeout"]  # seconds
+        
         # Buffer management
         self.line_buffer = []
         self.pending_lines = []
+        self.pending_start_time: Optional[float] = None  # Track when pending logs started
         
         # File state tracking (for rotation detection only)
         self.current_file_size = 0
@@ -134,6 +139,10 @@ class RealtimeLogMonitor:
         print(f"Poll Interval:    {self.realtime_config['polling_interval']}s")
         unit = 'lines'
         print(f"Chunk Size:       {self.chunk_size} {unit}")
+        if self.chunk_pending_timeout > 0:
+            print(f"Pending Timeout:  {self.chunk_pending_timeout} seconds ({self.chunk_pending_timeout//60} minutes)")
+        else:
+            print(f"Pending Timeout:  Disabled (wait indefinitely)")
         print(f"Starting Mode:    NEW LOGS ONLY (realtime)")
         print("=" * 80)
     
@@ -313,9 +322,13 @@ class RealtimeLogMonitor:
             new_lines = new_lines[:max_lines]
         
         # 대기 중인 버퍼에 추가
-        self.pending_lines.extend(new_lines)
-        
         if new_lines:
+            # 새로운 라인이 추가되는 시점에서 pending_start_time 설정
+            if not self.pending_lines:
+                self.pending_start_time = time.time()
+                logger.debug(f"Starting new pending batch at {self.pending_start_time}")
+            
+            self.pending_lines.extend(new_lines)
             logger.info(f"Added {len(new_lines)} new lines to buffer, total pending: {len(self.pending_lines)}")
         
         # 처리 모드 결정 및 자동 샘플링 로직 적용
@@ -335,12 +348,26 @@ class RealtimeLogMonitor:
             effective_mode = "full"
             logger.debug("Using full processing mode")
         
+        # 타임아웃 체크
+        timeout_triggered = False
+        if (self.pending_lines and 
+            self.chunk_pending_timeout > 0 and 
+            self.pending_start_time and 
+            time.time() - self.pending_start_time >= self.chunk_pending_timeout):
+            timeout_triggered = True
+            print(f"TIMEOUT: Chunk pending timeout reached ({self.chunk_pending_timeout} seconds), processing {len(self.pending_lines)} pending lines")
+            logger.info(f"Chunk pending timeout triggered after {self.chunk_pending_timeout} seconds with {len(self.pending_lines)} pending lines")
+        
         # 상태 업데이트
         if len(new_lines) > 0 or self.pending_lines:
             if len(new_lines) > 0:
                 status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines (+{len(new_lines)} new)"
             else:
                 status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines"
+            
+            if timeout_triggered:
+                status_msg += " [TIMEOUT]"
+                
             print(f"STATUS: {status_msg}")
         
         # 필요한 경우 샘플링 적용
@@ -351,13 +378,30 @@ class RealtimeLogMonitor:
                 print(f"SAMPLING: Discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
                 logger.info(f"Sampling applied - discarded {discarded_count} older lines, keeping latest {self.chunk_size}")
         
-        # 완전한 청크들 반환
+        # 완전한 청크들 반환 (정상적인 경우)
         while len(self.pending_lines) >= self.chunk_size:
             chunk = self.pending_lines[:self.chunk_size]
             self.pending_lines = self.pending_lines[self.chunk_size:]
             print(f"CHUNK READY: {len(chunk)} lines | Remaining: {len(self.pending_lines)}")
             logger.info(f"Yielding chunk with {len(chunk)} lines, {len(self.pending_lines)} lines remaining")
             logger.debug(f"Chunk content preview: {chunk[:3]}..." if len(chunk) > 3 else f"Chunk content: {chunk}")
+            
+            # pending_start_time 리셋
+            if not self.pending_lines:
+                self.pending_start_time = None
+            else:
+                self.pending_start_time = time.time()  # 남은 라인들에 대해 새로운 타이머 시작
+                
+            yield chunk
+        
+        # 타임아웃으로 인한 강제 처리
+        if timeout_triggered and self.pending_lines:
+            chunk = self.pending_lines[:]
+            self.pending_lines = []
+            self.pending_start_time = None
+            print(f"TIMEOUT CHUNK: {len(chunk)} lines (forced processing)")
+            logger.info(f"Yielding timeout chunk with {len(chunk)} lines")
+            logger.debug(f"Timeout chunk content preview: {chunk[:3]}..." if len(chunk) > 3 else f"Timeout chunk content: {chunk}")
             yield chunk
     
     def mark_chunk_processed(self, processed_lines: List[str]):
@@ -412,3 +456,4 @@ def create_realtime_monitor(log_type: str,
     monitor = RealtimeLogMonitor(log_type, config)
     logger.info(f"Realtime monitor created successfully for {log_type}")
     return monitor
+
