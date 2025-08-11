@@ -327,9 +327,16 @@ class RealtimeLogMonitor:
             if not self.pending_lines:
                 self.pending_start_time = time.time()
                 logger.debug(f"Starting new pending batch at {self.pending_start_time}")
+                if self.chunk_pending_timeout > 0:
+                    logger.info(f"Started pending batch timer - will timeout in {self.chunk_pending_timeout} seconds if chunk size ({self.chunk_size}) not reached")
             
             self.pending_lines.extend(new_lines)
             logger.info(f"Added {len(new_lines)} new lines to buffer, total pending: {len(self.pending_lines)}")
+            
+            # 타임아웃 경과 시간 로깅 (디버그 레벨)
+            if self.pending_start_time and self.chunk_pending_timeout > 0:
+                elapsed = time.time() - self.pending_start_time
+                logger.debug(f"Pending batch elapsed time: {elapsed:.1f}s / {self.chunk_pending_timeout}s")
         
         # 처리 모드 결정 및 자동 샘플링 로직 적용
         should_sample = False
@@ -361,12 +368,35 @@ class RealtimeLogMonitor:
         # 상태 업데이트
         if len(new_lines) > 0 or self.pending_lines:
             if len(new_lines) > 0:
-                status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines (+{len(new_lines)} new)"
+                status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines"
+                # 타임아웃 남은 시간 표시
+                if (self.pending_lines and 
+                    self.chunk_pending_timeout > 0 and 
+                    self.pending_start_time):
+                    elapsed = time.time() - self.pending_start_time
+                    remaining = max(0, self.chunk_pending_timeout - elapsed)
+                    if timeout_triggered:
+                        status_msg += " [TIMEOUT TRIGGERED]"
+                    else:
+                        status_msg += f" [Timeout: {int(remaining)}s]"
+                elif timeout_triggered:
+                    status_msg += " [TIMEOUT]"
+                
+                status_msg += f" (+{len(new_lines)} new)"
             else:
                 status_msg = f"[{effective_mode.upper()}] Pending: {len(self.pending_lines)} lines"
-            
-            if timeout_triggered:
-                status_msg += " [TIMEOUT]"
+                # 타임아웃 남은 시간 표시
+                if (self.pending_lines and 
+                    self.chunk_pending_timeout > 0 and 
+                    self.pending_start_time):
+                    elapsed = time.time() - self.pending_start_time
+                    remaining = max(0, self.chunk_pending_timeout - elapsed)
+                    if timeout_triggered:
+                        status_msg += " [TIMEOUT TRIGGERED]"
+                    else:
+                        status_msg += f" [Timeout: {int(remaining)}s]"
+                elif timeout_triggered:
+                    status_msg += " [TIMEOUT]"
                 
             print(f"STATUS: {status_msg}")
         
@@ -389,8 +419,10 @@ class RealtimeLogMonitor:
             # pending_start_time 리셋
             if not self.pending_lines:
                 self.pending_start_time = None
+                logger.debug("Cleared pending timer - all lines processed")
             else:
                 self.pending_start_time = time.time()  # 남은 라인들에 대해 새로운 타이머 시작
+                logger.debug(f"Reset pending timer for {len(self.pending_lines)} remaining lines")
                 
             yield chunk
         
@@ -401,6 +433,7 @@ class RealtimeLogMonitor:
             self.pending_start_time = None
             print(f"TIMEOUT CHUNK: {len(chunk)} lines (forced processing)")
             logger.info(f"Yielding timeout chunk with {len(chunk)} lines")
+            logger.warning(f"Forced processing due to pending timeout - processed {len(chunk)} lines after {self.chunk_pending_timeout} seconds")
             logger.debug(f"Timeout chunk content preview: {chunk[:3]}..." if len(chunk) > 3 else f"Timeout chunk content: {chunk}")
             yield chunk
     
