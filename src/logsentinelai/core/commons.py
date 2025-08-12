@@ -716,7 +716,7 @@ def create_argument_parser(description: str):
     
     # Config file override
     parser.add_argument('--config', type=str, default=None,
-                       help='설정 파일 경로 (.env 형식). 미지정 시 /etc/logsentinelai.config → ./config 순으로 탐색')
+                       help='Configuration file path (.env format). If not specified, searches /etc/logsentinelai.config → ./config in order')
 
     # Analysis mode
     parser.add_argument('--mode', choices=['batch', 'realtime'], default='batch',
