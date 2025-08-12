@@ -1254,7 +1254,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.99.7"
+version = "1.99.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1266,14 +1266,14 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/e3/14812e91dee4d7a1d6aa365ec722b9f2c7ecca3b4f1fb5c56c2c1d83de82/openai-1.99.7.tar.gz", hash = "sha256:d2f4211642b9dbcd8e3cc6e6ef1180ac149f80d2e5ab1ee7f5afdd8d34c9b33b", size = 505598, upload-time = "2025-08-11T15:13:10.693Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/d2/ef89c6f3f36b13b06e271d3cc984ddd2f62508a0972c1cbcc8485a6644ff/openai-1.99.9.tar.gz", hash = "sha256:f2082d155b1ad22e83247c3de3958eb4255b20ccf4a1de2e6681b6957b554e92", size = 506992, upload-time = "2025-08-12T02:31:10.054Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/2d/a41c49550a69374111647be22b587e3311a6fc31fc7370e14448e78018bc/openai-1.99.7-py3-none-any.whl", hash = "sha256:ef4165cc4f8872dd4a967d109f12b0b9c98a1e20ae05940c28701729c2883891", size = 786809, upload-time = "2025-08-11T15:13:08.537Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/fb/df274ca10698ee77b07bff952f302ea627cc12dac6b85289485dd77db6de/openai-1.99.9-py3-none-any.whl", hash = "sha256:9dbcdb425553bae1ac5d947147bebbd630d91bbfc7788394d4c4f3a35682ab3a", size = 786816, upload-time = "2025-08-12T02:31:08.34Z" },
 ]
 
 [[package]]
 name = "outlines"
-version = "1.2.2"
+version = "1.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "airportsdata" },
@@ -1291,9 +1291,9 @@ dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/da/25/d31245c2d5d52662a748720a6add2f4061a9a26c7e61560c9e21e73ecbe2/outlines-1.2.2.tar.gz", hash = "sha256:dda928c65edbd679f088596864904068ab08c816ecd698f67b9e56f2601d1549", size = 2801602, upload-time = "2025-08-08T13:14:22.794Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/84/60cc60b90cd7ba66867294d3c6da06f0cd0cac94de941c47194ea45615fa/outlines-1.2.3.tar.gz", hash = "sha256:cc8e756c35645834426126f7adabfa4331dedd0c7cfd6c147ae54181af0411cc", size = 2802268, upload-time = "2025-08-11T21:22:14.276Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/ed/c129e3473b325e717e061b00473563ce955381cd21ebaf9a102962cd935a/outlines-1.2.2-py3-none-any.whl", hash = "sha256:5f7aaf02a889436f8ec217ff7610283165b7212e042ae37c0eaf184568a0596f", size = 93917, upload-time = "2025-08-08T13:14:21.235Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/94/b227cd58504e4684eeac092b423422eb9135525f3b8baac146be3375690d/outlines-1.2.3-py3-none-any.whl", hash = "sha256:ae1c599894104104086c7411b1e32288ca6b206657680fa6c611141e25b03cb3", size = 94263, upload-time = "2025-08-11T21:22:12.671Z" },
 ]
 
 [package.optional-dependencies]
