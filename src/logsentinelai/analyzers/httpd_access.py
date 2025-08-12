@@ -66,11 +66,6 @@ def main():
     parser = create_argument_parser('HTTPD Access Log Analysis')
     args = parser.parse_args()
 
-    # --config 경로 적용 (가능하면 가장 먼저 반영)
-    if getattr(args, 'config', None):
-        from ..core.config import apply_config
-        apply_config(args.config)
-
     # 파일 로깅 설정 (콘솔 출력은 기존대로 print 사용)
     from ..core.commons import setup_logger, LOG_LEVEL
     logger = setup_logger(__name__, LOG_LEVEL)

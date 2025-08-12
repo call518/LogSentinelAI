@@ -9,11 +9,7 @@ including batch and real-time processing capabilities.
 
 import logging
 import os
-from dotenv import load_dotenv
 from contextvars import ContextVar
-
-# Load .env style config file (environment variables)
-load_dotenv(dotenv_path="config")
 
 # Logging environment variable setup (shared)
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -61,9 +57,7 @@ import datetime
 from typing import Dict, Any, Optional, List
 
 # Import from modularized components
-from .config import (
-    get_analysis_config, LLM_PROVIDER, LLM_MODELS
-)
+from . import config as config_module
 from .llm import initialize_llm_model, generate_with_model, wait_on_failure
 from .elasticsearch import send_to_elasticsearch_raw
 from .geoip import enrich_source_ips_with_geoip
@@ -344,13 +338,13 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
     print("=" * 70)
     
     # Get LLM configuration
-    llm_provider = LLM_PROVIDER
-    llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
+    llm_provider = config_module.LLM_PROVIDER
+    llm_model_name = config_module.LLM_MODELS.get(config_module.LLM_PROVIDER, "unknown")
     logger.info(f"Using LLM provider: {llm_provider}, model: {llm_model_name}")
     
     # Get analysis configuration
     try:
-        config = get_analysis_config(
+        config = config_module.get_analysis_config(
             log_type,
             chunk_size=chunk_size,
             analysis_mode="batch",
@@ -508,13 +502,13 @@ def run_generic_realtime_analysis(log_type: str, analysis_schema_class, prompt_t
         logger.info(f"Sampling threshold set to: {sampling_threshold}")
     
     # Get LLM configuration  
-    llm_provider = LLM_PROVIDER
-    llm_model_name = LLM_MODELS.get(LLM_PROVIDER, "unknown")
+    llm_provider = config_module.LLM_PROVIDER
+    llm_model_name = config_module.LLM_MODELS.get(config_module.LLM_PROVIDER, "unknown")
     logger.info(f"Using LLM provider: {llm_provider}, model: {llm_model_name}")
     
     # Get configuration
     try:
-        config = get_analysis_config(
+        config = config_module.get_analysis_config(
             log_type, 
             chunk_size, 
             analysis_mode="realtime",
@@ -714,10 +708,6 @@ def create_argument_parser(description: str):
     import argparse
     parser = argparse.ArgumentParser(description=description)
     
-    # Config file override
-    parser.add_argument('--config', type=str, default=None,
-                       help='Configuration file path (.env format). If not specified, searches /etc/logsentinelai.config → ./config in order')
-
     # Analysis mode
     parser.add_argument('--mode', choices=['batch', 'realtime'], default='batch',
                        help='Analysis mode: batch (default) or realtime')

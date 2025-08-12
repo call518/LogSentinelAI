@@ -1,12 +1,10 @@
-"""LogSentinelAI configuration loader with dynamic --config override support.
+"""LogSentinelAI configuration loader.
 
-This module dynamically loads (and can reload) env-style configuration files so
-that a different config file can be specified at runtime via the --config option.
+This module loads configuration files from the following locations in order:
+1) /etc/logsentinelai.config (system-wide config)
+2) ./config (local config)
 
-Search order priority:
-1) Explicit path provided via --config (if exists)
-2) Default path /etc/logsentinelai.config (if exists)
-3) Local project path ./config (fallback)
+If neither file exists, the application will exit with an error.
 """
 
 from __future__ import annotations
@@ -123,47 +121,31 @@ def _load_values() -> None:
     logger.info(f"Configuration loaded (config_file={CONFIG_FILE_PATH})")
 
 
-def apply_config(config_path: str | None) -> None:
+def apply_config() -> None:
     """Apply (load) the configuration file and rebuild global settings.
-
-    Args:
-        config_path: Optional explicit path provided by --config. If None, search defaults.
+    
+    Searches for configuration files in this order:
+    1. /etc/logsentinelai.config
+    2. ./config
     """
     global CONFIG_FILE_PATH
     
-    # 1. --config로 명시된 경우: 해당 파일만 사용 (없으면 중단)
-    if config_path:
-        if not os.path.isfile(config_path):
-            guidance = (
-                f"\n❌ [ERROR] Explicit --config path '{config_path}' not found\n\n"
-                "💡 If you need a template, copy 'config.template' from the 'LogSentinelAI GitHub Repository' and edit it.\n\n"
-                "- Fallback search skipped because an explicit path was provided.\n"
-                "- Omit --config to use default search: /etc/logsentinelai.config → ./config)\n"
-            )
-            logger.error(guidance)
-            print(guidance, file=sys.stderr)
-            sys.exit(1)
-        CONFIG_FILE_PATH = config_path
-        display_path = config_path if os.path.isabs(config_path) else f"./{config_path.lstrip('./')}"
-        logger.info(f"[config] Using explicit config file: {display_path}")
+    # Search for configuration file in priority order
+    if os.path.isfile("/etc/logsentinelai.config"):
+        CONFIG_FILE_PATH = "/etc/logsentinelai.config"
+        logger.info("[config] (1/2) Found config file: /etc/logsentinelai.config")
     else:
-        # 2. --config 미지정: 1순위=/etc/logsentinelai.config, 2순위=./config
-        # 1순위 체크
-        if os.path.isfile("/etc/logsentinelai.config"):
-            CONFIG_FILE_PATH = "/etc/logsentinelai.config"
-            logger.info("[config] (1/2) Found config file: /etc/logsentinelai.config")
-        # 2순위 체크 (1순위가 없을 때만)
+        logger.info("[config] (1/2) Not found: /etc/logsentinelai.config")
+        if os.path.isfile("./config"):
+            CONFIG_FILE_PATH = "./config"
+            logger.info("[config] (2/2) Found config file: ./config")
         else:
-            logger.info("[config] (1/2) Not found: /etc/logsentinelai.config")
-            if os.path.isfile("./config"):
-                CONFIG_FILE_PATH = "./config"
-                logger.info("[config] (2/2) Found config file: ./config")
-            else:
-                logger.info("[config] (2/2) Not found: ./config")
+            logger.info("[config] (2/2) Not found: ./config")
+    
+    # Check if any config file was found
+    if not CONFIG_FILE_PATH:
         
-        # 둘 다 없으면 오류
-        if not CONFIG_FILE_PATH:
-            guidance = """
+        guidance = """
 ❌ No configuration file detected
 🔎 Searched: /etc/logsentinelai.config, ./config
 
@@ -171,16 +153,13 @@ def apply_config(config_path: str | None) -> None:
 ✅ Quick fix:
   1) Copy the provided template:  cp config.template ./config
   2) Edit the file (add API keys, paths, etc.)
-  3) Run either:
-       logsentinelai --config ./config <command>
-     OR place it at /etc/logsentinelai.config for global use.
+  3) Place it at /etc/logsentinelai.config for global use or ./config for local use.
 
-💡 You can also specify any custom path with: --config /path/to/config
 📘 See INSTALL guide (section: Prepare Config File) for details.
 """
-            logger.error(guidance)
-            print(guidance, file=sys.stderr)
-            sys.exit(1)
+        logger.error(guidance)
+        print(guidance, file=sys.stderr)
+        sys.exit(1)
     
     logger.info(f"[config] Selected config file: {CONFIG_FILE_PATH}")
     
@@ -194,7 +173,7 @@ def apply_config(config_path: str | None) -> None:
 
 
 # Initial load when module is imported
-apply_config(None)
+apply_config()
 
 def get_config_file_path() -> str | None:
     """Return the resolved configuration file path currently in use."""

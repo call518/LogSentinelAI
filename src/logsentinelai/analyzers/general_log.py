@@ -94,10 +94,6 @@ def main():
     parser = create_argument_parser("General Log Analysis")
     args = parser.parse_args()
 
-    if getattr(args, 'config', None):
-        from ..core.config import apply_config
-        apply_config(args.config)
-
     # 파일 로깅 설정 (콘솔 출력은 기존대로 print 사용)
     from ..core.commons import setup_logger, LOG_LEVEL
     logger = setup_logger(__name__, LOG_LEVEL)

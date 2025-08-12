@@ -13,11 +13,11 @@ __email__ = "call518@gmail.com"
 # Import main functionality
 from .core.commons import (
     initialize_llm_model,
-    get_analysis_config,
     process_log_chunk,
     run_generic_batch_analysis,
     run_generic_realtime_analysis
 )
+from .core.config import get_analysis_config
 
 from .utils.geoip_downloader import download_geoip_database
 
