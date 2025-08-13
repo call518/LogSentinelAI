@@ -6,16 +6,6 @@
 
 LogSentinelAI는 **Declarative Extraction (선언적 추출)** 방식으로 LLM을 활용하여 Apache, Linux 등 다양한 로그에서 보안 이벤트, 이상 징후, 오류를 분석하고, 이를 Elasticsearch/Kibana로 시각화 가능한 구조화 데이터로 변환합니다. 원하는 결과 구조를 Pydantic 클래스로 선언하기만 하면, AI가 자동으로 로그를 분석하여 해당 스키마에 맞는 JSON을 반환합니다. 복잡한 파싱 작업은 필요하지 않습니다.
 
-## 시스템 아키텍처
-
-![System Architecture](img/system-architecture.png)
-
-- **Log Sources (로그 소스)**: 로컬 파일, 원격 SSH, HTTP 접근 로그, Apache 에러 로그, 시스템 로그, TCPDump 등 다양한 로그 소스로부터 데이터를 수집합니다.
-- **LogSentinelAI Core (핵심 처리 모듈)**: 사용자 정의 스키마(Pydantic 모델)를 기반으로 로그 구조를 선언적으로 정의하면, LLM을 통해 해당 데이터를 자동으로 추출 및 구조화합니다. 추출된 결과는 Pydantic을 통해 유효성 검사를 거칩니다.
-- **LLM Provider (LLM 공급자)**: OpenAI, vLLM, Ollama 등 다양한 외부 또는 로컬 LLM과 연동하여, 선언된 구조에 따라 로그를 해석하고 JSON 형태로 변환합니다.
-- **Elasticsearch**: 구조화된 JSON, 원시 로그, 메타데이터를 Elasticsearch에 인덱싱하여 검색 및 상관 분석이 가능하도록 합니다.
-- **Kibana**: Elasticsearch에 저장된 결과를 기반으로, 보안 이벤트 및 운영 현황에 대한 시각화와 대시보드를 제공합니다.
-
 ## 주요 특징
 
 > ⚡️ **Declarative Extraction (선언적 추출)**
@@ -38,6 +28,16 @@ class MyAccessLogResult(BaseModel):
 #   "is_attack": true
 # }
 ```
+
+## 시스템 아키텍처
+
+![System Architecture](img/system-architecture.png)
+
+- **Log Sources (로그 소스)**: 로컬 파일, 원격 SSH, HTTP 접근 로그, Apache 에러 로그, 시스템 로그, TCPDump 등 다양한 로그 소스로부터 데이터를 수집합니다.
+- **LogSentinelAI Core (핵심 처리 모듈)**: 사용자 정의 스키마(Pydantic 모델)를 기반으로 로그 구조를 선언적으로 정의하면, LLM을 통해 해당 데이터를 자동으로 추출 및 구조화합니다. 추출된 결과는 Pydantic을 통해 유효성 검사를 거칩니다.
+- **LLM Provider (LLM 공급자)**: OpenAI, vLLM, Ollama 등 다양한 외부 또는 로컬 LLM과 연동하여, 선언된 구조에 따라 로그를 해석하고 JSON 형태로 변환합니다.
+- **Elasticsearch**: 구조화된 JSON, 원시 로그, 메타데이터를 Elasticsearch에 인덱싱하여 검색 및 상관 분석이 가능하도록 합니다.
+- **Kibana**: Elasticsearch에 저장된 결과를 기반으로, 보안 이벤트 및 운영 현황에 대한 시각화와 대시보드를 제공합니다.
 
 ### AI 기반 분석
 - **Declarative Extraction 지원**: 원하는 결과 구조(Pydantic class)만 선언하면 LLM이 자동 분석

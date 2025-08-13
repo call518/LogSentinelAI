@@ -6,16 +6,6 @@
 
 LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing is required.
 
-## System Architecture
-
-![System Architecture](img/system-architecture.png)
-
-- **Log Sources**: Logs are collected from various sources, including local files, remote SSH connections, HTTP endpoints, Apache error logs, system logs, and TCPDump outputs.
-- **LogSentinelAI Core**: Handles parsing and extraction using a declarative approach. Log structures are defined using Pydantic models, and the actual extraction is performed by LLMs. The system validates and structures the extracted data.
-- **LLM Provider**: Integrates with external or local LLMs (e.g., OpenAI, vLLM, Ollama) to interpret and transform raw logs into structured JSON, based on user-defined schemas.
-- **Elasticsearch**: Structured outputs, raw logs, and metadata are indexed into Elasticsearch for searchability and event correlation.
-- **Kibana**: Provides visualization and dashboards for immediate insight into security events and operational data.
-
 ## Key Features
 
 > ⚡️ **Declarative Extraction**
@@ -38,6 +28,16 @@ class MyAccessLogResult(BaseModel):
 #   "is_attack": true
 # }
 ```
+
+## System Architecture
+
+![System Architecture](img/system-architecture.png)
+
+- **Log Sources**: Logs are collected from various sources, including local files, remote SSH connections, HTTP endpoints, Apache error logs, system logs, and TCPDump outputs.
+- **LogSentinelAI Core**: Handles parsing and extraction using a declarative approach. Log structures are defined using Pydantic models, and the actual extraction is performed by LLMs. The system validates and structures the extracted data.
+- **LLM Provider**: Integrates with external or local LLMs (e.g., OpenAI, vLLM, Ollama) to interpret and transform raw logs into structured JSON, based on user-defined schemas.
+- **Elasticsearch**: Structured outputs, raw logs, and metadata are indexed into Elasticsearch for searchability and event correlation.
+- **Kibana**: Provides visualization and dashboards for immediate insight into security events and operational data.
 
 ### AI-powered Analysis
 - **Declarative Extraction**: Just declare your desired result structure (Pydantic class) and the LLM analyzes logs automatically
