@@ -1,13 +1,23 @@
-.venv/
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+**/__pycache__/
+**/.pytest_cache/
+
 .vscode*
 .github/copilot-instructions.md
-dist/
-build/
-*.egg-info
-/*.log
-*.swp
-__pycache__
-config
+
 #sample-logs/
+config
 .positions/
 *.mmdb
+/*.log
+*.swp
