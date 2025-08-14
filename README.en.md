@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/call518/LogSentinelAI)
 
-# LogSentinelAI — Declarative LLM-Based Analyzer for Security Events, System Errors, and Anomalies
+# LogSentinelAI — Declarative LLM-Based Log Analyzer for Security Events, System Errors, and Anomalies
 
 LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing is required.
 
