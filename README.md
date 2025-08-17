@@ -6,6 +6,73 @@
 
 LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing is required.
 
+## Dashboard Example
+
+![Kibana Dashboard](img/ex-dashboard.png)
+
+## JSON Output Example
+
+![JSON Output](img/ex-json.png)
+
+## Telegram Alert Example
+
+When critical security events are detected, LogSentinelAI can automatically send real-time alerts to Telegram:
+
+```text
+🚨 [CRITICAL+ EVENTS] 🚨
+  • Highest Severity: CRITICAL
+  • Immediate Attention: Not Required
+
+📊 Alert Events Summary (1 total):
+  • CRITICAL: 1
+
+📋 Summary
+  ➤ The analysis indicates several potential security events in the system logs.
+
+🔥 Event-1
+  • Severity: CRITICAL
+  • Event Type: AUTH_FAILURE
+  • Description: Multiple authentication failures attempted against the SSH daemon.
+  • Confidence: 0.9
+  • Human Review: Required
+  • Related Logs:
+      1. Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0 euid=0 tty=NODEV...
+      2. Jun 14 15:16:02 combo sshd(pam_unix)[19937]: check pass; user unknown
+      3. Jun 15 02:04:59 combo sshd(pam_unix)[20882]: authentication failure; logname= uid=0 euid=0 tty=NODEV...
+      ... and 5 more log entries
+  • Recommended Actions:
+      ➤ Review login history and account activity for suspicious patterns.
+      ➤ Implement multi-factor authentication to enhance security.
+      ➤ Monitor network traffic for unauthorized connections.
+
+📊 Statistics:
+  • total_events: 8
+  • auth_failures: 8
+  • unique_ips: 0
+  • unique_users: 0
+
+🔍 ES/Kibana Metadata:
+  • Index: logsentinelai-analysis
+  • @chunk_analysis_start_utc: 2025-08-17T22:42:32Z
+  • @chunk_analysis_end_utc: 2025-08-17T22:43:02Z
+  • @chunk_analysis_elapsed_time: 30
+  • @processing_result: success
+  • @log_count: 10
+  • @processing_mode: batch
+  • @access_mode: local
+  • @llm_provider: vllm
+  • @llm_model: Qwen/Qwen2.5-1.5B-Instruct
+  • @log_path: /var/log/messages
+  • @token_size_input: 1834
+  • @token_size_output: 618
+  • @timestamp: 2025-08-17T22:43:02.261161
+  • @log_type: linux_system
+  • @document_id: linux_system_20250817_224302_261129_chunk_1
+  • @host: {"hostname":"linux.foo.com","ip_addresses":["123.123.123.123/24"]}
+```
+
+> Configure Telegram alerts by setting `TELEGRAM_ENABLED=true`, `TELEGRAM_TOKEN`, and `TELEGRAM_CHAT_ID` in your config file. Alerts are automatically sent for CRITICAL+ events (configurable via `TELEGRAM_ALERT_LEVEL`).
+
 ## Key Features
 
 > ⚡️ **Declarative Extraction**
@@ -69,14 +136,6 @@ class MyAccessLogResult(BaseModel):
 - **Visualization**: Kibana dashboard
 - **Deployment**: Docker containers
 - **Real-time Alerts**: Telegram notifications for CRITICAL security events and system failures
-
-## Dashboard Example
-
-![Kibana Dashboard](img/ex-dashboard.png)
-
-## JSON Output Example
-
-![JSON Output](img/ex-json.png)
 
 ### CLI Command Mapping
 
