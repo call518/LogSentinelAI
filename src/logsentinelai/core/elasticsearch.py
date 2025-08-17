@@ -79,7 +79,7 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
         # --- Telegram Alert: CRITICAL events OR processing failure ---
         print(f"[TELEGRAM][DEBUG] Checking events for CRITICAL severity and processing result...")
         try:
-            from .telegram_alert import send_telegram_alert
+            from ..utils.telegram_alert import send_telegram_alert
             events = enriched_data.get("events")
             processing_result = enriched_data.get("@processing_result", "unknown")
             
