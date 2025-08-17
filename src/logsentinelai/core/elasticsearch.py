@@ -187,6 +187,27 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
 
                             msg_lines.append(f"  • Human Review: {'Required' if evt.get('requires_human_review', False) else 'Not Required'}")
 
+                            # Related Logs 추가 (최대 3개까지만)
+                            related_logs = evt.get('related_logs')
+                            if related_logs:
+                                msg_lines.append(f"  • Related Logs:")
+                                if isinstance(related_logs, list):
+                                    displayed_logs = related_logs[:3]  # 최대 3개까지만
+                                    for j, log_line in enumerate(displayed_logs, 1):
+                                        # 로그 라인이 너무 길면 잘라내기 (100자 제한)
+                                        truncated_log = str(log_line)[:100]
+                                        if len(str(log_line)) > 100:
+                                            truncated_log += "..."
+                                        msg_lines.append(f"      {j}. {truncated_log}")
+                                    if len(related_logs) > 3:
+                                        msg_lines.append(f"      ... and {len(related_logs) - 3} more log entries")
+                                else:
+                                    # 단일 로그인 경우
+                                    truncated_log = str(related_logs)[:100]
+                                    if len(str(related_logs)) > 100:
+                                        truncated_log += "..."
+                                    msg_lines.append(f"      1. {truncated_log}")
+
                             if evt.get('recommended_actions'):
                                 msg_lines.append(f"  • Recommended Actions:")
                                 actions = evt.get('recommended_actions')[:3]  # 액션은 3개까지만
