@@ -92,6 +92,15 @@ packages = ["src/logsentinelai"]
 [tool.hatch.build.targets.wheel.force-include]
 "config.template" = "logsentinelai/config.template"
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "config.template",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml"
+]
+
 [tool.black]
 line-length = 88
 target-version = ['py311']
