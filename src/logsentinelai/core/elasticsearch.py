@@ -11,7 +11,7 @@ from rich import print_json
 
 from .config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
 from .commons import setup_logger, LOG_LEVEL
-from .utils import get_host_metadata
+from ..utils.general import get_host_metadata
 import logging
 
 logger = setup_logger("logsentinelai.elasticsearch", LOG_LEVEL)

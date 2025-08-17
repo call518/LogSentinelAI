@@ -31,7 +31,7 @@ from .config import get_analysis_config
 from .llm import initialize_llm_model, wait_on_failure
 
 # Import utilities
-from .utils import chunked_iterable, print_chunk_contents
+from ..utils.general import chunked_iterable, print_chunk_contents
 
 # Import monitoring
 from .monitoring import create_realtime_monitor

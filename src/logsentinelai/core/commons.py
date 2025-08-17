@@ -61,7 +61,7 @@ from . import config as config_module
 from .llm import initialize_llm_model, generate_with_model, wait_on_failure
 from .elasticsearch import send_to_elasticsearch_raw
 from .geoip import enrich_source_ips_with_geoip
-from .utils import chunked_iterable, print_chunk_contents
+from ..utils.general import chunked_iterable, print_chunk_contents
 from .monitoring import RealtimeLogMonitor, create_realtime_monitor
 from .token_utils import count_tokens
 
