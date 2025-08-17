@@ -7,9 +7,9 @@ import time
 from typing import Dict, Any, List, Generator, Optional
 from .config import get_analysis_config
 from .ssh import RemoteSSHLogMonitor
-from .commons import setup_logger, LOG_LEVEL
+from .commons import setup_logger
 
-logger = setup_logger("logsentinelai.core.monitoring", LOG_LEVEL)
+logger = setup_logger("logsentinelai.core.monitoring")
 
 class RealtimeLogMonitor:
     """Real-time log file monitoring and analysis"""

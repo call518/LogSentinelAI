@@ -14,9 +14,9 @@ except ImportError:
     GEOIP_AVAILABLE = False
 
 from .config import GEOIP_CONFIG
-from .commons import setup_logger, LOG_LEVEL
+from .commons import setup_logger
 
-logger = setup_logger("logsentinelai.core.geoip", LOG_LEVEL)
+logger = setup_logger("logsentinelai.core.geoip")
 
 class GeoIPLookup:
     """GeoIP lookup utility for enriching IP addresses with city and geo_point information"""

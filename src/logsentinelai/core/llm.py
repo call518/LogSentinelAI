@@ -12,11 +12,10 @@ from pydantic import ValidationError
 from google import genai
 
 from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
-from .commons import LOG_LEVEL
 from .commons import setup_logger
 import logging
 
-logger = setup_logger("logsentinelai.llm", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
+logger = setup_logger("logsentinelai.llm")
 
 def initialize_llm_model(llm_provider=None, llm_model_name=None):
     """

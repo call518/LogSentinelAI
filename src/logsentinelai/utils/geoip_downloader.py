@@ -21,8 +21,8 @@ import shutil
 from pathlib import Path
 
 # 로깅 설정 추가
-from ..core.commons import setup_logger, LOG_LEVEL
-logger = setup_logger("logsentinelai.utils.geoip_downloader", LOG_LEVEL)
+from ..core.commons import setup_logger
+logger = setup_logger("logsentinelai.utils.geoip_downloader")
 
 try:
     import requests

@@ -14,16 +14,16 @@ import logging
 from dotenv import load_dotenv
 import sys
 
-# Attempt to import setup_logger / LOG_LEVEL from commons (avoid circular import issues)
+# Attempt to import setup_logger from commons (avoid circular import issues)
 try:  # pragma: no cover - 보호적 로드
-    from .commons import setup_logger, LOG_LEVEL  # type: ignore
+    from .commons import setup_logger  # type: ignore
 except Exception:  # 초기 로드 단계에서 commons 미준비 가능
-    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")  # type: ignore
-    def setup_logger(name, level):  # minimal placeholder
-        logging.basicConfig(level=getattr(logging, level.upper(), logging.INFO))
+    def setup_logger(name, level=None):  # minimal placeholder
+        log_level = level or os.getenv("LOG_LEVEL", "INFO")
+        logging.basicConfig(level=getattr(logging, log_level.upper(), logging.INFO))
         return logging.getLogger(name)
 
-logger = setup_logger(__name__, LOG_LEVEL)
+logger = setup_logger(__name__)
 
 # Global state (updated on reload)
 CONFIG_FILE_PATH: str | None = None

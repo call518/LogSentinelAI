@@ -11,9 +11,9 @@ import argparse
 from typing import Optional
 
 # Logging setup
-from logsentinelai.core.commons import setup_logger, LOG_LEVEL
+from logsentinelai.core.commons import setup_logger
 
-logger = setup_logger("logsentinelai.cli", LOG_LEVEL)
+logger = setup_logger("logsentinelai.cli")
 
 def main() -> None:
     """Main CLI entry point"""

@@ -10,11 +10,11 @@ from elasticsearch.exceptions import ConnectionError, RequestError
 from rich import print_json
 
 from .config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
-from .commons import setup_logger, LOG_LEVEL
+from .commons import setup_logger
 from ..utils.general import get_host_metadata
 import logging
 
-logger = setup_logger("logsentinelai.elasticsearch", LOG_LEVEL)
+logger = setup_logger("logsentinelai.elasticsearch")
 
 def get_elasticsearch_client() -> Optional[Elasticsearch]:
     """

@@ -95,8 +95,8 @@ def main():
     args = parser.parse_args()
 
     # 파일 로깅 설정 (콘솔 출력은 기존대로 print 사용)
-    from ..core.commons import setup_logger, LOG_LEVEL
-    logger = setup_logger(__name__, LOG_LEVEL)
+    from ..core.commons import setup_logger
+    logger = setup_logger(__name__)
 
     try:
         # Handle SSH configuration

@@ -11,10 +11,6 @@ import logging
 import os
 from contextvars import ContextVar
 
-# Logging environment variable setup (shared)
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-LOG_FILE = os.getenv("LOG_FILE", "logsentinelai.log")
-
 # Add context for @log_type so every log line can include it in the header
 LOG_TYPE_CTX: ContextVar[str] = ContextVar("log_type", default="unknown")
 
@@ -25,16 +21,20 @@ def set_log_type(log_type: str):
     except Exception:
         LOG_TYPE_CTX.set("unknown")
 
-def setup_logger(name="logsentinelai", level=LOG_LEVEL):
+def setup_logger(name="logsentinelai", level=None):
     """
     Set up and return a logger with the specified name and level.
     """
+    # Read environment variables at runtime to ensure config file has been loaded
+    log_level = level or os.getenv("LOG_LEVEL", "INFO")
+    log_file = os.getenv("LOG_FILE", "logsentinelai.log")
+    
     logger = logging.getLogger(name)
     if not logger.hasHandlers():
         # Include @log_type right after LOG_LEVEL in the header
         formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(log_type)s] (%(name)s) %(message)s')
-        if LOG_FILE:
-            file_handler = logging.FileHandler(LOG_FILE)
+        if log_file:
+            file_handler = logging.FileHandler(log_file)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
         # Inject @log_type into each record
@@ -46,11 +46,11 @@ def setup_logger(name="logsentinelai", level=LOG_LEVEL):
                     record.log_type = "unknown"
                 return True
         logger.addFilter(LogTypeFilter())
-    logger.setLevel(getattr(logging, str(level).upper(), logging.INFO))
+    logger.setLevel(getattr(logging, str(log_level).upper(), logging.INFO))
     return logger
 
 # 공통 logger 객체 생성
-logger = setup_logger("logsentinelai.core.commons", LOG_LEVEL)
+logger = setup_logger("logsentinelai.core.commons")
 import json
 from rich import print_json
 import datetime

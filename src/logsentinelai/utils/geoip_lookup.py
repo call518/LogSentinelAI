@@ -5,9 +5,9 @@ It does NOT log or persist sensitive data to any file or system log.
 import sys
 import json
 from logsentinelai.core.geoip import get_geoip_lookup
-from logsentinelai.core.commons import setup_logger, LOG_LEVEL
+from logsentinelai.core.commons import setup_logger
 
-logger = setup_logger("logsentinelai.utils.geoip_lookup", LOG_LEVEL)
+logger = setup_logger("logsentinelai.utils.geoip_lookup")
 
 def main():
     if len(sys.argv) != 2:

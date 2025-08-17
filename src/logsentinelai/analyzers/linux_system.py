@@ -1,8 +1,8 @@
-from ..core.commons import setup_logger, LOG_LEVEL
+from ..core.commons import setup_logger
 import logging
 
 # 파일 로깅만 추가 (콘솔 출력은 기존 print 코드 그대로 유지)
-logger = setup_logger("logsentinelai.analyzers.linux_system", getattr(logging, LOG_LEVEL.upper(), logging.INFO))
+logger = setup_logger("logsentinelai.analyzers.linux_system")
 from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Optional
