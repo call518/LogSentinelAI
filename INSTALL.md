@@ -173,6 +173,11 @@ ELASTICSEARCH_HOST=localhost
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_USER=elastic
 ELASTICSEARCH_PASSWORD=changeme
+
+# Telegram alert options (optional)
+TELEGRAM_ENABLED=true                              # Enable/disable Telegram notifications
+TELEGRAM_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE       # Bot token from @BotFather
+TELEGRAM_CHAT_ID=YOUR_TELEGRAM_CHAT_ID_HERE       # Group/channel chat ID
 ```
 
 ---
@@ -193,6 +198,51 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 - City/country/coordinates (geo_point) auto assignment, Kibana map visualization supported
 - Private IPs are excluded from geo_point
 - Analysis works even if DB is missing (GeoIP enrich is skipped)
+
+---
+
+## 6.1. (Optional) Setup Telegram Alerts
+
+LogSentinelAI can automatically send real-time alerts to Telegram groups when CRITICAL security events are detected or processing failures occur.
+
+### 6.1.1 Create Telegram Bot
+
+1. Start a chat with @BotFather on Telegram
+2. Create a new bot: `/newbot`
+3. Follow the instructions and save your bot token
+4. Copy the token (format: `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
+
+### 6.1.2 Get Chat ID
+
+Option 1 - For group/channel:
+```bash
+# Add your bot to the group/channel as admin
+# Send a test message in the group
+# Replace YOUR_BOT_TOKEN with your actual token
+curl -s "https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates" | jq '.result[].message.chat.id'
+```
+
+Option 2 - For direct messages:
+```bash
+# Send a direct message to your bot
+# Then run the same command to get your user chat ID
+curl -s "https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates" | jq '.result[].message.chat.id'
+```
+
+### 6.1.3 Configure in config file
+
+```ini
+# Enable Telegram alerts
+TELEGRAM_ENABLED=true
+TELEGRAM_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+TELEGRAM_CHAT_ID=-1001234567890  # Negative for groups, positive for users
+```
+
+### 6.1.4 Alert Triggers
+
+- **CRITICAL Events**: SQL injection, XSS attacks, brute force attempts
+- **Processing Failures**: LLM API errors, parsing failures, system errors
+- **Real-time Mode**: Immediate notifications during live monitoring
 
 ---
 

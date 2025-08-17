@@ -39,6 +39,7 @@ class MyAccessLogResult(BaseModel):
 - **LLM Provider**: Integrates with external or local LLMs (e.g., OpenAI, vLLM, Ollama) to interpret and transform raw logs into structured JSON, based on user-defined schemas.
 - **Elasticsearch**: Structured outputs, raw logs, and metadata are indexed into Elasticsearch for searchability and event correlation.
 - **Kibana**: Provides visualization and dashboards for immediate insight into security events and operational data.
+- **Telegram Alerts**: Automatically sends real-time notifications to Telegram groups/channels when CRITICAL security events are detected or processing failures occur, enabling immediate incident response.
 
 ### AI-powered Analysis
 
@@ -62,11 +63,12 @@ class MyAccessLogResult(BaseModel):
 - **Statistics**: IP counts, response codes, various metrics
 - **Multi-language Support**: Configurable result language (default: Korean)
 
-### Enterprise Integration
+### Integration & Output
 
 - **Storage**: Elasticsearch (ILM policy support)
 - **Visualization**: Kibana dashboard
 - **Deployment**: Docker containers
+- **Real-time Alerts**: Telegram notifications for CRITICAL security events and system failures
 
 ## Dashboard Example
 
