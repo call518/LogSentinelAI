@@ -11,6 +11,7 @@ LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security 
 > ⚡️ **Declarative Extraction**
 >
 > In each analyzer script, simply declare the desired result structure as a Pydantic class, and the LLM will automatically analyze logs and return results as JSON matching that schema. No complex parsing or post-processing—just declare what you want, and the AI handles the rest. This approach enables developers to focus on "what to extract" declaratively, while the LLM takes care of "how to extract"—a modern paradigm for information extraction.
+
 ```python
 # Example: Just declare the result structure you want in your HTTP Access log analyzer
 from pydantic import BaseModel
@@ -40,6 +41,7 @@ class MyAccessLogResult(BaseModel):
 - **Kibana**: Provides visualization and dashboards for immediate insight into security events and operational data.
 
 ### AI-powered Analysis
+
 - **Declarative Extraction**: Just declare your desired result structure (Pydantic class) and the LLM analyzes logs automatically
 - **LLM Providers**: OpenAI API, Ollama, vLLM
 - **Supported Log Types**: HTTP Access, Apache Error, Linux System
@@ -49,16 +51,19 @@ class MyAccessLogResult(BaseModel):
 - **Adaptive Sensitivity**: Detection sensitivity auto-adjusted by LLM model and log type prompt
 
 ### Processing Modes
+
 - **Batch**: Bulk analysis of historical logs
 - **Real-time**: Sampling-based live monitoring
 - **Access Methods**: Local files, SSH remote
 
 ### Data Enrichment
+
 - **GeoIP**: MaxMind GeoLite2 City lookup (including coordinates, Kibana geo_point support)
 - **Statistics**: IP counts, response codes, various metrics
 - **Multi-language Support**: Configurable result language (default: Korean)
 
 ### Enterprise Integration
+
 - **Storage**: Elasticsearch (ILM policy support)
 - **Visualization**: Kibana dashboard
 - **Deployment**: Docker containers
@@ -84,7 +89,8 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 ### Sample Log Preview
 
 #### HTTP Access Log
-```
+
+```log
 54.36.149.41 - - [22/Jan/2019:03:56:14 +0330] "GET /filter/27|13%20%D9%85%DA%AF%D8%A7%D9%BE%DB%8C%DA%A9%D8%B3%D9%84,27|%DA%A9%D9%85%D8%AA%D8%B1%20%D8%A7%D8%B2%205%20%D9%85%DA%AF%D8%A7%D9%BE%DB%8C%DA%A9%D8%B3%D9%84,p53 HTTP/1.1" 200 30577 "-" "Mozilla/5.0 (compatible; AhrefsBot/6.1; +http://ahrefs.com/robot/)" "-"
 31.56.96.51 - - [22/Jan/2019:03:56:16 +0330] "GET /image/60844/productModel/200x200 HTTP/1.1" 200 5667 "https://www.zanbil.ir/m/filter/b113" "Mozilla/5.0 (Linux; Android 6.0; ALE-L21 Build/HuaweiALE-L21) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.158 Mobile Safari/537.36" "-"
 31.56.96.51 - - [22/Jan/2019:03:56:16 +0330] "GET /image/61474/productModel/200x200 HTTP/1.1" 200 5379 "https://www.zanbil.ir/m/filter/b113" "Mozilla/5.0 (Linux; Android 6.0; ALE-L21 Build/HuaweiALE-L21) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.158 Mobile Safari/537.36" "-"
@@ -98,7 +104,8 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
 
 #### Apache Server Log
-```
+
+```log
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
 [Thu Jun 09 06:07:04 2005] [notice] LDAP: SSL support unavailable
 [Thu Jun 09 06:07:04 2005] [notice] suEXEC mechanism enabled (wrapper: /usr/sbin/suexec)
@@ -112,7 +119,8 @@ logsentinelai-geoip-download → utils/geoip_downloader.py
 ```
 
 #### Linux System Log
-```
+
+```log
 Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=218.188.2.4 
 Jun 14 15:16:02 combo sshd(pam_unix)[19937]: check pass; user unknown
 Jun 14 15:16:02 combo sshd(pam_unix)[19937]: authentication failure; logname= uid=0 euid=0 tty=NODEVssh ruser= rhost=218.188.2.4 
@@ -132,6 +140,7 @@ To test more log types and formats, you can leverage this public sample logs rep
 - GitHub: https://github.com/SoftManiaTech/sample_log_files
 
 How to use with LogSentinelAI:
+
 - Clone and pick appropriate files for your analyzer
 - Use `--log-path` to point the analyzer CLI at the chosen file
 - Some formats may require adapting analyzer prompts/schemas
@@ -149,13 +158,16 @@ For installation, environment setup, CLI usage, Elasticsearch/Kibana integration
 We would like to express our sincere gratitude to the following projects and communities that provided inspiration, guidance, and foundational technologies for LogSentinelAI:
 
 ### Core Technologies & Frameworks
+
 - **[Outlines](https://dottxt-ai.github.io/outlines/latest/)** - Structured LLM output generation framework that powers our reliable AI analysis
 - **[dottxt-ai Demos](https://github.com/dottxt-ai/demos/tree/main/logs)** - Excellent log analysis examples and implementation patterns
 - **[Docker ELK Stack](https://github.com/deviantony/docker-elk)** - Comprehensive Elasticsearch, Logstash, and Kibana Docker setup
 
 ### LLM Infrastructure & Deployment
+
 - **[vLLM](https://github.com/vllm-project/vllm)** - High-performance LLM inference engine for GPU-accelerated local deployment
 - **[Ollama](https://ollama.com/)** - Simplified local LLM deployment and management platform
 
 ### Open Source Community
+
 We are deeply grateful to the broader open source community and the countless projects that have contributed to making AI-powered log analysis accessible and practical. This project stands on the shoulders of many innovative open source initiatives that continue to push the boundaries of what's possible.
