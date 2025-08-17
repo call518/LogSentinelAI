@@ -16,8 +16,6 @@ updates:
       time: "09:00"
       timezone: "Asia/Seoul"
     open-pull-requests-limit: 5
-    reviewers:
-      - "call518"
     assignees:
       - "call518"
     commit-message:
@@ -47,8 +45,6 @@ updates:
       time: "09:30"
       timezone: "Asia/Seoul"
     open-pull-requests-limit: 3
-    reviewers:
-      - "call518"
     assignees:
       - "call518"
     commit-message:
