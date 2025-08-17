@@ -1,5 +1,7 @@
 # LogSentinelAI — Declarative LLM-Based Log Analyzer for Security Events, System Errors, and Anomalies
 
+> **Benefits**: Transform unstructured logs into structured security intelligence by simply defining a Pydantic model—the LLM automatically extracts and validates data without manual parsing or regex rules.
+
 [![Deploy to PyPI with tag](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml/badge.svg)](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/call518/LogSentinelAI)
