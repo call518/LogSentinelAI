@@ -121,14 +121,10 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                         msg_lines.append(f"   • Error Message: {error_message}")
                         msg_lines.append("")
                         
-                        # 실패 시에도 전체 메타데이터 표시 (제외 항목 적용)
+                        # 실패 시에도 전체 메타데이터 표시
                         msg_lines.append("🔍 Complete Processing Metadata:")
-                        excluded_failure_metadata = {
-                            "@chunk_analysis_start_utc", "@chunk_analysis_end_utc", 
-                            "@token_size_input", "@token_size_output"
-                        }
                         for key, value in enriched_data.items():
-                            if key.startswith("@") and key not in excluded_failure_metadata:
+                            if key.startswith("@"):  # 모든 @ 메타데이터 표시
                                 display_key = key[1:]  # @ 제거
                                 if isinstance(value, dict):
                                     msg_lines.append(f"   • {display_key}: {json.dumps(value, separators=(',', ':'))}")
@@ -188,12 +184,8 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                     # ES/Kibana 조회를 위한 메타데이터 정보 (항상 표시)
                     msg_lines.append("🔍 ES/Kibana Metadata:")
                     msg_lines.append(f"   • Index: {ELASTICSEARCH_INDEX}")
-                    excluded_metadata = {
-                        "@chunk_analysis_start_utc", "@chunk_analysis_end_utc", 
-                        "@token_size_input", "@token_size_output"
-                    }
                     for key, value in enriched_data.items():
-                        if key.startswith("@") and key not in excluded_metadata:  # 개수 제한 제거
+                        if key.startswith("@"):  # 모든 @ 메타데이터 표시
                             display_key = key[1:]  # @ 제거
                             # @host 같은 dict는 특별 처리
                             if isinstance(value, dict):
