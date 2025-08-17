@@ -2,19 +2,21 @@
 
 > **Benefits**: Transform unstructured logs into structured security intelligence by simply defining a Pydantic model—the LLM automatically extracts and validates data without manual parsing or regex rules.
 
+**Keywords**: `AI log analysis` • `cybersecurity automation` • `SIEM integration` • `threat detection` • `DevSecOps` • `log monitoring` • `security intelligence` • `anomaly detection`
+
 [![Deploy to PyPI with tag](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml/badge.svg)](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/call518/LogSentinelAI)
 
-LogSentinelAI leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data that can be visualized with Elasticsearch/Kibana. Simply declare your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing is required.
+LogSentinelAI is an **AI-powered cybersecurity tool** that leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data for **SIEM integration** with Elasticsearch/Kibana. This **DevSecOps automation solution** enables **real-time threat detection** and **security monitoring** by simply declaring your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing or regex rules required.
 
 ## Dashboard Example
 
-![Kibana Dashboard](img/ex-dashboard.png)
+![LogSentinelAI Kibana Dashboard showing security events, threat detection, and log analysis visualization](img/ex-dashboard.png)
 
 ## JSON Output Example
 
-![JSON Output](img/ex-json.png)
+![Structured JSON output from LogSentinelAI showing security event analysis results](img/ex-json.png)
 
 ## Telegram Alert Example
 
@@ -101,7 +103,7 @@ class MyAccessLogResult(BaseModel):
 
 ## System Architecture
 
-![System Architecture](img/system-architecture.png)
+![LogSentinelAI System Architecture - AI-powered log analysis workflow with LLM integration, Elasticsearch SIEM, and real-time cybersecurity monitoring](img/system-architecture.png)
 
 - **Log Sources**: Logs are collected from various sources, including local files, remote SSH connections, HTTP endpoints, Apache error logs, system logs, and TCPDump outputs.
 - **LogSentinelAI Core**: Handles parsing and extraction using a declarative approach. Log structures are defined using Pydantic models, and the actual extraction is performed by LLMs. The system validates and structures the extracted data.
@@ -200,12 +202,35 @@ Jun 15 02:04:59 combo sshd(pam_unix)[20893]: authentication failure; logname= ui
 
 To test more log types and formats, you can leverage this public sample logs repository:
 
-- GitHub: https://github.com/SoftManiaTech/sample_log_files
+- GitHub: [Sample Log Files Repository](https://github.com/SoftManiaTech/sample_log_files)
 
 How to use with LogSentinelAI:
 
 - Clone and pick appropriate files for your analyzer
 - Use `--log-path` to point the analyzer CLI at the chosen file
+
+## Frequently Asked Questions (FAQ)
+
+### Q: How does LogSentinelAI differ from traditional log analysis tools?
+
+**A**: Unlike traditional tools that require complex regex patterns and manual parsing rules, LogSentinelAI uses **declarative extraction** - you simply define a Pydantic model structure, and the LLM automatically extracts and validates security data. No programming required for new log formats.
+
+### Q: Can I use LogSentinelAI for compliance and audit reporting?
+
+**A**: Yes! LogSentinelAI provides structured JSON output with full audit trails, timestamps, and confidence scores - perfect for **SOX compliance**, **PCI DSS audits**, and **security incident reporting**. All analysis results are indexed in Elasticsearch for long-term retention.
+
+### Q: Does it work with custom or proprietary log formats?
+
+**A**: Absolutely! The AI can adapt to any log format. Simply create a new analyzer with your desired output schema, and the LLM will learn to parse your custom logs automatically. No need to write parsing logic.
+
+### Q: Is it suitable for high-volume enterprise environments?
+
+**A**: Yes, LogSentinelAI supports **real-time processing**, **batch analysis**, and **sampling-based monitoring** for high-volume scenarios. It integrates with enterprise SIEM solutions via Elasticsearch and provides **horizontal scaling** capabilities.
+
+### Q: What about data privacy and on-premises deployment?
+
+**A**: LogSentinelAI supports **local LLM deployment** using Ollama or vLLM - your logs never leave your infrastructure. Perfect for organizations with strict **data residency** and **privacy compliance** requirements.
+
 - Some formats may require adapting analyzer prompts/schemas
 
 ## Installation Guide

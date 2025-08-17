@@ -1,16 +1,32 @@
-# LogSentinelAI Installation & Usage Guide (RHEL & Ubuntu)
+# LogSentinelAI Installation & Usage Guide — AI-Powered Cybersecurity Log Analysis Setup for RHEL & Ubuntu
 
-This document provides a detailed step-by-step guide for installing, configuring, and testing LogSentinelAI on RHEL (RockyLinux, CentOS, etc.) and Ubuntu environments. Each step includes clear commands, notes, and practical examples.
+**Keywords**: `LogSentinelAI installation` • `cybersecurity tool setup` • `AI log analysis deployment` • `SIEM integration guide` • `threat detection installation` • `enterprise security monitoring` • `DevSecOps automation setup`
+
+This document provides a comprehensive step-by-step guide for installing, configuring, and testing LogSentinelAI on enterprise Linux environments (RHEL, RockyLinux, CentOS) and Ubuntu systems. Perfect for **cybersecurity teams**, **DevOps engineers**, and **system administrators** implementing AI-powered security monitoring solutions.
 
 ---
 
-## 1. System Requirements
+## 1. System Requirements & Use Cases
+
+LogSentinelAI is designed for **enterprise cybersecurity environments**, **SOC (Security Operations Center)** deployment, **compliance auditing**, and **real-time threat detection** scenarios.
+
+### Infrastructure Requirements
 
 - **OS**: RHEL 8/9, RockyLinux 8/9, CentOS 8/9, Ubuntu 20.04/22.04 (including WSL2)
 - **Python**: 3.11+ (3.12 recommended)
-- **Memory**: Minimum 4GB (8GB+ recommended for local LL## 13. Reference Links & Contact*: At least 2GB free space
+- **Memory**: Minimum 4GB (8GB+ recommended for local LLM deployment)
+- **Storage**: At least 2GB free space
 - **Network**: Access to PyPI, GitHub, OpenAI, Ollama/vLLM, etc.
 - **(Optional) Docker**: Required for running Elasticsearch/Kibana, vLLM, Ollama containers
+
+### Perfect for These Use Cases
+
+- **Security Operations Center (SOC)** log analysis automation
+- **Compliance reporting** (SOX, PCI DSS, HIPAA) with structured audit trails  
+- **Incident response** and forensic log investigation
+- **DevSecOps pipeline** integration for CI/CD security monitoring
+- **Enterprise SIEM** enhancement with AI-powered threat detection
+- **Real-time security monitoring** for critical infrastructure
 
 ---
 
@@ -270,7 +286,8 @@ ls *.log  # Check various sample logs
 ### Tip: Use More Public Sample Logs
 
 For testing additional log types and formats, leverage this public repository:
-- GitHub: https://github.com/SoftManiaTech/sample_log_files
+
+- GitHub: [Sample Log Files Repository](https://github.com/SoftManiaTech/sample_log_files)
 
 How to use with LogSentinelAI:
 
@@ -559,7 +576,9 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 
 ---
 
-## 12. Troubleshooting FAQ
+## 12. Troubleshooting FAQ & Enterprise Deployment Issues
+
+### Common Installation Issues
 
 - **Permission denied on pip install**: Activate virtualenv or use `pip install --user`
 - **Python 3.11 not found**: Check install path, use `python3.11` directly
@@ -567,6 +586,14 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 - **GeoIP DB download failed**: Download manually and set path in config
 - **SSH remote analysis error**: Check SSH key permissions, known_hosts, firewall, port
 - **LLM API error**: Check OPENAI_API_KEY, Ollama/vLLM server status, network
+
+### Enterprise Environment Considerations
+
+- **High-volume log processing**: Increase `REALTIME_SAMPLING_THRESHOLD` and `CHUNK_SIZE_*` for better performance
+- **Network security policies**: Ensure outbound access to LLM providers (OpenAI, Ollama) or use local deployment
+- **Compliance requirements**: Configure appropriate log retention policies in Elasticsearch ILM
+- **Multi-server deployment**: Use SSH remote analysis for centralized security monitoring
+- **Scalability planning**: Consider horizontal scaling with multiple LogSentinelAI instances
 
 ---
 
