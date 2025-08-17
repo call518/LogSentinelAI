@@ -17,10 +17,13 @@ This document provides a detailed step-by-step guide for installing, configuring
 ## 2. Install uv & Create Virtual Environment
 
 ### 2.1 Install uv
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+
 After installation, ensure "$HOME/.local/bin" (default install path) is in your PATH:
+
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
@@ -28,6 +31,7 @@ uv --version
 ```
 
 ### 2.2 Install Python 3.11+ & Create Virtual Environment
+
 ```bash
 uv python install 3.11
 uv venv --python=3.11 logsentinelai-venv
@@ -39,6 +43,7 @@ source logsentinelai-venv/bin/activate
 ## 3. Install LogSentinelAI
 
 ### 3.1 Install from PyPI (Recommended)
+
 ```bash
 # Install using uv
 uv sync
@@ -46,6 +51,7 @@ uv pip install -U logsentinelai
 ```
 
 ### 3.2 Install from GitHub Source (Development/Latest)
+
 ```bash
 git clone https://github.com/call518/LogSentinelAI.git
 cd LogSentinelAI
@@ -58,11 +64,14 @@ uv pip install .
 ## 4. Install Required External Tools
 
 ### 4.1 (Optional) Install Docker
+
 - [Official Docker Install Guide](https://docs.docker.com/engine/install/)
 - Refer to official docs for both RHEL/Ubuntu
 
 ### 4.2 (Optional) Install Ollama (Local LLM)
+
 - [Ollama Official Install](https://ollama.com/download)
+
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 systemctl start ollama
@@ -70,6 +79,7 @@ ollama pull gemma3:1b
 ```
 
 ### 4.3 (Optional) Install vLLM (Local GPU LLM)
+
 ```bash
 # Docker-based vLLM install & model download example
 git clone https://github.com/call518/vLLM-Tutorial.git
@@ -84,6 +94,7 @@ curl -s -X GET http://localhost:5000/v1/models | jq
 ```
 
 #### vLLM generation_config.json example (recommended values)
+
 ```json
 {
   "temperature": 0.1,
@@ -111,6 +122,7 @@ Notes:
 ```
 
 ### Example config main items
+
 ```ini
 # LLM Provider & Model
 LLM_PROVIDER=openai   # openai/ollama/vllm/gemini
@@ -169,6 +181,7 @@ ELASTICSEARCH_PASSWORD=changeme
 
 - On first run, GeoIP City DB is automatically downloaded to `~/.logsentinelai/` (recommended)
 - For manual download:
+
 ```bash
 logsentinelai-geoip-download
 # or
@@ -176,6 +189,7 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ```
 
 ### GeoIP main features
+
 - City/country/coordinates (geo_point) auto assignment, Kibana map visualization supported
 - Private IPs are excluded from geo_point
 - Analysis works even if DB is missing (GeoIP enrich is skipped)
@@ -192,10 +206,12 @@ ls *.log  # Check various sample logs
 ```
 
 ### Tip: Use More Public Sample Logs
+
 For testing additional log types and formats, leverage this public repository:
 - GitHub: https://github.com/SoftManiaTech/sample_log_files
 
 How to use with LogSentinelAI:
+
 ```bash
 # Clone the public sample logs repository
 cd ~
@@ -207,7 +223,9 @@ logsentinelai-linux-system --log-path ~/sample_log_files/linux/example.log
 # Example: test HTTP access analyzer on an access log sample
 logsentinelai-httpd-access --log-path ~/sample_log_files/web/apache_access.log
 ```
+
 Notes:
+
 - Some samples may have formats not fully covered by current analyzers; adjust prompts/schemas accordingly
 - Use `--chunk-size` to tune batch size when experimenting with very large files
 
@@ -216,6 +234,7 @@ Notes:
 ## 8. Install & Integrate Elasticsearch & Kibana (Optional)
 
 ### 8.1 Install ELK Stack via Docker
+
 ```bash
 git clone https://github.com/call518/Docker-ELK.git
 cd Docker-ELK
@@ -230,6 +249,7 @@ docker compose up -d
 Run the following commands in the terminal when Kibana/Elasticsearch is running (default: http://localhost:5601, http://localhost:9200). Default account: `elastic`/`changeme`.
 
 #### 1) Create ILM Policy (7 days retention, 10GB/1d rollover)
+
 ```bash
 curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
 -H "Content-Type: application/json" \
@@ -257,6 +277,7 @@ curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
 ```
 
 #### 2) Create Index Template
+
 ```bash
 curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
 -H "Content-Type: application/json" \
@@ -299,6 +320,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
 ```
 
 #### 3) Create Initial Index & Write Alias
+
 ```bash
 curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 -H "Content-Type: application/json" \
@@ -313,6 +335,7 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 ```
 
 #### 4) Import Kibana Dashboard/Settings
+
 1. Access http://localhost:5601 (elastic/changeme)
 2. Stack Management → Saved Objects → Import
 3. Import `Kibana-9.0.3-Advanced-Settings.ndjson` then `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson`
@@ -323,11 +346,13 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 ## 9. LogSentinelAI Main Commands & Test
 
 ### 9.1 List All Commands
+
 ```bash
 logsentinelai --help
 ```
 
 ### 9.2 Main Analysis Command Examples
+
 ```bash
 # HTTP Access log analysis (batch)
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
@@ -358,18 +383,20 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 > CLI options always override config file
 
 ### 9.8 SSH Remote Log Analysis
+
 ```bash
 logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
 ```
+
 - **Tip:** Register the target server in known_hosts in advance (`ssh-keyscan -H <host> >> ~/.ssh/known_hosts`)
 
 ### 9.9 Manual GeoIP DB Download/Path
+
 ```bash
 logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 ```
 
 ---
-
 
 ## 10. Declarative Extraction Usage
 
@@ -381,6 +408,7 @@ LogSentinelAI's biggest feature is **Declarative Extraction**. By declaring only
 2. When you run the analysis command, the LLM automatically generates JSON matching that structure.
 
 #### Example: Customizing HTTP Access Log Analyzer
+
 ```python
 from pydantic import BaseModel
 
@@ -389,7 +417,9 @@ class MyAccessLogResult(BaseModel):
     url: str
     is_attack: bool
 ```
+
 Just define the fields you want, and the LLM will generate results like:
+
 ```json
 {
   "ip": "192.168.0.1",
@@ -399,6 +429,7 @@ Just define the fields you want, and the LLM will generate results like:
 ```
 
 #### Example: Customizing Apache Error Log Analyzer
+
 ```python
 from pydantic import BaseModel
 
@@ -409,6 +440,7 @@ class MyApacheErrorResult(BaseModel):
 ```
 
 #### Example: Customizing Linux System Log Analyzer
+
 ```python
 from pydantic import BaseModel
 
@@ -425,6 +457,7 @@ By declaring only the result structure you want in each analyzer, the LLM automa
 ## 11. Advanced Usage Examples
 
 ### 11.1 Set Defaults in config & Override with CLI
+
 ```bash
 # Set CHUNK_SIZE_LINUX_SYSTEM=20 in config
 logsentinelai-linux-system --chunk-size 10  # CLI option takes precedence
@@ -433,9 +466,10 @@ logsentinelai-linux-system --chunk-size 10  # CLI option takes precedence
 ### 11.2 Realtime Mode Auto Sampling Operation & Principle
 
 > **Realtime Mode Key Features**  
-> - Starts from the **current End of File (EOF)** and processes only newly added logs  
-> - Existing logs in the file are excluded from analysis (true real-time monitoring)  
-> - Even after program interruption and restart, past logs are not processed (always starts from current time)
+
+- Starts from the **current End of File (EOF)** and processes only newly added logs
+- Existing logs in the file are excluded from analysis (true real-time monitoring)  
+- Even after program interruption and restart, past logs are not processed (always starts from current time)
 
 ```bash
 logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-threshold 100
@@ -443,16 +477,19 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 ```
 
 #### Sampling Operation Example
+
 1. Normal: 15 lines in → FULL mode (below threshold), analyze by chunk_size
 2. Traffic spike: 250 lines in → Exceeds threshold (100), auto-switch to SAMPLING mode, analyze only latest 10 lines, skip the rest (original logs preserved)
 3. Traffic normalizes: Back to FULL mode
 
 #### Sampling Strategy
+
 - FIFO buffer, if threshold exceeded, only latest chunk_size analyzed
 - No severity/pattern-based priority (purely time order)
 - Possible analysis omission (original logs preserved)
 
 ### 11.3 Import Kibana Dashboard
+
 1. Access http://localhost:5601 (elastic/changeme)
 2. Stack Management → Saved Objects → Import
 3. Import `Kibana-9.0.3-Advanced-Settings.ndjson` then `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson`
@@ -472,6 +509,7 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 ---
 
 ## 13. Reference/Recommended Links & Contact
+
 - [LogSentinelAI GitHub](https://github.com/call518/LogSentinelAI)
 - [Docker-ELK Official](https://github.com/deviantony/docker-elk)
 - [Ollama Official](https://ollama.com/)
@@ -483,6 +521,7 @@ Contact/Feedback: GitHub Issue, Discussions, Pull Request welcome
 ---
 
 ## 13. Reference Links & Contact
+
 - [LogSentinelAI GitHub](https://github.com/call518/LogSentinelAI)
 - [Docker-ELK Official](https://github.com/deviantony/docker-elk)
 - [Ollama Official](https://ollama.com/)
@@ -513,7 +552,8 @@ This section provides a detailed explanation of how the system automatically swi
 #### A.2 Auto-Sampling Trigger Scenarios
 
 ##### Scenario 1: Normal Log Processing (FULL mode maintained)
-```
+
+```text
 Configuration:
 - CHUNK_SIZE_HTTPD_ACCESS = 10
 - REALTIME_SAMPLING_THRESHOLD = 100
@@ -529,7 +569,8 @@ Process:
 ```
 
 ##### Scenario 2: Traffic Spike - Auto-switch to Sampling
-```
+
+```text
 Configuration: Same as above
 
 Spike situation:
@@ -549,7 +590,8 @@ SAMPLING mode operation:
 ```
 
 ##### Scenario 3: Traffic Normalization - Return to FULL mode
-```
+
+```text
 Normalization process:
 1. Log influx decreases: around 5-15 lines per polling cycle
 2. Pending buffer drops below threshold (100)
@@ -560,6 +602,7 @@ Normalization process:
 #### A.3 Real-world Usage Examples
 
 ##### Web Server DDoS Attack Scenario
+
 ```bash
 # Configuration: In config file
 CHUNK_SIZE_HTTPD_ACCESS=15
@@ -577,6 +620,7 @@ logsentinelai-httpd-access --mode realtime
 ```
 
 ##### System Log Mass Generation Scenario
+
 ```bash
 # Configuration
 CHUNK_SIZE_LINUX_SYSTEM=20
@@ -591,17 +635,20 @@ REALTIME_SAMPLING_THRESHOLD=150
 #### A.4 Sampling Strategy Features and Limitations
 
 ##### Advantages
+
 - **Automation**: Control system load without user intervention
 - **Memory Protection**: Prevent unlimited buffer growth
 - **Recency Guarantee**: Focus on most recent logs
 - **Original Preservation**: Log files themselves remain intact
 
 ##### Limitations
+
 - **Analysis Gaps**: Some logs skipped during sampling
 - **Time-based Only**: Chronological processing, no severity-based priority
 - **Temporary Blind Spots**: Limited pattern analysis during spike periods
 
 ##### Recommended Tuning Methods
+
 ```bash
 # High-performance system (sufficient memory)
 REALTIME_SAMPLING_THRESHOLD=500
@@ -621,4 +668,3 @@ REALTIME_POLLING_INTERVAL=10
 ```
 
 Through this auto-sampling mechanism, LogSentinelAI provides stable real-time analysis even in unpredictable log traffic situations.
-

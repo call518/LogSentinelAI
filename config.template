@@ -1,3 +1,13 @@
+# =============================================================================
+# Telegram Alert Configuration
+# =============================================================================
+# Telegram Bot Token (required for alerting to Telegram group)
+# Get from @BotFather after creating your bot
+TELEGRAM_TOKEN=
+
+# Telegram Chat ID (group or user)
+# Use @userinfobot or similar to get your group chat ID (negative number for groups)
+TELEGRAM_CHAT_ID=
 # LogSentinelAI Configuration File
 
 # =============================================================================
