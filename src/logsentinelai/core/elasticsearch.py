@@ -109,16 +109,25 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                     
                     # 청크 전체 정보를 가독성 좋게 포맷팅
                     msg_lines = []
-                    msg_lines.append(f"🚨 [{alert_type}] 🚨")
-                    msg_lines.append("")
+                    
+                    # 전체 분석의 requires_immediate_attention 표시 (CRITICAL 이벤트가 있는 경우)
+                    requires_immediate_attention = enriched_data.get("requires_immediate_attention", False)
+                    if has_critical:
+                        critical_events = [e for e in events if str(e.get("severity", "")).upper() == "CRITICAL"]
+                        msg_lines.append(f"🚨 [{alert_type}] 🚨")
+                        msg_lines.append(f"Immediate Attention: {'Required' if requires_immediate_attention else 'Not Required'}")
+                        msg_lines.append("")
+                    else:
+                        msg_lines.append(f"🚨 [{alert_type}] 🚨")
+                        msg_lines.append("")
                     
                     # 처리 실패인 경우 에러 정보 표시
                     if has_failure:
                         error_type = enriched_data.get("@error_type", "unknown_error")
                         error_message = enriched_data.get("@error_message", "No error message")
                         msg_lines.append("❌ Processing Failure:")
-                        msg_lines.append(f"   • Error Type: {error_type}")
-                        msg_lines.append(f"   • Error Message: {error_message}")
+                        msg_lines.append(f"  • Error Type: {error_type}")
+                        msg_lines.append(f"  • Error Message: {error_message}")
                         msg_lines.append("")
                         
                         # 실패 시에도 전체 메타데이터 표시
@@ -127,42 +136,15 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                             if key.startswith("@"):  # 모든 @ 메타데이터 표시
                                 display_key = key[1:]  # @ 제거
                                 if isinstance(value, dict):
-                                    msg_lines.append(f"   • {display_key}: {json.dumps(value, separators=(',', ':'))}")
+                                    msg_lines.append(f"  • {display_key}: {json.dumps(value, separators=(',', ':'))}")
                                 elif isinstance(value, list):
-                                    msg_lines.append(f"   • {display_key}: {json.dumps(value, separators=(',', ':'))}")
+                                    msg_lines.append(f"  • {display_key}: {json.dumps(value, separators=(',', ':'))}")
                                 else:
-                                    msg_lines.append(f"   • {display_key}: {value}")
+                                    msg_lines.append(f"  • {display_key}: {value}")
                         msg_lines.append("")
                     
-                    # 요약 (성공한 경우에만)
-                    if not has_failure:
-                        summary = enriched_data.get("summary", "No summary")
-                        msg_lines.append(f"📋 Summary: {summary}")
-                        msg_lines.append("")
-                    
-                    # CRITICAL 이벤트들만 표시 (이벤트가 있는 경우에만)
+                    # 전체 이벤트 요약 (모든 severity 포함) - Summary 앞으로 이동
                     if has_critical and events:
-                        critical_events = [e for e in events if str(e.get("severity", "")).upper() == "CRITICAL"]
-                        msg_lines.append(f"🔴 Critical Events ({len(critical_events)}):")
-                        
-                        # 최대 1개까지만 표시 (길이 절약)
-                        displayed_events = critical_events[:1]
-                        for i, evt in enumerate(displayed_events, 1):
-                            msg_lines.append(f"{i}. {evt.get('event_type', 'Unknown')}")
-                            msg_lines.append(f"   • {evt.get('description', 'No description')}")
-                            if evt.get('recommended_actions'):
-                                actions = evt.get('recommended_actions')[:3]  # 액션은 3개까지만
-                                for action in actions:
-                                    msg_lines.append(f"   ➤ {action}")
-                            msg_lines.append("")  # CRITICAL 이벤트 간 구분을 위한 빈 줄
-                        
-                        # 1개 초과 시 생략 안내 메시지
-                        if len(critical_events) > 1:
-                            omitted_count = len(critical_events) - 1
-                            msg_lines.append(f"   ... and {omitted_count} more CRITICAL event(s) omitted (check ES/Kibana for full details)")
-                            msg_lines.append("")
-                        
-                        # 전체 이벤트 요약 (모든 severity 포함)
                         all_severities = {}
                         for evt in events:
                             sev = evt.get('severity', 'UNKNOWN')
@@ -170,31 +152,77 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                         
                         msg_lines.append(f"📊 All Events Summary ({len(events)} total):")
                         for sev, count in sorted(all_severities.items()):
-                            msg_lines.append(f"   • {sev}: {count}")
+                            msg_lines.append(f"  • {sev}: {count}")
                         msg_lines.append("")
+                    
+                    # 요약 (성공한 경우에만) - 새로운 형식
+                    if not has_failure:
+                        summary = enriched_data.get("summary", "No summary")
+                        msg_lines.append("📋 Summary")
+                        msg_lines.append(f"  ➤ {summary}")
+                        msg_lines.append("")
+                    
+                    # CRITICAL 이벤트들만 표시 (이벤트가 있는 경우에만) - 새로운 형식
+                    if has_critical and events:
+                        critical_events = [e for e in events if str(e.get("severity", "")).upper() == "CRITICAL"]
+                        
+                        # 최대 1개까지만 표시 (길이 절약)
+                        displayed_events = critical_events[:1]
+                        for i, evt in enumerate(displayed_events, 1):
+                            msg_lines.append(f"🔥 Event-{i}")
+                            msg_lines.append(f"  • Severity: {evt.get('severity', 'Unknown')}")
+                            msg_lines.append(f"  • Event Type: {evt.get('event_type', 'Unknown')}")
+                            msg_lines.append(f"  • Description: {evt.get('description', 'No description')}")
+                            msg_lines.append(f"  • Confidence: {evt.get('confidence_score', 'N/A')}")
+
+                            # Source IPs 처리 (리스트 또는 단일 값)
+                            source_ips = evt.get('source_ips')
+                            if source_ips:
+                                if isinstance(source_ips, list):
+                                    ip_str = ', '.join(str(ip) for ip in source_ips[:5])  # 최대 5개까지만
+                                    if len(source_ips) > 5:
+                                        ip_str += f" (and {len(source_ips) - 5} more)"
+                                else:
+                                    ip_str = str(source_ips)
+                                msg_lines.append(f"  • Source IPs: {ip_str}")
+
+                            msg_lines.append(f"  • Human Review: {'Required' if evt.get('requires_human_review', False) else 'Not Required'}")
+
+                            if evt.get('recommended_actions'):
+                                msg_lines.append(f"  • Recommended Actions:")
+                                actions = evt.get('recommended_actions')[:3]  # 액션은 3개까지만
+                                for action in actions:
+                                    msg_lines.append(f"      ➤ {action}")
+                            msg_lines.append("")  # CRITICAL 이벤트 간 구분을 위한 빈 줄
+                        
+                        # 1개 초과 시 생략 안내 메시지
+                        if len(critical_events) > 1:
+                            omitted_count = len(critical_events) - 1
+                            msg_lines.append(f"   ... and {omitted_count} more CRITICAL event(s) omitted (check ES/Kibana for full details)")
+                            msg_lines.append("")
                     
                     # 통계 (CRITICAL 이벤트와 관계없이 항상 표시)
                     stats = enriched_data.get("statistics", {})
                     if stats:
                         msg_lines.append("📊 Statistics:")
                         for key, value in list(stats.items())[:5]:  # 최대 5개 통계
-                            msg_lines.append(f"   • {key}: {value}")
+                            msg_lines.append(f"  • {key}: {value}")
                         msg_lines.append("")
                     
                     # ES/Kibana 조회를 위한 메타데이터 정보 (항상 표시)
                     msg_lines.append("🔍 ES/Kibana Metadata:")
-                    msg_lines.append(f"   • Index: {ELASTICSEARCH_INDEX}")
+                    msg_lines.append(f"  • Index: {ELASTICSEARCH_INDEX}")
                     for key, value in enriched_data.items():
                         if key.startswith("@"):  # 모든 @ 메타데이터 표시
                             display_key = key[1:]  # @ 제거
                             # @host 같은 dict는 특별 처리
                             if isinstance(value, dict):
-                                msg_lines.append(f"   • {display_key}: {json.dumps(value, separators=(',', ':'))}")
+                                msg_lines.append(f"  • {display_key}: {json.dumps(value, separators=(',', ':'))}")
                             # 리스트는 간단하게 표시
                             elif isinstance(value, list):
-                                msg_lines.append(f"   • {display_key}: {json.dumps(value, separators=(',', ':'))}")
+                                msg_lines.append(f"  • {display_key}: {json.dumps(value, separators=(',', ':'))}")
                             else:
-                                msg_lines.append(f"   • {display_key}: {value}")
+                                msg_lines.append(f"  • {display_key}: {value}")
                     
                     # 메시지 구성 완료
                     msg = "\n".join(msg_lines)
