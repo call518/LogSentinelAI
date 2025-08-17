@@ -46,6 +46,9 @@ ELASTICSEARCH_HOST: str = "http://localhost:9200"
 ELASTICSEARCH_USER: str = "elastic"
 ELASTICSEARCH_PASSWORD: str = "changeme"
 ELASTICSEARCH_INDEX: str = "logsentinelai-analysis"
+TELEGRAM_ENABLED: bool = True
+TELEGRAM_TOKEN: str = ""
+TELEGRAM_CHAT_ID: str = ""
 
 
 def _load_values() -> None:
@@ -53,7 +56,7 @@ def _load_values() -> None:
     global LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
     global RESPONSE_LANGUAGE, ANALYSIS_MODE, LOG_PATHS, REALTIME_CONFIG, DEFAULT_REMOTE_SSH_CONFIG
     global LOG_CHUNK_SIZES, GEOIP_CONFIG, ELASTICSEARCH_HOST, ELASTICSEARCH_USER
-    global ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX
+    global ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX, TELEGRAM_ENABLED, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
     LLM_MODELS = {
         "ollama": os.getenv("LLM_MODEL_OLLAMA", "qwen2.5-coder:3b"),
@@ -117,6 +120,11 @@ def _load_values() -> None:
     ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER", "elastic")
     ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "changeme")
     ELASTICSEARCH_INDEX = os.getenv("ELASTICSEARCH_INDEX", "logsentinelai-analysis")
+    
+    # Telegram Configuration
+    TELEGRAM_ENABLED = os.getenv("TELEGRAM_ENABLED", "true").lower() == "true"
+    TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
+    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
     logger.info(f"Configuration loaded (config_file={CONFIG_FILE_PATH})")
 

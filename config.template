@@ -1,6 +1,10 @@
 # =============================================================================
 # Telegram Alert Configuration
 # =============================================================================
+# Enable/Disable Telegram notifications (true/false)
+# When false, all Telegram alert processing is skipped for better performance
+TELEGRAM_ENABLED=true
+
 # Telegram Bot Token (required for alerting to Telegram group)
 # Get from @BotFather after creating your bot
 TELEGRAM_TOKEN=
