@@ -76,11 +76,23 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
             **host_metadata
         }
 
-        # --- Telegram Alert: CRITICAL events OR processing failure ---
-        from .config import TELEGRAM_ENABLED
+        # --- Telegram Alert: Configured severity level events OR processing failure ---
+        from .config import TELEGRAM_ENABLED, TELEGRAM_ALERT_LEVEL
+        
+        def get_severity_priority(severity: str) -> int:
+            """Get numeric priority for severity level (lower number = higher priority)"""
+            severity_map = {
+                "CRITICAL": 1,
+                "HIGH": 2,
+                "MEDIUM": 3,
+                "LOW": 4,
+                "INFO": 5
+            }
+            return severity_map.get(severity.upper(), 999)
         
         if TELEGRAM_ENABLED:
-            print(f"[TELEGRAM][DEBUG] Telegram alerts enabled - checking events for CRITICAL severity and processing result...")
+            alert_threshold_priority = get_severity_priority(TELEGRAM_ALERT_LEVEL)
+            print(f"[TELEGRAM][DEBUG] Telegram alerts enabled - checking events for {TELEGRAM_ALERT_LEVEL}+ severity and processing result...")
             try:
                 from ..utils.telegram_alert import send_telegram_alert
                 
@@ -89,18 +101,26 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                 
                 print(f"[TELEGRAM][DEBUG] Found {len(events) if events else 0} events, processing_result: {processing_result}")
                 
-                # 알림 조건 체크: CRITICAL 이벤트 OR 처리 실패
-                has_critical = events and any(str(e.get("severity", "")).upper() == "CRITICAL" for e in events)
+                # 알림 조건 체크: TELEGRAM_ALERT_LEVEL 이상의 이벤트 OR 처리 실패
+                alert_events = []
+                if events:
+                    for event in events:
+                        event_severity = str(event.get("severity", "")).upper()
+                        event_priority = get_severity_priority(event_severity)
+                        if event_priority <= alert_threshold_priority:
+                            alert_events.append(event)
+                
+                has_alert_events = len(alert_events) > 0
                 has_failure = processing_result != "success"
                 
-                if has_critical or has_failure:
+                if has_alert_events or has_failure:
                     # 알림 타입에 따른 로깅 및 메시지 준비
-                    if has_critical and has_failure:
-                        alert_type = "CRITICAL EVENTS + PROCESSING FAILURE"
-                        logger.info(f"[TELEGRAM] CRITICAL events AND processing failure detected in chunk {chunk_id}")
-                    elif has_critical:
-                        alert_type = "CRITICAL EVENTS"
-                        logger.info(f"[TELEGRAM] CRITICAL event(s) detected in chunk {chunk_id}")
+                    if has_alert_events and has_failure:
+                        alert_type = f"{TELEGRAM_ALERT_LEVEL}+ EVENTS + PROCESSING FAILURE"
+                        logger.info(f"[TELEGRAM] {TELEGRAM_ALERT_LEVEL}+ events AND processing failure detected in chunk {chunk_id}")
+                    elif has_alert_events:
+                        alert_type = f"{TELEGRAM_ALERT_LEVEL}+ EVENTS"
+                        logger.info(f"[TELEGRAM] {TELEGRAM_ALERT_LEVEL}+ event(s) detected in chunk {chunk_id}")
                     else:  # has_failure
                         alert_type = "PROCESSING FAILURE"
                         logger.info(f"[TELEGRAM] Processing failure detected in chunk {chunk_id}")
@@ -110,12 +130,13 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                     # 청크 전체 정보를 가독성 좋게 포맷팅
                     msg_lines = []
                     
-                    # 전체 분석의 requires_immediate_attention 표시 (CRITICAL 이벤트가 있는 경우)
+                    # 전체 분석의 requires_immediate_attention 표시 (알림 이벤트가 있는 경우)
                     requires_immediate_attention = enriched_data.get("requires_immediate_attention", False)
-                    if has_critical:
-                        critical_events = [e for e in events if str(e.get("severity", "")).upper() == "CRITICAL"]
+                    if has_alert_events:
+                        highest_severity = enriched_data.get("highest_severity", "UNKNOWN")
                         msg_lines.append(f"🚨 [{alert_type}] 🚨")
-                        msg_lines.append(f"Immediate Attention: {'Required' if requires_immediate_attention else 'Not Required'}")
+                        msg_lines.append(f"  • Highest Severity: {highest_severity}")
+                        msg_lines.append(f"  • Immediate Attention: {'Required' if requires_immediate_attention else 'Not Required'}")
                         msg_lines.append("")
                     else:
                         msg_lines.append(f"🚨 [{alert_type}] 🚨")
@@ -142,15 +163,25 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                                     msg_lines.append(f"  • {key}: {value}")
                         msg_lines.append("")
                     
-                    # 전체 이벤트 요약 (모든 severity 포함) - Summary 앞으로 이동
-                    if has_critical and events:
-                        all_severities = {}
+                    # 전체 이벤트 요약 (설정된 레벨 이상만 표시) - Summary 앞으로 이동
+                    if has_alert_events and events:
+                        # 설정된 레벨 이상의 severity만 집계
+                        alert_severities = {}
                         for evt in events:
-                            sev = evt.get('severity', 'UNKNOWN')
-                            all_severities[sev] = all_severities.get(sev, 0) + 1
+                            sev = evt.get('severity', 'UNKNOWN').upper()
+                            event_priority = get_severity_priority(sev)
+                            if event_priority <= alert_threshold_priority:
+                                alert_severities[sev] = alert_severities.get(sev, 0) + 1
                         
-                        msg_lines.append(f"📊 All Events Summary ({len(events)} total):")
-                        for sev, count in sorted(all_severities.items()):
+                        # severity 우선순위 순서대로 정렬 (CRITICAL -> HIGH -> MEDIUM -> LOW -> INFO)
+                        severity_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+                        sorted_severities = []
+                        for sev in severity_order:
+                            if sev in alert_severities:
+                                sorted_severities.append((sev, alert_severities[sev]))
+                        
+                        msg_lines.append(f"📊 Alert Events Summary ({sum(alert_severities.values())} total):")
+                        for sev, count in sorted_severities:
                             msg_lines.append(f"  • {sev}: {count}")
                         msg_lines.append("")
                     
@@ -161,12 +192,22 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                         msg_lines.append(f"  ➤ {summary}")
                         msg_lines.append("")
                     
-                    # CRITICAL 이벤트들만 표시 (이벤트가 있는 경우에만) - 새로운 형식
-                    if has_critical and events:
-                        critical_events = [e for e in events if str(e.get("severity", "")).upper() == "CRITICAL"]
+                    # 알림 이벤트들만 표시 (이벤트가 있는 경우에만) - 새로운 형식
+                    if has_alert_events and events:
+                        # 가장 높은 severity 레벨의 이벤트 중 1개 선택
+                        # 원본 JSON의 highest_severity 사용
+                        highest_severity = enriched_data.get("highest_severity", "UNKNOWN")
                         
-                        # 최대 1개까지만 표시 (길이 절약)
-                        displayed_events = critical_events[:1]
+                        # highest_severity와 동일한 레벨의 이벤트들 중 첫 번째 선택
+                        highest_severity_events = [evt for evt in alert_events 
+                                                 if str(evt.get('severity', '')).upper() == str(highest_severity).upper()]
+                        
+                        # 해당 레벨의 이벤트가 없으면 알림 이벤트 중 첫 번째 선택
+                        if not highest_severity_events:
+                            highest_severity_events = alert_events[:1]
+                        
+                        displayed_events = highest_severity_events[:1]
+                        
                         for i, evt in enumerate(displayed_events, 1):
                             msg_lines.append(f"🔥 Event-{i}")
                             msg_lines.append(f"  • Severity: {evt.get('severity', 'Unknown')}")
@@ -213,15 +254,15 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                                 actions = evt.get('recommended_actions')[:3]  # 액션은 3개까지만
                                 for action in actions:
                                     msg_lines.append(f"      ➤ {action}")
-                            msg_lines.append("")  # CRITICAL 이벤트 간 구분을 위한 빈 줄
+                            msg_lines.append("")  # 알림 이벤트 간 구분을 위한 빈 줄
                         
                         # 1개 초과 시 생략 안내 메시지
-                        if len(critical_events) > 1:
-                            omitted_count = len(critical_events) - 1
-                            msg_lines.append(f"   ... and {omitted_count} more CRITICAL event(s) omitted (check ES/Kibana for full details)")
+                        if len(alert_events) > 1:
+                            omitted_count = len(alert_events) - 1
+                            msg_lines.append(f"   ... and {omitted_count} more {TELEGRAM_ALERT_LEVEL}+ event(s) omitted (check ES/Kibana for full details)")
                             msg_lines.append("")
                     
-                    # 통계 (CRITICAL 이벤트와 관계없이 항상 표시)
+                    # 통계 (알림 이벤트와 관계없이 항상 표시)
                     stats = enriched_data.get("statistics", {})
                     if stats:
                         msg_lines.append("📊 Statistics:")
@@ -252,11 +293,10 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                     
                     try:
                         send_telegram_alert(msg)
-                        if has_critical and has_failure:
+                        if has_alert_events and has_failure:
                             logger.info(f"[TELEGRAM] Alert sent successfully: {alert_type} for chunk {chunk_id}")
-                        elif has_critical:
-                            critical_events = [e for e in events if str(e.get("severity", "")).upper() == "CRITICAL"]
-                            logger.info(f"[TELEGRAM] Alert sent successfully: {alert_type} for chunk {chunk_id} ({len(critical_events)} events)")
+                        elif has_alert_events:
+                            logger.info(f"[TELEGRAM] Alert sent successfully: {alert_type} for chunk {chunk_id} ({len(alert_events)} events)")
                         else:
                             logger.info(f"[TELEGRAM] Alert sent successfully: {alert_type} for chunk {chunk_id}")
                         print(f"[TELEGRAM][DEBUG] ✅ Alert sent: {alert_type}")
@@ -264,8 +304,8 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                         logger.error(f"[TELEGRAM] Failed to send alert for chunk {chunk_id}: {e}")
                         print(f"[TELEGRAM][ERROR] ❌ Failed to send alert: {e}")
                 else:
-                    logger.debug(f"[TELEGRAM] No alert conditions met for chunk {chunk_id} (no CRITICAL events and processing_result={processing_result})")
-                    print(f"[TELEGRAM][DEBUG] No alert conditions met (no CRITICAL events, processing_result={processing_result})")
+                    logger.debug(f"[TELEGRAM] No alert conditions met for chunk {chunk_id} (no {TELEGRAM_ALERT_LEVEL}+ events and processing_result={processing_result})")
+                    print(f"[TELEGRAM][DEBUG] No alert conditions met (no {TELEGRAM_ALERT_LEVEL}+ events, processing_result={processing_result})")
             except ImportError:
                 print("[TELEGRAM][ERROR] telegram_alert import failed!")
                 pass
