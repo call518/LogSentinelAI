@@ -89,6 +89,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/logsentinelai"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"config.template" = "logsentinelai/config.template"
+
 [tool.black]
 line-length = 88
 target-version = ['py311']
