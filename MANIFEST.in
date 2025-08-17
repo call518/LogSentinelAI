@@ -1,0 +1,5 @@
+include config.template
+include README.md
+include LICENSE
+recursive-include src/logsentinelai *.py
+recursive-include src/logsentinelai *.typed

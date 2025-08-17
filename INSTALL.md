@@ -111,7 +111,7 @@ curl -s -X GET http://localhost:5000/v1/models | jq
 
 ```bash
 cd ~/LogSentinelAI  # If installed from source
-curl -o config https://raw.githubusercontent.com/call518/LogSentinelAI/main/config.template
+curl -o config https://raw.githubusercontent.com/call518/LogSentinelAI/main/src/logsentinelai/config.template
 nano config  # or vim config
 # Enter required fields such as OPENAI_API_KEY
 ```
