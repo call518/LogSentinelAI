@@ -9,6 +9,13 @@
 # When false, all Telegram alert processing is skipped for better performance
 TELEGRAM_ENABLED=true
 
+# Telegram Alert Level - Minimum severity level to trigger alerts
+# Choose from: CRITICAL, HIGH, MEDIUM, LOW, INFO
+# Only events with this severity level or higher will trigger Telegram alerts
+# Example: If set to HIGH, only CRITICAL and HIGH events will send alerts
+# Example: If set to MEDIUM, CRITICAL, HIGH, and MEDIUM events will send alerts
+TELEGRAM_ALERT_LEVEL=CRITICAL
+
 # Telegram Bot Token (required for alerting to Telegram group)
 # Get from @BotFather after creating your bot
 TELEGRAM_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE
