@@ -237,7 +237,7 @@ How to use with LogSentinelAI:
 
 For installation, environment setup, CLI usage, Elasticsearch/Kibana integration, and all practical guides for LogSentinelAI, please refer to the installation documentation below.
 
-**[Go to Installation and Usage Guide: INSTALL.en.md](./INSTALL.en.md)**
+**[Go to Installation and Usage Guide: INSTALL.md](./INSTALL.md)**
 
 > ⚡️ For additional inquiries, please use GitHub Issues/Discussions!
 
@@ -249,6 +249,7 @@ We would like to express our sincere gratitude to the following projects and com
 
 - **[Outlines](https://dottxt-ai.github.io/outlines/latest/)** - Structured LLM output generation framework that powers our reliable AI analysis
 - **[dottxt-ai Demos](https://github.com/dottxt-ai/demos/tree/main/logs)** - Excellent log analysis examples and implementation patterns
+- **[STRESSED - YouTube](https://www.youtube.com/watch?v=csw6TVfzBcw)** - Creating a Structured AI Log Analysis System with Python & LLMs
 - **[Docker ELK Stack](https://github.com/deviantony/docker-elk)** - Comprehensive Elasticsearch, Logstash, and Kibana Docker setup
 
 ### LLM Infrastructure & Deployment
