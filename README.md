@@ -260,3 +260,20 @@ We would like to express our sincere gratitude to the following projects and com
 ### Open Source Community
 
 We are deeply grateful to the broader open source community and the countless projects that have contributed to making AI-powered log analysis accessible and practical. This project stands on the shoulders of many innovative open source initiatives that continue to push the boundaries of what's possible.
+
+## Contributing
+
+🤝 **Got ideas? Found bugs? Want to add cool features?**
+
+We're always excited to welcome new contributors! Whether you're fixing a typo, adding a new monitoring tool, or improving documentation - every contribution makes this project better.
+
+**Ways to contribute:**
+- 🐛 Report issues or bugs
+- 💡 Suggest new PostgreSQL monitoring features
+- 📝 Improve documentation 
+- 🚀 Submit pull requests
+- ⭐ Star the repo if you find it useful!
+
+## 📄 License
+
+This project is licensed under the MIT License.
