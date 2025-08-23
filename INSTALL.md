@@ -13,7 +13,7 @@ LogSentinelAI is designed for **enterprise cybersecurity environments**, **SOC (
 ### Infrastructure Requirements
 
 - **OS**: RHEL 8/9, RockyLinux 8/9, CentOS 8/9, Ubuntu 20.04/22.04 (including WSL2)
-- **Python**: 3.11+ (3.12 recommended)
+- **Python**: 3.11 or 3.12 (Python 3.13+ not supported due to dependency compatibility)
 - **Memory**: Minimum 4GB (8GB+ recommended for local LLM deployment)
 - **Storage**: At least 2GB free space
 - **Network**: Access to PyPI, GitHub, OpenAI, Ollama/vLLM, etc.
@@ -49,6 +49,7 @@ uv --version
 ### 2.2 Install Python 3.11+ & Create Virtual Environment
 
 ```bash
+# Install Python 3.11 or 3.12 (3.13+ not supported)
 uv python install 3.11
 uv venv --python=3.11 logsentinelai-venv
 source logsentinelai-venv/bin/activate
