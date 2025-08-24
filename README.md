@@ -11,6 +11,14 @@
 
 LogSentinelAI is an **AI-powered cybersecurity tool** that leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data for **SIEM integration** with Elasticsearch/Kibana. This **DevSecOps automation solution** enables **real-time threat detection** and **security monitoring** by simply declaring your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing or regex rules required.
 
+---
+
+[![Stargazers repo roster for @call518/LogSentinelAI](https://reporoster.com/stars/call518/LogSentinelAI)](https://github.com/call518/LogSentinelAI/stargazers)
+
+[![Forkers repo roster for @call518/LogSentinelAI](https://reporoster.com/forks/call518/LogSentinelAI)](https://github.com/call518/LogSentinelAI/network/members)
+
+---
+
 ## Dashboard Example
 
 ![LogSentinelAI Kibana Dashboard showing security events, threat detection, and log analysis visualization](img/ex-dashboard.png)
