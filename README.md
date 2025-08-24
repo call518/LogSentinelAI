@@ -13,12 +13,6 @@ LogSentinelAI is an **AI-powered cybersecurity tool** that leverages LLM with **
 
 ---
 
-[![Stargazers repo roster for @call518/LogSentinelAI](https://reporoster.com/stars/call518/LogSentinelAI)](https://github.com/call518/LogSentinelAI/stargazers)
-
-[![Forkers repo roster for @call518/LogSentinelAI](https://reporoster.com/forks/call518/LogSentinelAI)](https://github.com/call518/LogSentinelAI/network/members)
-
----
-
 ## Dashboard Example
 
 ![LogSentinelAI Kibana Dashboard showing security events, threat detection, and log analysis visualization](img/ex-dashboard.png)
