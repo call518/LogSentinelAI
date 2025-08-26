@@ -150,18 +150,6 @@ def send_to_elasticsearch_raw(data: Dict[str, Any], log_type: str, chunk_id: Opt
                         msg_lines.append(f"  • Error Type: {error_type}")
                         msg_lines.append(f"  • Error Message: {error_message}")
                         msg_lines.append("")
-                        
-                        # 실패 시에도 전체 메타데이터 표시
-                        msg_lines.append("🔍 Complete Processing Metadata:")
-                        for key, value in enriched_data.items():
-                            if key.startswith("@"):  # 모든 @ 메타데이터 표시
-                                if isinstance(value, dict):
-                                    msg_lines.append(f"  • {key}: {json.dumps(value, separators=(',', ':'))}")
-                                elif isinstance(value, list):
-                                    msg_lines.append(f"  • {key}: {json.dumps(value, separators=(',', ':'))}")
-                                else:
-                                    msg_lines.append(f"  • {key}: {value}")
-                        msg_lines.append("")
                     
                     # 전체 이벤트 요약 (설정된 레벨 이상만 표시) - Summary 앞으로 이동
                     if has_alert_events and events:
