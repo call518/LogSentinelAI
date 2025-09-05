@@ -13,10 +13,10 @@ LogSentinelAI is designed for **enterprise cybersecurity environments**, **SOC (
 ### Infrastructure Requirements
 
 - **OS**: RHEL 8/9, RockyLinux 8/9, CentOS 8/9, Ubuntu 20.04/22.04 (including WSL2)
-- **Python**: 3.11 or 3.12 (Python 3.13+ not supported due to dependency compatibility)
+- **Python**: **3.11 or 3.12 ONLY** (⚠️ Python 3.13+ not supported due to dependency compatibility issues)
 - **Memory**: Minimum 4GB (8GB+ recommended for local LLM deployment)
-- **Storage**: At least 2GB free space
-- **Network**: Access to PyPI, GitHub, OpenAI, Ollama/vLLM, etc.
+- **Storage**: At least 2GB free space (additional for ELK stack if used)
+- **Network**: Access to PyPI, GitHub, OpenAI API, Ollama/vLLM endpoints
 - **(Optional) Docker**: Required for running Elasticsearch/Kibana, vLLM, Ollama containers
 
 ### Perfect for These Use Cases
@@ -324,11 +324,30 @@ docker compose up -d
 # Access http://localhost:5601, elastic/changeme
 ```
 
-### 8.2 Set Elasticsearch Index/Policy/Template
+**⚠️ Important**: Wait for Elasticsearch and Kibana to fully start before proceeding. Check with:
+```bash
+# Check Elasticsearch status
+curl -u elastic:changeme http://localhost:9200/_cluster/health
 
-Run the following commands in the terminal when Kibana/Elasticsearch is running (default: http://localhost:5601, http://localhost:9200). Default account: `elastic`/`changeme`.
+# Check Kibana status  
+curl -u elastic:changeme http://localhost:5601/api/status
+```
 
-#### 1) Create ILM Policy (7 days retention, 10GB/1d rollover)
+### 8.2 Complete ELK Setup Process (Must Follow This Order)
+
+**🔄 Follow these steps in the exact order below for successful setup:**
+
+#### Step 1: Access Kibana Web Interface
+
+1. Open browser and go to http://localhost:5601
+2. Login with default credentials: `elastic` / `changeme`
+3. Verify Kibana is fully loaded and functional
+
+#### Step 2: Create Elasticsearch Index Infrastructure
+
+Run the following commands in terminal to set up the index structure:
+
+##### 1) Create ILM Policy (7 days retention, 10GB/1d rollover)
 
 ```bash
 curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
@@ -356,7 +375,7 @@ curl -X PUT "localhost:9200/_ilm/policy/logsentinelai-analysis-policy" \
 }'
 ```
 
-#### 2) Create Index Template
+##### 2) Create Index Template
 
 ```bash
 curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
@@ -399,7 +418,7 @@ curl -X PUT "localhost:9200/_index_template/logsentinelai-analysis-template" \
 }'
 ```
 
-#### 3) Create Initial Index & Write Alias
+##### 3) Create Initial Index & Write Alias
 
 ```bash
 curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
@@ -414,12 +433,65 @@ curl -X PUT "localhost:9200/logsentinelai-analysis-000001" \
 }'
 ```
 
-#### 4) Import Kibana Dashboard/Settings
+**✅ Verify Index Creation**: Check that the index was created successfully:
+```bash
+curl -u elastic:changeme "localhost:9200/_cat/indices/logsentinelai-analysis*?v"
+```
 
-1. Access http://localhost:5601 (elastic/changeme)
-2. Stack Management → Saved Objects → Import
-3. Import `Kibana-9.0.3-Advanced-Settings.ndjson` then `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson`
-4. Check results in Analytics > Dashboard > LogSentinelAI Dashboard
+#### Step 3: Create Kibana Data View
+
+**🎯 Critical Step**: Before importing dashboards, you must create a Data View in Kibana:
+
+1. In Kibana web interface, go to **Stack Management** → **Data Views**
+2. Click **Create data view**
+3. Configure the Data View:
+   - **Name**: `LogSentinelAI Analysis`
+   - **Index pattern**: `logsentinelai-analysis*`
+   - **Timestamp field**: `@timestamp` (⚠️ Important: Select this exact field)
+4. Click **Save data view to Kibana**
+
+**🔍 Alternative method via Dev Tools**:
+You can also create the Data View using Kibana's Dev Tools console:
+
+```bash
+# Go to Kibana → Dev Tools and run:
+POST /api/data_views/data_view
+{
+  "data_view": {
+    "title": "logsentinelai-analysis*",
+    "name": "LogSentinelAI Analysis",
+    "timeFieldName": "@timestamp"
+  }
+}
+```
+
+#### Step 4: Import Kibana Configuration Files
+
+**📂 Import Order**: Import configuration files in this specific order:
+
+1. **First**: Import Advanced Settings
+   - Go to **Stack Management** → **Saved Objects** → **Import**
+   - Select and import `Kibana-9.0.3-Advanced-Settings.ndjson`
+   - Click **Import** and resolve any conflicts
+
+2. **Second**: Import Dashboard
+   - In the same import interface
+   - Select and import `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson`  
+   - Click **Import** and resolve any conflicts
+   - ⚠️ If there are missing references, ensure the Data View was created correctly in Step 3
+
+#### Step 5: Verify Complete Setup
+
+1. Go to **Analytics** → **Dashboard** → **LogSentinelAI Dashboard**
+2. Verify the dashboard loads without errors
+3. Check that all visualizations are properly configured
+4. Test by running a LogSentinelAI analysis to populate data
+
+**🚨 Troubleshooting**: If dashboard shows "No data" or errors:
+- Verify Data View exists and uses `@timestamp` field
+- Check that the index pattern `logsentinelai-analysis*` matches your data
+- Ensure LogSentinelAI config has correct Elasticsearch settings
+- Run a test analysis to generate sample data
 
 ---
 
@@ -570,10 +642,26 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 
 ### 11.3 Import Kibana Dashboard
 
+**⚠️ Note**: If you followed the complete ELK setup process in Section 8.2, you've already completed this step. This section is for reference or if you need to re-import the dashboard.
+
+**Prerequisites**: 
+- Elasticsearch and Kibana must be running
+- Data View `logsentinelai-analysis*` must be created with `@timestamp` as the time field
+- Index infrastructure must be properly set up
+
+**Import Steps**:
 1. Access http://localhost:5601 (elastic/changeme)
-2. Stack Management → Saved Objects → Import
-3. Import `Kibana-9.0.3-Advanced-Settings.ndjson` then `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson`
-4. Check results in Analytics > Dashboard > LogSentinelAI Dashboard
+2. Navigate to **Stack Management** → **Saved Objects** → **Import**
+3. **Import in this order**:
+   - First: `Kibana-9.0.3-Advanced-Settings.ndjson`
+   - Second: `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson`
+4. Resolve any import conflicts if prompted
+5. Verify: Go to **Analytics** → **Dashboard** → **LogSentinelAI Dashboard**
+
+**🚨 Troubleshooting Import Issues**:
+- **"Missing references" error**: Ensure Data View was created correctly
+- **Dashboard shows empty/no data**: Run a LogSentinelAI analysis to generate sample data
+- **Visualization errors**: Check that index pattern matches `logsentinelai-analysis*`
 
 ---
 
@@ -587,6 +675,44 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 - **GeoIP DB download failed**: Download manually and set path in config
 - **SSH remote analysis error**: Check SSH key permissions, known_hosts, firewall, port
 - **LLM API error**: Check OPENAI_API_KEY, Ollama/vLLM server status, network
+
+### ELK Stack Setup Issues
+
+- **Elasticsearch not starting**: 
+  ```bash
+  # Check container logs
+  docker logs docker-elk-elasticsearch-1
+  # Increase memory if needed
+  echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+  sudo sysctl -p
+  ```
+
+- **Kibana showing "Kibana server is not ready yet"**: 
+  - Wait 2-3 minutes for full startup
+  - Check Elasticsearch is healthy: `curl -u elastic:changeme http://localhost:9200/_cluster/health`
+
+- **Dashboard import fails with "Missing references"**:
+  - Ensure Data View `logsentinelai-analysis*` exists with `@timestamp` time field
+  - Create index infrastructure first (Step 2 in Section 8.2)
+  - Re-import in correct order: Advanced Settings → Dashboard
+
+- **Dashboard shows "No data available"**:
+  - Run LogSentinelAI analysis to populate data: `logsentinelai-linux-system --log-path sample-logs/linux-2k.log`
+  - Check index exists: `curl -u elastic:changeme "localhost:9200/_cat/indices/logsentinelai-analysis*?v"`
+  - Verify Elasticsearch config in LogSentinelAI config file
+
+- **Data View creation fails**:
+  - Ensure index exists before creating Data View
+  - Use exact pattern: `logsentinelai-analysis*`
+  - Select `@timestamp` as time field (not `timestamp`)
+
+- **Port conflicts (5601/9200 already in use)**:
+  ```bash
+  # Check what's using the ports
+  sudo netstat -tlnp | grep :5601
+  sudo netstat -tlnp | grep :9200
+  # Stop conflicting services or modify docker-compose.yml ports
+  ```
 
 ### Enterprise Environment Considerations
 
