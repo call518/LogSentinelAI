@@ -54,6 +54,7 @@ logger = setup_logger("logsentinelai.core.commons")
 import json
 from rich import print_json
 import datetime
+import glob
 from typing import Dict, Any, Optional, List
 
 # Import from modularized components
@@ -64,6 +65,43 @@ from .geoip import enrich_source_ips_with_geoip
 from ..utils.general import chunked_iterable, print_chunk_contents
 from .monitoring import RealtimeLogMonitor, create_realtime_monitor
 from .token_utils import count_tokens
+
+def expand_file_patterns(file_patterns: List[str]) -> List[str]:
+    """
+    Expand file patterns (wildcards) to actual file paths
+    
+    Args:
+        file_patterns: List of file patterns (can include wildcards like *, ?, [])
+        
+    Returns:
+        List of actual file paths that match the patterns
+    """
+    expanded_files = []
+    
+    for pattern in file_patterns:
+        # Use glob to expand wildcards
+        matches = glob.glob(pattern)
+        
+        if matches:
+            # Sort for consistent processing order
+            matches.sort()
+            expanded_files.extend(matches)
+            logger.info(f"Pattern '{pattern}' expanded to {len(matches)} files: {matches}")
+        else:
+            # If no matches, treat as literal path (might be a single file)
+            expanded_files.append(pattern)
+            logger.warning(f"Pattern '{pattern}' did not match any files, treating as literal path")
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_files = []
+    for file_path in expanded_files:
+        if file_path not in seen:
+            seen.add(file_path)
+            unique_files.append(file_path)
+    
+    logger.info(f"Final expanded file list: {unique_files}")
+    return unique_files
 
 def send_to_elasticsearch(analysis_data: Dict[str, Any], log_type: str, chunk_id: Optional[int] = None, chunk: Optional[List] = None) -> bool:
     """
@@ -318,13 +356,14 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
                              remote_log_path: Optional[str] = None):
     """
     Generic batch analysis function for all log types
+    Support wildcard patterns for multiple file processing
     
     Args:
         log_type: Type of log ("httpd_access", "httpd_server", "linux_system")
         analysis_schema_class: Pydantic schema class for structured output
         prompt_template: Prompt template string
         analysis_title: Title to display in output header
-        log_path: Override log file path (for local files)
+        log_path: Override log file path (supports wildcards like *.log, /var/log/apache*.log)
         chunk_size: Override chunk size
         remote_mode: "local" or "ssh" (overrides config default)
         ssh_config: Custom SSH configuration dict
@@ -357,16 +396,48 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
         logger.error(f"Failed to get analysis configuration: {e}")
         raise
     
-    # Override log path if provided (for local files)
-    if log_path and config["access_mode"] == "local":
-        config["log_path"] = log_path
-        logger.info(f"Overriding log path to: {log_path}")
+    # Handle wildcard file patterns for local mode
+    if config["access_mode"] == "local":
+        # Determine file patterns to process
+        if log_path:
+            # Use provided log_path (may contain wildcards)
+            file_patterns = [log_path]
+            logger.info(f"Using provided log path pattern: {log_path}")
+        else:
+            # Use config log_path
+            file_patterns = [config["log_path"]]
+            logger.info(f"Using config log path: {config['log_path']}")
+        
+        # Expand wildcard patterns to actual files
+        log_files = expand_file_patterns(file_patterns)
+        
+        if not log_files:
+            logger.error(f"No files found matching patterns: {file_patterns}")
+            print(f"ERROR: No files found matching patterns: {file_patterns}")
+            raise FileNotFoundError(f"No files found matching patterns: {file_patterns}")
+        
+        logger.info(f"Found {len(log_files)} files to process: {log_files}")
+        print(f"Files to process: {len(log_files)}")
+        for i, file_path in enumerate(log_files, 1):
+            print(f"  {i}. {file_path}")
+        
+    else:
+        # SSH mode - single file only (no wildcard support for remote files yet)
+        if log_path:
+            config["log_path"] = log_path
+            logger.info(f"Overriding remote log path to: {log_path}")
+        log_files = [config["log_path"]]
+        logger.info(f"SSH mode - processing single remote file: {config['log_path']}")
     
-    logger.info(f"Final configuration - Access mode: {config['access_mode']}, Log file: {config['log_path']}, Chunk size: {config['chunk_size']}")
+    chunk_size = config["chunk_size"]
+    response_language = config["response_language"]
+    
+    # Display configuration summary
+    logger.info(f"Final configuration - Access mode: {config['access_mode']}, Files: {len(log_files)}, Chunk size: {chunk_size}")
     print(f"Access mode:       {config['access_mode'].upper()}")
-    print(f"Log file:          {config['log_path']}")
-    print(f"Chunk size:        {config['chunk_size']}")
-    print(f"Response language: {config['response_language']}")
+    print(f"Total files:       {len(log_files)}")
+    print(f"Chunk size:        {chunk_size}")
+    print(f"Response language: {response_language}")
     print(f"LLM Provider:      {llm_provider}")
     print(f"LLM Model:         {llm_model_name}")
     if config["access_mode"] == "ssh":
@@ -376,39 +447,71 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
         print(f"SSH Target:        {ssh_target}")
     print("=" * 70)
     
-    log_path = config["log_path"]
-    chunk_size = config["chunk_size"]
-    response_language = config["response_language"]
-    
     logger.info("Initializing LLM model...")
     model = initialize_llm_model()
     logger.info("LLM model initialized successfully.")
     
-    try:
-        # Use streaming batch processing for memory safety and logrotate handling
-        chunk_count = _process_file_streaming_batch(
-            log_path=log_path,
-            chunk_size=chunk_size,
-            model=model,
-            analysis_schema_class=analysis_schema_class,
-            prompt_template=prompt_template,
-            response_language=response_language,
-            log_type=log_type,
-            llm_provider=llm_provider,
-            llm_model_name=llm_model_name,
-            config=config
-        )
-        logger.info(f"Batch analysis completed. Total chunks processed: {chunk_count}")
-    except FileNotFoundError:
-        logger.error(f"Log file not found: {log_path}")
-        print(f"ERROR: Log file not found: {log_path}")
-        raise
-    except PermissionError:
-        logger.error(f"Permission denied accessing log file: {log_path}")
-        print(f"ERROR: Permission denied: {log_path}")
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error during batch analysis: {e}")
+    # Process all files
+    total_chunks_processed = 0
+    successful_files = 0
+    failed_files = 0
+    
+    for file_index, current_log_path in enumerate(log_files, 1):
+        print(f"\n📁 Processing file {file_index}/{len(log_files)}: {current_log_path}")
+        logger.info(f"Starting analysis of file {file_index}/{len(log_files)}: {current_log_path}")
+        
+        try:
+            # Use streaming batch processing for memory safety and logrotate handling
+            chunk_count = _process_file_streaming_batch(
+                log_path=current_log_path,
+                chunk_size=chunk_size,
+                model=model,
+                analysis_schema_class=analysis_schema_class,
+                prompt_template=prompt_template,
+                response_language=response_language,
+                log_type=log_type,
+                llm_provider=llm_provider,
+                llm_model_name=llm_model_name,
+                config=config
+            )
+            total_chunks_processed += chunk_count
+            successful_files += 1
+            logger.info(f"File {file_index} completed successfully. Chunks processed: {chunk_count}")
+            print(f"✅ File {file_index} completed successfully. Chunks processed: {chunk_count}")
+            
+        except FileNotFoundError:
+            failed_files += 1
+            logger.error(f"File {file_index} not found: {current_log_path}")
+            print(f"❌ ERROR: File {file_index} not found: {current_log_path}")
+            # Continue with next file instead of raising
+            continue
+        except PermissionError:
+            failed_files += 1
+            logger.error(f"Permission denied accessing file {file_index}: {current_log_path}")
+            print(f"❌ ERROR: Permission denied: {current_log_path}")
+            # Continue with next file instead of raising
+            continue
+        except Exception as e:
+            failed_files += 1
+            logger.error(f"Unexpected error processing file {file_index} ({current_log_path}): {e}")
+            print(f"❌ ERROR processing file {file_index}: {e}")
+            # Continue with next file instead of raising
+            continue
+    
+    # Final summary
+    print(f"\n" + "=" * 70)
+    print(f"BATCH ANALYSIS SUMMARY")
+    print(f"=" * 70)
+    print(f"Total files processed: {successful_files}/{len(log_files)}")
+    print(f"Failed files:          {failed_files}")
+    print(f"Total chunks:          {total_chunks_processed}")
+    print(f"=" * 70)
+    
+    logger.info(f"Batch analysis completed. Files: {successful_files}/{len(log_files)}, Failed: {failed_files}, Total chunks: {total_chunks_processed}")
+    
+    # Raise error only if all files failed
+    if successful_files == 0 and len(log_files) > 0:
+        raise RuntimeError(f"All {len(log_files)} files failed to process")
         print(f"ERROR: Unexpected error: {e}")
         raise
 
@@ -663,9 +766,9 @@ def create_argument_parser(description: str):
     parser.add_argument('--chunk-size', type=int, default=None,
                        help='Override default chunk size')
     
-    # Log file path
+    # Log file path with wildcard support
     parser.add_argument('--log-path', type=str, default=None,
-                       help='Log file path (local: /path/to/log, remote: /var/log/remote.log)')
+                       help='Log file path or pattern (supports wildcards: /var/log/*.log, /path/to/apache*.log, etc.)')
     
     # Remote access configuration
     parser.add_argument('--remote', action='store_true',

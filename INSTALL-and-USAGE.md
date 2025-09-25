@@ -506,12 +506,17 @@ logsentinelai --help
 ### 9.2 Main Analysis Command Examples
 
 ```bash
-# HTTP Access log analysis (batch)
+# Single file analysis
 logsentinelai-httpd-access --log-path sample-logs/access-10k.log
-# Apache Error log analysis
 logsentinelai-httpd-server --log-path sample-logs/apache-10k.log
-# Linux System log analysis
 logsentinelai-linux-system --log-path sample-logs/linux-2k.log
+
+# Multiple files with wildcard patterns (batch mode only)
+logsentinelai-httpd-access --log-path "/var/log/apache*.log"
+logsentinelai-linux-system --log-path "/var/log/messages*"
+logsentinelai-general-log --log-path "logs/*.log"
+logsentinelai-httpd-access --log-path "sample-logs/access*.log"
+
 # Realtime monitoring (local)
 logsentinelai-linux-system --mode realtime
 # Manual GeoIP DB download/path
@@ -522,7 +527,7 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 | Option | Description | config default | CLI override |
 |--------|-------------|---------------|-------------|
-| --log-path <path> | Log file path to analyze | LOG_PATH_* | Y |
+| --log-path <path> | Log file path or pattern (supports wildcards: *.log, /var/log/apache*.log) | LOG_PATH_* | Y |
 | --mode <mode> | batch/realtime analysis mode | ANALYSIS_MODE | Y |
 | --chunk-size <num> | Analysis unit (lines) | CHUNK_SIZE_* | Y |
 | --processing-mode <mode> | Realtime processing (full/sampling) | REALTIME_PROCESSING_MODE | Y |
@@ -534,7 +539,25 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 > CLI options always override config file
 
-### 9.8 SSH Remote Log Analysis
+### 9.8 Multiple File Processing with Wildcards
+
+**Batch mode only** - Process multiple log files at once using wildcard patterns:
+
+```bash
+# Process all Apache access logs
+logsentinelai-httpd-access --log-path "/var/log/httpd/access_log.*"
+# Process all rotated system logs  
+logsentinelai-linux-system --log-path "/var/log/messages*"
+# Process all .log files in directory
+logsentinelai-general-log --log-path "/path/to/logs/*.log"
+```
+
+- **✅ Supported patterns**: `*` (any characters), `?` (single character), `[abc]` (character sets)
+- **✅ Memory safe**: Each file processed individually using streaming
+- **✅ Error resilient**: Failed files don't stop processing of remaining files
+- **❌ SSH limitation**: Wildcard patterns not supported for remote files (single file only)
+
+### 9.9 SSH Remote Log Analysis
 
 ```bash
 logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/id_rsa --log-path /var/log/messages
@@ -542,7 +565,7 @@ logsentinelai-linux-system --remote --ssh admin@192.168.1.100 --ssh-key ~/.ssh/i
 
 - **Tip:** Register the target server in known_hosts in advance (`ssh-keyscan -H <host> >> ~/.ssh/known_hosts`)
 
-### 9.9 Manual GeoIP DB Download/Path
+### 9.10 Manual GeoIP DB Download/Path
 
 ```bash
 logsentinelai-geoip-download --output-dir ~/.logsentinelai/

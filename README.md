@@ -15,13 +15,29 @@ LogSentinelAI is an **AI-powered cybersecurity tool** that leverages LLM with **
 
 ---
 
+## Installation & Usage Guide
+
+**Requirements**: Python 3.11 or 3.12 (Python 3.13+ not supported due to dependency compatibility)
+
+For installation, environment setup, CLI usage, Elasticsearch/Kibana integration, and all practical guides for LogSentinelAI, please refer to the installation documentation below.
+
+**[Go to Installation and Usage Guide: INSTALL-and-USAGE.md](./INSTALL-and-USAGE.md)**
+
+> ⚡️ For additional inquiries, please use GitHub Issues/Discussions!
+
+---
+
 ## Dashboard Example
 
 ![LogSentinelAI Kibana Dashboard showing security events, threat detection, and log analysis visualization](img/ex-dashboard.png)
 
+---
+
 ## JSON Output Example
 
 ![Structured JSON output from LogSentinelAI showing security event analysis results](img/ex-json.png)
+
+---
 
 ## Telegram Alert Example
 
@@ -82,6 +98,8 @@ When critical security events are detected, LogSentinelAI can automatically send
 
 > Configure Telegram alerts by setting `TELEGRAM_ENABLED=true`, `TELEGRAM_TOKEN`, and `TELEGRAM_CHAT_ID` in your config file. Alerts are automatically sent for CRITICAL+ events (configurable via `TELEGRAM_ALERT_LEVEL`).
 
+---
+
 ## Key Features
 
 > ⚡️ **Declarative Extraction**
@@ -105,6 +123,8 @@ class MyAccessLogResult(BaseModel):
 #   "is_attack": true
 # }
 ```
+
+---
 
 ## System Architecture
 
@@ -214,6 +234,8 @@ How to use with LogSentinelAI:
 - Clone and pick appropriate files for your analyzer
 - Use `--log-path` to point the analyzer CLI at the chosen file
 
+---
+
 ## Frequently Asked Questions (FAQ)
 
 ### Q: How does LogSentinelAI differ from traditional log analysis tools?
@@ -238,15 +260,7 @@ How to use with LogSentinelAI:
 
 - Some formats may require adapting analyzer prompts/schemas
 
-## Installation & Usage Guide
-
-**Requirements**: Python 3.11 or 3.12 (Python 3.13+ not supported due to dependency compatibility)
-
-For installation, environment setup, CLI usage, Elasticsearch/Kibana integration, and all practical guides for LogSentinelAI, please refer to the installation documentation below.
-
-**[Go to Installation and Usage Guide: INSTALL-and-USAGE.md](./INSTALL-and-USAGE.md)**
-
-> ⚡️ For additional inquiries, please use GitHub Issues/Discussions!
+---
 
 ## Acknowledgments
 
@@ -268,6 +282,8 @@ We would like to express our sincere gratitude to the following projects and com
 
 We are deeply grateful to the broader open source community and the countless projects that have contributed to making AI-powered log analysis accessible and practical. This project stands on the shoulders of many innovative open source initiatives that continue to push the boundaries of what's possible.
 
+---
+
 ## Contributing
 
 🤝 **Got ideas? Found bugs? Want to add cool features?**
@@ -280,6 +296,8 @@ We're always excited to welcome new contributors! Whether you're fixing a typo, 
 - 📝 Improve documentation 
 - 🚀 Submit pull requests
 - ⭐ Star the repo if you find it useful!
+
+---
 
 ## 📄 License
 
