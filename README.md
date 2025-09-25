@@ -7,9 +7,12 @@
 **Keywords**: `AI log analysis` • `cybersecurity automation` • `SIEM integration` • `threat detection` • `DevSecOps` • `log monitoring` • `security intelligence` • `anomaly detection`
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Deploy to PyPI with tag](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml/badge.svg)](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/call518/LogSentinelAI)
 [![BuyMeACoffee](https://raw.githubusercontent.com/pachadotdev/buymeacoffee-badges/main/bmc-donate-yellow.svg)](https://www.buymeacoffee.com/call518)
+
+[![Deploy to PyPI with tag](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml/badge.svg)](https://github.com/call518/LogSentinelAI/actions/workflows/pypi-publish.yml)
+![PyPI](https://img.shields.io/pypi/v/logsentinelai?label=pypi%20package)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/logsentinelai)
 
 LogSentinelAI is an **AI-powered cybersecurity tool** that leverages LLM with **Declarative Extraction** to analyze security events, anomalies, and errors from various logs including Apache, Linux, and converts them into structured data for **SIEM integration** with Elasticsearch/Kibana. This **DevSecOps automation solution** enables **real-time threat detection** and **security monitoring** by simply declaring your desired result structure as a Pydantic class, and the AI automatically analyzes logs to return JSON matching that schema. No complex parsing or regex rules required.
 
