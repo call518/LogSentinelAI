@@ -238,13 +238,13 @@ How to use with LogSentinelAI:
 
 - Some formats may require adapting analyzer prompts/schemas
 
-## Installation Guide
+## Installation & Usage Guide
 
 **Requirements**: Python 3.11 or 3.12 (Python 3.13+ not supported due to dependency compatibility)
 
 For installation, environment setup, CLI usage, Elasticsearch/Kibana integration, and all practical guides for LogSentinelAI, please refer to the installation documentation below.
 
-**[Go to Installation and Usage Guide: INSTALL.md](./INSTALL.md)**
+**[Go to Installation and Usage Guide: INSTALL-and-USAGE.md](./INSTALL-and-USAGE.md)**
 
 > ⚡️ For additional inquiries, please use GitHub Issues/Discussions!
 

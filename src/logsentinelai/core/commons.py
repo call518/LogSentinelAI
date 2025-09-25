@@ -385,73 +385,20 @@ def run_generic_batch_analysis(log_type: str, analysis_schema_class, prompt_temp
     logger.info("LLM model initialized successfully.")
     
     try:
-        with open(log_path, "r", encoding="utf-8") as f:
-            logger.info(f"Successfully opened log file: {log_path}")
-            chunk_count = 0
-            for i, chunk in enumerate(chunked_iterable(f, chunk_size, debug=False)):
-                chunk_count = i + 1
-                logger.debug(f"Processing chunk {chunk_count}")
-                # Record analysis start time
-                chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
-                logs = "".join(chunk).rstrip("\n")
-                model_schema = analysis_schema_class.model_json_schema()
-                prompt = prompt_template.format(logs=logs, model_schema=model_schema, response_language=response_language)
-                prompt = prompt.strip()
-
-                # Token count for prompt (approximate)
-                try:
-                    prompt_tokens = count_tokens(prompt, llm_model_name)
-                    # Log token count with provider/model for traceability
-                    logger.info(
-                        f"Prompt tokens (approx.): {prompt_tokens} (provider={llm_provider}, model={llm_model_name})"
-                    )
-                except Exception:
-                    prompt_tokens = None
-                    logger.warning(
-                        f"Failed to count prompt tokens (provider={llm_provider}, model={llm_model_name})"
-                    )
-                
-                # DEBUG 레벨에서 LLM에 전송될 최종 프롬프트 로깅
-                logger.debug(f"Final prompt for chunk {chunk_count}:\n{prompt}")
-                
-                # Always print the final prompt for each chunk
-                print("\n[LLM Prompt Submitted]")
-                print("-" * 50)
-                print(prompt)
-                print("-" * 50)
-                # Print prompt token count right after the prompt output
-                if prompt_tokens is not None:
-                    print(f"✅ Prompt tokens (approx.): {prompt_tokens} (model: {llm_model_name})")
-                print(f"\n--- Chunk {i+1} ---")
-                print_chunk_contents(chunk)
-                
-                # Process chunk using common function
-                success, parsed_data = process_log_chunk(
-                    model=model,
-                    prompt=prompt,
-                    model_class=analysis_schema_class,
-                    chunk_start_time=chunk_start_time,
-                    chunk_end_time=None,  # Will be calculated in function
-                    elasticsearch_index=log_type,
-                    chunk_number=i+1,
-                    chunk_data=chunk,
-                    llm_provider=llm_provider,
-                    llm_model=llm_model_name,
-                    processing_mode="batch",
-                    log_path=log_path,
-                    access_mode=config["access_mode"],
-                    token_size_input=prompt_tokens,
-                )
-                
-                if success:
-                    print("✅ Analysis completed successfully")
-                else:
-                    print("❌ Analysis failed")
-                    wait_on_failure(30)  # Wait 30 seconds on failure
-                
-                print("-" * 50)
-            
-            logger.info(f"Batch analysis completed. Total chunks processed: {chunk_count}")
+        # Use streaming batch processing for memory safety and logrotate handling
+        chunk_count = _process_file_streaming_batch(
+            log_path=log_path,
+            chunk_size=chunk_size,
+            model=model,
+            analysis_schema_class=analysis_schema_class,
+            prompt_template=prompt_template,
+            response_language=response_language,
+            log_type=log_type,
+            llm_provider=llm_provider,
+            llm_model_name=llm_model_name,
+            config=config
+        )
+        logger.info(f"Batch analysis completed. Total chunks processed: {chunk_count}")
     except FileNotFoundError:
         logger.error(f"Log file not found: {log_path}")
         print(f"ERROR: Log file not found: {log_path}")
@@ -937,3 +884,341 @@ def read_file_content(log_path: str, ssh_config=None) -> str:
             logger.error(f"Failed to read local file {log_path}: {e}")
             print(f"✗ Failed to read local file {log_path}: {e}")
             raise
+
+
+# ============================================================================
+# STREAMING BATCH PROCESSING - Memory Safe & Logrotate Resistant
+# ============================================================================
+
+def _process_file_streaming_batch(log_path: str, chunk_size: int, model, analysis_schema_class,
+                                prompt_template: str, response_language: str, log_type: str,
+                                llm_provider: str, llm_model_name: str, config: dict) -> int:
+    """
+    Process local file using streaming approach - memory efficient and logrotate safe
+    
+    Args:
+        log_path: Path to the log file
+        chunk_size: Number of lines per chunk
+        model: LLM model instance
+        analysis_schema_class: Pydantic schema class
+        prompt_template: Template for prompts
+        response_language: Language for responses
+        log_type: Type of log being processed
+        llm_provider: LLM provider name
+        llm_model_name: LLM model name
+        config: Analysis configuration
+    
+    Returns:
+        int: Number of chunks processed
+    """
+    if not os.path.exists(log_path):
+        logger.error(f"Log file not found: {log_path}")
+        raise FileNotFoundError(f"Log file not found: {log_path}")
+    
+    # Record initial file state for snapshot boundary and rotation detection
+    initial_stat = os.stat(log_path)
+    initial_inode = initial_stat.st_ino
+    initial_size = initial_stat.st_size
+    
+    logger.info(f"📸 Starting streaming batch analysis")
+    logger.info(f"   📄 File: {log_path}")
+    logger.info(f"   📏 Size: {initial_size:,} bytes")
+    logger.info(f"   🔢 Inode: {initial_inode}")
+    logger.info(f"   🧩 Chunk size: {chunk_size} lines")
+    logger.info(f"   ⚠️  Will detect logrotate/truncation during processing")
+    
+    # Check if file is actively growing (optional warning)
+    _check_growing_file_warning(log_path, initial_size)
+    
+    chunk_buffer = []
+    chunk_count = 0
+    total_lines_processed = 0
+    last_position = 0
+    
+    try:
+        logger.info(f"Successfully opened log file for streaming: {log_path}")
+        with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
+            
+            line_number = 0
+            while True:
+                current_position = f.tell()
+                line = f.readline()
+                
+                # End of file reached
+                if not line:
+                    break
+                
+                line_number += 1
+                
+                # Check for file rotation every 1000 lines
+                if line_number % 1000 == 0:
+                    if _check_file_rotation(log_path, initial_inode, current_position):
+                        logger.warning(f"🔄 File rotation detected at line {line_number}")
+                        logger.warning(f"📊 Processing up to current position: {current_position:,} bytes")
+                        break
+                
+                # Check snapshot boundary
+                if current_position > initial_size:
+                    logger.info(f"🛑 Reached original snapshot boundary at line {line_number}")
+                    logger.info(f"📊 Processed exactly {initial_size:,} bytes as planned")
+                    break
+                
+                line = line.strip()
+                if not line:
+                    continue
+                
+                chunk_buffer.append(line)
+                last_position = current_position
+                
+                # Process chunk when buffer is full
+                if len(chunk_buffer) >= chunk_size:
+                    chunk_count += 1
+                    progress_pct = (current_position / initial_size) * 100
+                    logger.info(f"Processing chunk {chunk_count} (Progress: {progress_pct:.1f}%)")
+                    
+                    # Process the chunk
+                    success = _process_single_chunk_streaming(
+                        chunk_buffer=chunk_buffer,
+                        chunk_number=chunk_count,
+                        model=model,
+                        analysis_schema_class=analysis_schema_class,
+                        prompt_template=prompt_template,
+                        response_language=response_language,
+                        log_type=log_type,
+                        llm_provider=llm_provider,
+                        llm_model_name=llm_model_name,
+                        config=config
+                    )
+                    
+                    total_lines_processed += len(chunk_buffer)
+                    chunk_buffer = []  # Clear buffer to free memory
+                    
+                    if not success:
+                        logger.warning(f"Chunk {chunk_count} processing failed, continuing with next chunk")
+                        wait_on_failure(30)
+                
+                # Progress logging
+                if line_number % 5000 == 0:
+                    progress_pct = (current_position / initial_size) * 100
+                    logger.info(f"📖 Read {line_number:,} lines ({progress_pct:.1f}% of snapshot)")
+            
+            # Process final chunk if buffer has remaining lines
+            if chunk_buffer:
+                chunk_count += 1
+                logger.info(f"Processing final chunk {chunk_count}")
+                success = _process_single_chunk_streaming(
+                    chunk_buffer=chunk_buffer,
+                    chunk_number=chunk_count,
+                    model=model,
+                    analysis_schema_class=analysis_schema_class,
+                    prompt_template=prompt_template,
+                    response_language=response_language,
+                    log_type=log_type,
+                    llm_provider=llm_provider,
+                    llm_model_name=llm_model_name,
+                    config=config
+                )
+                total_lines_processed += len(chunk_buffer)
+                
+                if not success:
+                    logger.warning(f"Final chunk {chunk_count} processing failed")
+    
+    except (IOError, OSError) as e:
+        logger.error(f"💥 File I/O error during streaming processing: {e}")
+        logger.warning(f"📊 Partial analysis completed: {total_lines_processed:,} lines processed")
+        
+        # Diagnose file state
+        final_check = _diagnose_file_state(log_path, initial_inode)
+        logger.info(f"🔍 File state diagnosis: {final_check}")
+        
+        if chunk_count > 0:
+            logger.info("✅ Returning partial streaming analysis results")
+        else:
+            logger.error("❌ No streaming analysis chunks completed")
+            
+    except Exception as e:
+        logger.error(f"💥 Unexpected error during streaming file processing: {e}")
+        logger.debug("Full traceback:", exc_info=True)
+        raise
+    
+    # Generate final processing report
+    final_state = _get_final_processing_report(log_path, initial_inode, initial_size, 
+                                             total_lines_processed, chunk_count)
+    logger.info(final_state)
+    
+    return chunk_count
+
+def _check_growing_file_warning(file_path: str, initial_size: int):
+    """Check if file is actively growing and warn user"""
+    try:
+        import time
+        time.sleep(1)  # Wait 1 second
+        current_size = os.path.getsize(file_path)
+        
+        if current_size > initial_size:
+            growth_bytes = current_size - initial_size
+            logger.warning(f"⚠️  File is actively growing: +{growth_bytes:,} bytes in 1 second")
+            logger.warning(f"📝 Batch mode processes snapshot only (up to {initial_size:,} bytes)")
+            logger.warning(f"🔄 Consider using --mode realtime for continuously growing files")
+            print(f"⚠️  WARNING: File is actively growing (+{growth_bytes:,} bytes/sec)")
+            print(f"📝 Batch mode will process snapshot only (up to {initial_size:,} bytes)")
+            print(f"🔄 Consider using --mode realtime for live monitoring")
+    except Exception as e:
+        logger.debug(f"Could not check file growth: {e}")
+
+def _check_file_rotation(file_path: str, original_inode: int, current_position: int) -> bool:
+    """Detect file rotation/truncation"""
+    try:
+        if not os.path.exists(file_path):
+            logger.warning(f"📁 File disappeared: {file_path}")
+            return True
+        
+        current_stat = os.stat(file_path)
+        current_inode = current_stat.st_ino
+        current_size = current_stat.st_size
+        
+        # Inode changed = file was moved/deleted and new file created
+        if current_inode != original_inode:
+            logger.warning(f"🔄 Inode changed: {original_inode} → {current_inode} (file rotated)")
+            return True
+        
+        # File size is smaller than current read position = truncated
+        if current_size < current_position:
+            logger.warning(f"✂️  File truncated: size {current_size} < position {current_position}")
+            return True
+        
+        return False
+        
+    except (OSError, IOError) as e:
+        logger.warning(f"⚠️  Cannot check file rotation: {e}")
+        return True  # Assume rotation for safety
+
+def _diagnose_file_state(file_path: str, original_inode: int) -> str:
+    """Diagnose current file state"""
+    try:
+        if not os.path.exists(file_path):
+            return f"File not found (likely rotated/deleted)"
+        
+        current_stat = os.stat(file_path)
+        current_inode = current_stat.st_ino
+        current_size = current_stat.st_size
+        
+        if current_inode != original_inode:
+            return f"Inode changed ({original_inode} → {current_inode}) - file was rotated"
+        else:
+            return f"Same file (inode {current_inode}), current size: {current_size:,} bytes"
+            
+    except Exception as e:
+        return f"Cannot diagnose: {e}"
+
+def _process_single_chunk_streaming(chunk_buffer: List[str], chunk_number: int, model, 
+                                  analysis_schema_class, prompt_template: str, response_language: str,
+                                  log_type: str, llm_provider: str, llm_model_name: str, config: dict) -> bool:
+    """Process a single chunk using streaming approach with retry logic"""
+    max_retries = 2
+    
+    for attempt in range(max_retries + 1):
+        try:
+            # Record analysis start time
+            chunk_start_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+            
+            # Prepare chunk data as string (same format as original)
+            logs = "\n".join(chunk_buffer).rstrip("\n")
+            model_schema = analysis_schema_class.model_json_schema()
+            prompt = prompt_template.format(logs=logs, model_schema=model_schema, response_language=response_language)
+            prompt = prompt.strip()
+
+            # Token count for prompt
+            try:
+                prompt_tokens = count_tokens(prompt, llm_model_name)
+                logger.info(f"Prompt tokens (approx.): {prompt_tokens} (provider={llm_provider}, model={llm_model_name})")
+            except Exception:
+                prompt_tokens = None
+                logger.warning(f"Failed to count prompt tokens (provider={llm_provider}, model={llm_model_name})")
+            
+            # Debug logging
+            logger.debug(f"Final prompt for streaming chunk {chunk_number}:\n{prompt}")
+            
+            # Print prompt and chunk info (same format as original)
+            print("\n[LLM Prompt Submitted]")
+            print("-" * 50)
+            print(prompt)
+            print("-" * 50)
+            if prompt_tokens is not None:
+                print(f"✅ Prompt tokens (approx.): {prompt_tokens} (model: {llm_model_name})")
+            print(f"\n--- Chunk {chunk_number} ---")
+            print_chunk_contents(chunk_buffer)  # chunk_buffer is already a list of strings
+            
+            # Process chunk using common function
+            success, parsed_data = process_log_chunk(
+                model=model,
+                prompt=prompt,
+                model_class=analysis_schema_class,
+                chunk_start_time=chunk_start_time,
+                chunk_end_time=None,  # Will be calculated in function
+                elasticsearch_index=log_type,
+                chunk_number=chunk_number,
+                chunk_data=chunk_buffer,
+                llm_provider=llm_provider,
+                llm_model=llm_model_name,
+                processing_mode="batch",
+                log_path=config.get("log_path", "unknown"),
+                access_mode=config.get("access_mode", "local"),
+                token_size_input=prompt_tokens,
+            )
+            
+            if success:
+                print("✅ Analysis completed successfully")
+                return True
+            else:
+                print("❌ Analysis failed")
+                if attempt < max_retries:
+                    logger.warning(f"⚠️  Chunk {chunk_number} analysis failed (attempt {attempt + 1}/{max_retries + 1})")
+                    import time
+                    time.sleep(1)  # Short wait before retry
+                    continue
+                else:
+                    logger.error(f"💥 Chunk {chunk_number} analysis failed after {max_retries + 1} attempts")
+                    return False
+                    
+        except Exception as e:
+            if attempt < max_retries:
+                logger.warning(f"⚠️  Chunk {chunk_number} processing error (attempt {attempt + 1}/{max_retries + 1}): {e}")
+                import time
+                time.sleep(1)
+                continue
+            else:
+                logger.error(f"💥 Chunk {chunk_number} processing failed after {max_retries + 1} attempts: {e}")
+                logger.debug(f"Failed chunk preview: {chunk_buffer[:2] if chunk_buffer else 'empty'}")
+                return False
+    
+    print("-" * 50)
+    return False
+
+def _get_final_processing_report(file_path: str, original_inode: int, original_size: int, 
+                               lines_processed: int, chunks_analyzed: int) -> str:
+    """Generate final processing report"""
+    try:
+        if os.path.exists(file_path):
+            final_stat = os.stat(file_path)
+            final_inode = final_stat.st_ino
+            final_size = final_stat.st_size
+            
+            if final_inode != original_inode:
+                status = f"🔄 File was rotated during processing"
+            elif final_size != original_size:
+                size_change = final_size - original_size
+                status = f"📈 File grew by {size_change:,} bytes during processing"
+            else:
+                status = f"📊 File remained stable during processing"
+        else:
+            status = f"📁 File no longer exists (rotated/deleted)"
+        
+        return (f"✅ Streaming batch analysis completed:\n"
+               f"   📄 Lines processed: {lines_processed:,}\n" 
+               f"   🧩 Chunks analyzed: {chunks_analyzed}\n"
+               f"   📏 Original size: {original_size:,} bytes\n"
+               f"   {status}")
+               
+    except Exception as e:
+        return f"⚠️  Cannot generate final report: {e}"

@@ -116,20 +116,43 @@ class RemoteSSHLogMonitor:
         """특정 위치부터 원격 파일 읽기"""
         ssh = self._create_ssh_connection()
         try:
-            command = f"tail -c +{position + 1} '{self.remote_log_path}' 2>/dev/null || echo ''"
+            # 먼저 현재 파일 크기 확인
+            size_command = f"stat -c %s '{self.remote_log_path}' 2>/dev/null || echo 0"
+            stdin, stdout, stderr = ssh.exec_command(size_command)
+            stdout.channel.recv_exit_status()
+            current_size = int(stdout.read().decode('utf-8').strip() or '0')
+            
+            # 요청한 위치가 파일 끝이거나 그 이후인 경우
+            if position >= current_size:
+                return []
+            
+            # 실제로 읽을 바이트 수 계산
+            bytes_to_read = current_size - position
+            if bytes_to_read <= 0:
+                return []
+            
+            # dd 명령으로 정확한 바이트 수만큼 읽기 (tail보다 정확함)
+            command = f"dd if='{self.remote_log_path}' bs=1 skip={position} count={bytes_to_read} 2>/dev/null || echo ''"
             stdin, stdout, stderr = ssh.exec_command(command)
             stdout.channel.recv_exit_status()
             
             content = stdout.read().decode('utf-8', errors='ignore')
             
-            if not content.strip():
+            # 내용이 실제로 없는 경우
+            if not content:
                 return []
             
+            # 라인 분할 및 빈 라인 제거
             lines = content.split('\n')
-            if lines and not lines[-1].strip():
+            
+            # 마지막이 개행으로 끝나는 경우 빈 라인 제거
+            if lines and not lines[-1]:
                 lines = lines[:-1]
             
-            return [line.strip() for line in lines if line.strip()]
+            # 빈 라인과 공백만 있는 라인 필터링
+            filtered_lines = [line.strip() for line in lines if line.strip()]
+            
+            return filtered_lines
             
         except Exception as e:
             print(f"WARNING: Failed to read remote file: {e}")
