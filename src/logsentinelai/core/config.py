@@ -2,7 +2,7 @@
 
 This module loads configuration files from the following locations in order:
 1) /etc/logsentinelai.config (system-wide config)
-2) ./config (local config)
+2) ./.env (local config)
 
 If neither file exists, the application will exit with an error.
 """
@@ -136,7 +136,7 @@ def apply_config() -> None:
     
     Searches for configuration files in this order:
     1. /etc/logsentinelai.config
-    2. ./config
+    2. ./.env
     """
     global CONFIG_FILE_PATH
     
@@ -146,24 +146,24 @@ def apply_config() -> None:
         logger.info("[config] (1/2) Found config file: /etc/logsentinelai.config")
     else:
         logger.info("[config] (1/2) Not found: /etc/logsentinelai.config")
-        if os.path.isfile("./config"):
-            CONFIG_FILE_PATH = "./config"
-            logger.info("[config] (2/2) Found config file: ./config")
+        if os.path.isfile("./.env"):
+            CONFIG_FILE_PATH = "./.env"
+            logger.info("[config] (2/2) Found config file: ./.env")
         else:
-            logger.info("[config] (2/2) Not found: ./config")
+            logger.info("[config] (2/2) Not found: ./.env")
     
     # Check if any config file was found
     if not CONFIG_FILE_PATH:
         
         guidance = """
 ❌ No configuration file detected
-🔎 Searched: /etc/logsentinelai.config, ./config
+🔎 Searched: /etc/logsentinelai.config, ./.env
 
 📄 A config file is REQUIRED.
 ✅ Quick fix:
-  1) Copy the provided template:  cp config.template ./config
+    1) Copy the provided template:  cp .env.template ./.env
   2) Edit the file (add API keys, paths, etc.)
-  3) Place it at /etc/logsentinelai.config for global use or ./config for local use.
+  3) Place it at /etc/logsentinelai.config for global use or ./.env for local use.
 
 📘 See INSTALL guide (section: Prepare Config File) for details.
 """
@@ -174,6 +174,10 @@ def apply_config() -> None:
     logger.info(f"[config] Selected config file: {CONFIG_FILE_PATH}")
     
     try:
+        # Ensure submodules can reuse the resolved path
+        if CONFIG_FILE_PATH:
+            os.environ["CONFIG_FILE_PATH"] = CONFIG_FILE_PATH
+        # Load the selected configuration file explicitly
         load_dotenv(dotenv_path=CONFIG_FILE_PATH, override=True)
     except Exception as exc:
         logger.error(f"Failed loading config file {CONFIG_FILE_PATH}: {exc}")

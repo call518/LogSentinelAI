@@ -448,13 +448,13 @@ All commands support:
 
 ### Complete Configuration Reference
 
-LogSentinelAI uses environment variables for configuration. Copy `config.template` to `config` and customize:
+LogSentinelAI uses environment variables for configuration. Copy `.env.template` to `.env` and customize:
 
 ```bash
 # Copy configuration template
-cp config.template config
+cp .env.template .env
 # Edit configuration
-nano config
+nano .env
 ```
 
 **Key Configuration Sections:**
@@ -531,7 +531,7 @@ REMOTE_SSH_KEY_PATH=~/.ssh/id_rsa
 REMOTE_SSH_TIMEOUT=10
 ```
 
-> **📋 Full Reference**: See `config.template` in the repository for all available options with detailed comments.
+> **📋 Full Reference**: See `.env.template` in the repository for all available options with detailed comments.
 
 ---
 

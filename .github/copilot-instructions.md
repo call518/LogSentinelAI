@@ -49,7 +49,7 @@ def setup_logger():
 ```
 - `commons.py`: `setup_logger()` reads environment variables at runtime
 - `config.py`: Uses `load_dotenv()` to load config files before other modules read env vars
-- **Config search order**: `/etc/logsentinelai.config` → `./config` → error if none found
+- **Config search order**: `/etc/logsentinelai.config` → `./.env` → error if none found
 
 ### 4. Analyzer Structure Pattern
 Every analyzer follows this exact pattern:
@@ -128,7 +128,7 @@ def main():
 ```
 
 ### Configuration System  
-- **Environment-based**: Copy `config.template` → `config`, set LLM provider/API keys
+- **Environment-based**: Copy `.env.template` → `.env`, set LLM provider/API keys
 - **Multi-provider support**: `LLM_PROVIDER={openai|ollama|vllm|gemini}`
 - **Logging config**: `LOG_FILE=/var/log/logsentinelai.log`, `LOG_LEVEL=INFO`
 - **Chunk-based processing**: `CHUNK_SIZE_*` controls how many log entries per LLM request
@@ -158,16 +158,16 @@ logsentinelai-geoip-lookup   → utils/geoip_lookup.py:main()
 - **Build system**: `setuptools` with `pyproject.toml` configuration
 - **Version injection**: GitHub Actions injects version from git tags into `pyproject.toml` and `__init__.py`
 - **Development dependencies**: `pytest`, `black`, `isort`, `flake8`, `mypy` in `[project.optional-dependencies]`
-- **Package data**: `config.template` included via `MANIFEST.in` and `tool.setuptools.package-data`
+- **Package data**: `.env.template` included via `MANIFEST.in` and `tool.setuptools.package-data`
 - **Development setup**: `uv venv`, `uv sync`, `uv pip install -e .`
-- **Local testing**: Copy `config.template` → `config`, set API keys, test with sample logs
+- **Local testing**: Copy `.env.template` → `.env`, set API keys, test with sample logs
 - **Release workflow**: Git tag → GitHub Actions → TestPyPI → PyPI (automatic)
 
 ### Container & Infrastructure Integration  
 - **Docker-based LLM deployment**: Ollama and vLLM run in containers with OpenAI-compatible APIs
 - **ELK Stack integration**: Uses external Docker-ELK repository for Elasticsearch/Kibana setup  
 - **External dependencies**: Requires Docker for local LLM providers and ELK stack
-- **Configuration templating**: Uses `config.template` pattern for environment-specific configuration
+- **Configuration templating**: Uses `.env.template` pattern for environment-specific configuration
 
 ## Integration Points
 - **LLM Providers**: OpenAI (production), Ollama/vLLM (local), Gemini (with special handling)
@@ -227,7 +227,7 @@ Every analyzer follows this exact pattern:
 5. Follow the standard analyzer pattern (see `httpd_access.py`)
 
 ### Configuration System
-- **Environment-based**: Copy `config.template` → `config`, set LLM provider/API keys
+- **Environment-based**: Copy `.env.template` → `.env`, set LLM provider/API keys
 - **Multi-provider support**: `LLM_PROVIDER={openai|ollama|vllm|gemini}`
 - **Logging config**: `LOG_FILE=/var/log/logsentinelai.log`, `LOG_LEVEL=INFO`
 - **Chunk-based processing**: `CHUNK_SIZE_*` controls how many log entries per LLM request

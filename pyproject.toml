@@ -93,7 +93,7 @@ include = ["logsentinelai*"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-logsentinelai = ["config.template"]
+logsentinelai = [".env.template"]
 
 [tool.black]
 line-length = 88

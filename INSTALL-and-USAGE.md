@@ -128,29 +128,29 @@ curl -s -X GET http://localhost:5000/v1/models | jq
 
 ```bash
 cd ~/LogSentinelAI  # If installed from source
-curl -o config https://raw.githubusercontent.com/call518/LogSentinelAI/main/src/logsentinelai/config.template
-nano config  # or vim config
+curl -o .env https://raw.githubusercontent.com/call518/LogSentinelAI/main/src/logsentinelai/.env.template
+nano .env  # or vim .env
 # Enter required fields such as OPENAI_API_KEY
 ```
 
 ### Option 2: From Installed Package
 
 ```bash
-# Copy config template from installed package
-cp $(python -c "import logsentinelai; import os; print(os.path.join(os.path.dirname(logsentinelai.__file__), 'config.template'))") ./config
-nano config  # or vim config
+# Copy .env template from installed package
+cp $(python -c "import logsentinelai; import os; print(os.path.join(os.path.dirname(logsentinelai.__file__), '.env.template'))") ./.env
+nano .env  # or vim .env
 # Enter required fields such as OPENAI_API_KEY
 ```
 
 **Notes:**
 
-- A config file is MANDATORY. Base it on the provided `config.template`.
-- Runtime search order (if `--config` not given): `/etc/logsentinelai.config` → `./config`.
+- A .env file is MANDATORY. Base it on the provided `.env.template`.
+- Runtime search order (if `--config` not given): `/etc/logsentinelai.config` → `./.env`.
 - If no file is found the program aborts with guidance; create one and re-run.
-- Override path explicitly: `--config /path/to/config`
-- If an explicit `--config /path/to/config` is given and that file does not exist, the program aborts immediately (no fallback search).
+- Override path explicitly: `--config /path/to/.env`
+- If an explicit `--config /path/to/.env` is given and that file does not exist, the program aborts immediately (no fallback search).
 
-### Example config main items
+### Example .env main items
 
 ```ini
 # LLM Provider & Model
@@ -258,7 +258,7 @@ Option 2 - For direct messages:
 curl -s "https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates" | jq '.result[].message.chat.id'
 ```
 
-### 6.1.3 Configure in config file
+### 6.1.3 Configure in .env file
 
 ```ini
 # Enable Telegram alerts
@@ -525,7 +525,7 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 
 ### 9.3 CLI Option Summary
 
-| Option | Description | config default | CLI override |
+| Option | Description | .env default | CLI override |
 |--------|-------------|---------------|-------------|
 | --log-path <path> | Log file path or pattern (supports wildcards: *.log, /var/log/apache*.log) | LOG_PATH_* | Y |
 | --mode <mode> | batch/realtime analysis mode | ANALYSIS_MODE | Y |
@@ -537,7 +537,7 @@ logsentinelai-geoip-download --output-dir ~/.logsentinelai/
 | --ssh-key <path> | SSH key path | REMOTE_SSH_KEY_PATH | Y |
 | --help | Help | - | - |
 
-> CLI options always override config file
+> CLI options always override .env file
 
 ### 9.8 Multiple File Processing with Wildcards
 
@@ -631,10 +631,10 @@ By declaring only the result structure you want in each analyzer, the LLM automa
 
 ## 11. Advanced Usage Examples
 
-### 11.1 Set Defaults in config & Override with CLI
+### 11.1 Set Defaults in .env & Override with CLI
 
 ```bash
-# Set CHUNK_SIZE_LINUX_SYSTEM=20 in config
+# Set CHUNK_SIZE_LINUX_SYSTEM=20 in .env
 logsentinelai-linux-system --chunk-size 10  # CLI option takes precedence
 ```
 
@@ -695,7 +695,7 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 - **Permission denied on pip install**: Activate virtualenv or use `pip install --user`
 - **Python 3.11 not found**: Check install path, use `python3.11` directly
 - **Cannot access Elasticsearch/Kibana**: Check Docker status, port conflicts, firewall
-- **GeoIP DB download failed**: Download manually and set path in config
+- **GeoIP DB download failed**: Download manually and set path in .env
 - **SSH remote analysis error**: Check SSH key permissions, known_hosts, firewall, port
 - **LLM API error**: Check OPENAI_API_KEY, Ollama/vLLM server status, network
 
@@ -722,7 +722,7 @@ logsentinelai-httpd-access --mode realtime --processing-mode full --sampling-thr
 - **Dashboard shows "No data available"**:
   - Run LogSentinelAI analysis to populate data: `logsentinelai-linux-system --log-path sample-logs/linux-2k.log`
   - Check index exists: `curl -u elastic:changeme "localhost:9200/_cat/indices/logsentinelai-analysis*?v"`
-  - Verify Elasticsearch config in LogSentinelAI config file
+  - Verify Elasticsearch config in LogSentinelAI .env file
 
 - **Data View creation fails**:
   - Ensure index exists before creating Data View
@@ -843,7 +843,7 @@ Normalization process:
 ##### Web Server DDoS Attack Scenario
 
 ```bash
-# Configuration: In config file
+# Configuration: In .env file
 CHUNK_SIZE_HTTPD_ACCESS=15
 REALTIME_SAMPLING_THRESHOLD=200
 REALTIME_POLLING_INTERVAL=3

@@ -11,7 +11,7 @@ from telegram.ext import Application
 import asyncio
 
 # Load environment variables from config (already loaded in main app, but safe here)
-load_dotenv(os.getenv("CONFIG_FILE_PATH", "./config"), override=True)
+load_dotenv(os.getenv("CONFIG_FILE_PATH", "./.env"), override=True)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")

@@ -1,4 +1,4 @@
-include config.template
+include .env.template
 include README.md
 include LICENSE
 recursive-include src/logsentinelai *.py

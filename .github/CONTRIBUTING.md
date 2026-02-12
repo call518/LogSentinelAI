@@ -19,8 +19,8 @@ cd LogSentinelAI
 uv sync
 
 # Setup config
-cp config.template config
-# Edit config with your LLM provider settings
+cp .env.template .env
+# Edit .env with your LLM provider settings
 
 # Download GeoIP database
 logsentinelai-geoip-download
