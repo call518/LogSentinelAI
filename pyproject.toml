@@ -53,6 +53,7 @@ dependencies = [
     "google-genai>=1.28.0",
     "tiktoken>=0.7.0",
     "python-telegram-bot>=22.3",
+    "anthropic>=0.84.0",
 ]
 
 [project.optional-dependencies]

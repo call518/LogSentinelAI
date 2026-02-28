@@ -154,25 +154,27 @@ nano .env  # or vim .env
 
 ```ini
 # LLM Provider & Model
-LLM_PROVIDER=openai   # openai/ollama/vllm/gemini
+LLM_PROVIDER=openai   # openai/ollama/vllm/gemini/anthropic
 LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OLLAMA=gemma3:1b
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
 LLM_MODEL_GEMINI=gemini-2.5-flash
+LLM_MODEL_ANTHROPIC=claude-haiku-4-5-20251001
 
-# OpenAI API Key
+# API Keys
 OPENAI_API_KEY=sk-...
-
-# Gemini API Key (required if using Gemini provider)
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY_HERE
 
 # Max output tokens per LLM provider (each provider has different model context limits)
 # Gemini: uses max_output_tokens — set higher for Korean/multilingual structured JSON responses
+# Anthropic: uses tool calling for structured output; max_tokens caps the response
 # Ollama/vLLM/OpenAI: uses max_tokens — must not exceed the loaded model's max context length
 LLM_MAX_TOKENS_OLLAMA=8192
 LLM_MAX_TOKENS_VLLM=8192
 LLM_MAX_TOKENS_OPENAI=8192
 LLM_MAX_TOKENS_GEMINI=32768
+LLM_MAX_TOKENS_ANTHROPIC=8192
 
 # Response language
 RESPONSE_LANGUAGE=korean   # or english

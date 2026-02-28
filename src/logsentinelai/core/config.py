@@ -63,7 +63,8 @@ def _load_values() -> None:
         "ollama": os.getenv("LLM_MODEL_OLLAMA", "qwen2.5-coder:3b"),
         "vllm": os.getenv("LLM_MODEL_VLLM", "Qwen/Qwen2.5-1.5B-Instruct"),
         "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini"),
-        "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-2.5-flash")
+        "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-2.5-flash"),
+        "anthropic": os.getenv("LLM_MODEL_ANTHROPIC", "claude-haiku-4-5-20251001"),
     }
     LLM_API_HOSTS = {
         "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434/v1"),
@@ -81,6 +82,7 @@ def _load_values() -> None:
         "vllm": int(os.getenv("LLM_MAX_TOKENS_VLLM", "8192")),
         "openai": int(os.getenv("LLM_MAX_TOKENS_OPENAI", "8192")),
         "gemini": int(os.getenv("LLM_MAX_TOKENS_GEMINI", "32768")),
+        "anthropic": int(os.getenv("LLM_MAX_TOKENS_ANTHROPIC", "8192")),
     }
 
     RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
