@@ -142,7 +142,7 @@ class MyAccessLogResult(BaseModel):
 
 - **Log Sources**: Logs are collected from various sources, including local files, remote SSH connections, HTTP endpoints, Apache error logs, system logs, and TCPDump outputs.
 - **LogSentinelAI Core**: Handles parsing and extraction using a declarative approach. Log structures are defined using Pydantic models, and the actual extraction is performed by LLMs. The system validates and structures the extracted data.
-- **LLM Provider**: Integrates with external or local LLMs (e.g., OpenAI, vLLM, Ollama) to interpret and transform raw logs into structured JSON, based on user-defined schemas.
+- **LLM Provider**: Integrates with external or local LLMs (e.g., OpenAI, vLLM, Ollama, Google Gemini) to interpret and transform raw logs into structured JSON, based on user-defined schemas.
 - **Elasticsearch**: Structured outputs, raw logs, and metadata are indexed into Elasticsearch for searchability and event correlation.
 - **Kibana**: Provides visualization and dashboards for immediate insight into security events and operational data.
 - **Telegram Alerts**: Automatically sends real-time notifications to Telegram groups/channels when CRITICAL security events are detected or processing failures occur, enabling immediate incident response.
@@ -150,8 +150,8 @@ class MyAccessLogResult(BaseModel):
 ### AI-powered Analysis
 
 - **Declarative Extraction**: Just declare your desired result structure (Pydantic class) and the LLM analyzes logs automatically
-- **LLM Providers**: OpenAI API, Ollama, vLLM
-- **Supported Log Types**: HTTP Access, Apache Error, Linux System
+- **LLM Providers**: OpenAI API, Ollama, vLLM, Google Gemini
+- **Supported Log Types**: HTTP Access, Apache Error, Linux System, General Log
 - **Threat Detection**: SQL Injection, XSS, Brute Force, Network Anomaly Detection
 - **Output**: Structured JSON validated by Pydantic
 - **Just define a Pydantic class and the LLM generates results in that structure automatically**

@@ -56,7 +56,7 @@ class Statistics(BaseModel):
     auth_failures: int = Field(description="Number of authentication failures")
     unique_ips: int = Field(description="Number of unique IPs")
     unique_users: int = Field(description="Number of unique users")
-    event_by_type: dict[str, int] = Field(default_factory=dict, description="Events by type")
+    event_by_type: list[str] = Field(description='Events by type as "TYPE:COUNT" pairs (e.g., ["AUTH_FAILURE:5", "SESSION_EVENT:3"])')
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")

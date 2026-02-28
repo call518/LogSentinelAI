@@ -158,13 +158,21 @@ LLM_PROVIDER=openai   # openai/ollama/vllm/gemini
 LLM_MODEL_OPENAI=gpt-4o-mini
 LLM_MODEL_OLLAMA=gemma3:1b
 LLM_MODEL_VLLM=Qwen/Qwen2.5-1.5B-Instruct
-LLM_MODEL_GEMINI=gemini-1.5-pro
+LLM_MODEL_GEMINI=gemini-2.5-flash
 
 # OpenAI API Key
 OPENAI_API_KEY=sk-...
 
 # Gemini API Key (required if using Gemini provider)
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+
+# Max output tokens per LLM provider (each provider has different model context limits)
+# Gemini: uses max_output_tokens — set higher for Korean/multilingual structured JSON responses
+# Ollama/vLLM/OpenAI: uses max_tokens — must not exceed the loaded model's max context length
+LLM_MAX_TOKENS_OLLAMA=8192
+LLM_MAX_TOKENS_VLLM=8192
+LLM_MAX_TOKENS_OPENAI=8192
+LLM_MAX_TOKENS_GEMINI=32768
 
 # Response language
 RESPONSE_LANGUAGE=korean   # or english

@@ -34,7 +34,7 @@ LLM_MODELS: dict[str, str] = {}
 LLM_API_HOSTS: dict[str, str] = {}
 LLM_TEMPERATURE: float = 0.1
 LLM_TOP_P: float = 0.5
-LLM_MAX_TOKENS: int = 2048
+LLM_MAX_TOKENS: dict[str, int] = {}
 RESPONSE_LANGUAGE: str = "korean"
 ANALYSIS_MODE: str = "batch"
 LOG_PATHS: dict[str, str] = {}
@@ -63,21 +63,25 @@ def _load_values() -> None:
         "ollama": os.getenv("LLM_MODEL_OLLAMA", "qwen2.5-coder:3b"),
         "vllm": os.getenv("LLM_MODEL_VLLM", "Qwen/Qwen2.5-1.5B-Instruct"),
         "openai": os.getenv("LLM_MODEL_OPENAI", "gpt-4o-mini"),
-        "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-1.5-pro")
+        "gemini": os.getenv("LLM_MODEL_GEMINI", "gemini-2.5-flash")
     }
     LLM_API_HOSTS = {
         "ollama": os.getenv("LLM_API_HOST_OLLAMA", "http://127.0.0.1:11434/v1"),
         "vllm": os.getenv("LLM_API_HOST_VLLM", "http://127.0.0.1:5000/v1"),
         "openai": os.getenv("LLM_API_HOST_OPENAI", "https://api.openai.com/v1"),
-        "gemini": os.getenv("LLM_API_HOST_GEMINI", "https://generativelanguage.googleapis.com/v1beta/openai/")
     }
     try:
         LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
         LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.5"))
-        LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
     except ValueError:
         logger.warning("Invalid numeric LLM parameter detected; using defaults")
-        LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS = 0.1, 0.5, 2048
+        LLM_TEMPERATURE, LLM_TOP_P = 0.1, 0.5
+    LLM_MAX_TOKENS = {
+        "ollama": int(os.getenv("LLM_MAX_TOKENS_OLLAMA", "8192")),
+        "vllm": int(os.getenv("LLM_MAX_TOKENS_VLLM", "8192")),
+        "openai": int(os.getenv("LLM_MAX_TOKENS_OPENAI", "8192")),
+        "gemini": int(os.getenv("LLM_MAX_TOKENS_GEMINI", "32768")),
+    }
 
     RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")
     ANALYSIS_MODE = os.getenv("ANALYSIS_MODE", "batch")

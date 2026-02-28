@@ -48,7 +48,7 @@ class Statistics(BaseModel):
     total_requests: int = Field(description="Total number of requests")
     unique_ips: int = Field(description="Number of unique IPs")
     error_rate: float = Field(description="Error rate (0.0-1.0)")
-    response_code_dist: dict[str, int] = Field(default_factory=dict, description="Response code distribution")
+    response_code_dist: list[str] = Field(description='Response code distribution as "CODE:COUNT" pairs (e.g., ["200:150", "404:10", "500:2"])')
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary including IP patterns and geographic distribution")

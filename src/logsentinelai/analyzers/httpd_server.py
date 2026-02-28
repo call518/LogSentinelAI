@@ -45,8 +45,8 @@ class SecurityEvent(BaseModel):
 
 class Statistics(BaseModel):
     total_event: int = Field(description="Total number of errors")
-    event_by_level: dict[str, int] = Field(default_factory=dict, description="Errors by level")
-    event_by_type: dict[str, int] = Field(default_factory=dict, description="Errors by type")
+    event_by_level: list[str] = Field(description='Events by log level as "LEVEL:COUNT" pairs (e.g., ["ERROR:5", "WARN:3", "INFO:12"])')
+    event_by_type: list[str] = Field(description='Events by type as "TYPE:COUNT" pairs (e.g., ["authentication:3", "config:2"])')
 
 class LogAnalysis(BaseModel):
     summary: str = Field(description="Analysis summary")
