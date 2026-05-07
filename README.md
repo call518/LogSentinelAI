@@ -262,7 +262,7 @@ How to use with LogSentinelAI:
 
 ### Q: Is it suitable for high-volume enterprise environments?
 
-**A**: Yes, LogSentinelAI supports **real-time processing**, **batch analysis**, and **sampling-based monitoring** for high-volume scenarios. It integrates with enterprise SIEM solutions via Elasticsearch and provides **horizontal scaling** capabilities.
+**A**: Yes, LogSentinelAI supports **real-time processing**, **batch analysis**, and **sampling-based monitoring** for high-volume scenarios. It integrates with enterprise SIEM(Security Information and Event Management) solutions via Elasticsearch and provides **horizontal scaling** capabilities.
 
 ### Q: What about data privacy and on-premises deployment?
 
