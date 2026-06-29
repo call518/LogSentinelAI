@@ -460,19 +460,20 @@ curl -u elastic:changeme "localhost:9200/_cat/indices/logsentinelai-analysis*?v"
    - **Timestamp field**: `@timestamp` (⚠️ Important: Select this exact field)
 4. Click **Save data view to Kibana**
 
-**🔍 Alternative method via Dev Tools**:
-You can also create the Data View using Kibana's Dev Tools console:
+**🔍 Alternative method via API**:
+You can also create the Data View using curl command:
 
 ```bash
-# Go to Kibana → Dev Tools and run:
-POST /api/data_views/data_view
-{
-  "data_view": {
-    "title": "logsentinelai-analysis*",
-    "name": "LogSentinelAI Analysis",
-    "timeFieldName": "@timestamp"
-  }
-}
+curl -X POST "http://localhost:5601/api/data_views/data_view" \
+  -H "Content-Type: application/json" \
+  -H "kbn-xsrf: true" \
+  -d '{
+    "data_view": {
+      "title": "logsentinelai-analysis-*",
+      "name": "LogSentinelAI Analysis",
+      "timeFieldName": "@timestamp"
+    }
+  }'
 ```
 
 #### Step 4: Import Kibana Configuration Files
