@@ -136,6 +136,37 @@ class MyAccessLogResult(BaseModel):
 
 ---
 
+## Self-Test
+
+The source tree includes a small pytest smoke suite for local verification:
+
+- dependency/runtime import checks for `outlines`, `paramiko`, and `setuptools`
+- prompt template checks for HTTP access, Apache error, Linux system, and general logs
+- CLI argument parsing checks, including SSH options and `--chunk-size`
+- Pydantic schema validation checks for all analyzer result models
+- invalid LLM JSON debug-output checks
+
+Run it from the repository root:
+
+```bash
+uv run pytest
+```
+
+When testing local Ollama models, start with a small chunk size. Small models
+such as `gemma3:1b` may fail to produce complete schema-valid JSON when too
+many log lines are sent at once:
+
+```bash
+logsentinelai-httpd-access --mode batch --log-path ./sample-logs/access-100.log --chunk-size 1
+logsentinelai-httpd-access --mode batch --log-path ./sample-logs/access-100.log --chunk-size 2
+```
+
+If JSON parsing fails, LogSentinelAI prints the raw LLM response preview,
+response length, and error-position context to help identify whether the model
+returned empty, truncated, or non-JSON output.
+
+---
+
 ## System Architecture
 
 ![LogSentinelAI System Architecture - AI-powered log analysis workflow with LLM integration, Elasticsearch SIEM, and real-time cybersecurity monitoring](img/system-architecture.png)

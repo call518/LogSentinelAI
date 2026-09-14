@@ -66,6 +66,28 @@ from ..utils.general import chunked_iterable, print_chunk_contents
 from .monitoring import RealtimeLogMonitor, create_realtime_monitor
 from .token_utils import count_tokens
 
+def print_raw_response_debug(raw_response, error=None, max_preview_chars: int = 4000) -> None:
+    """Print enough raw LLM response context to diagnose invalid JSON."""
+    response_text = "" if raw_response is None else str(raw_response)
+    print("\n🔍 [Debug] Raw LLM Response (for debugging JSON parse error):")
+    print("-" * 80)
+    if response_text:
+        print(response_text[:max_preview_chars])
+        if len(response_text) > max_preview_chars:
+            print(f"... [truncated {len(response_text) - max_preview_chars} characters]")
+    else:
+        print("(empty response)")
+    print("-" * 80)
+    print(f"Response length: {len(response_text)} characters")
+
+    error_pos = getattr(error, "pos", None)
+    if error_pos is not None:
+        start_pos = max(0, error_pos - 100)
+        end_pos = min(len(response_text), error_pos + 100)
+        print(f"Error position: {error_pos}")
+        print("Context around error position:")
+        print(f"'{response_text[start_pos:end_pos]}'")
+
 def expand_file_patterns(file_patterns: List[str]) -> List[str]:
     """
     Expand file patterns (wildcards) to actual file paths
@@ -274,21 +296,8 @@ def _handle_processing_error(error, error_type, chunk_start_time, chunk_end_time
     print(f"❌ {error_type.replace('_', ' ').title()}: {error}")
 
     # If this is a JSON parse error and we have the raw response, print it for debugging
-    if error_type == "json_parse_error" and raw_response:
-        print(f"\n🔍 [Debug] Raw LLM Response (for debugging JSON parse error):")
-        print("-" * 80)
-        print(raw_response)
-        print("-" * 80)
-        print(f"Response length: {len(raw_response)} characters")
-
-        # Also try to show where the error might be occurring
-        if hasattr(error, 'pos'):
-            error_pos = error.pos
-            start_pos = max(0, error_pos - 100)
-            end_pos = min(len(raw_response), error_pos + 100)
-            print(f"Error position: {error_pos}")
-            print(f"Context around error position:")
-            print(f"'{raw_response[start_pos:end_pos]}'")
+    if error_type == "json_parse_error":
+        print_raw_response_debug(raw_response, error)
 
     if chunk_end_time is None:
         chunk_end_time = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'

@@ -294,6 +294,33 @@ cd LogSentinelAI/sample-logs
 ls *.log  # Check various sample logs
 ```
 
+### 7.1 Run Project Self-Tests
+
+For source checkouts, run the pytest smoke suite before manual analyzer tests:
+
+```bash
+uv run pytest
+```
+
+The suite verifies core imports, supported prompt templates, CLI argument
+parsing, analyzer Pydantic schemas, `--chunk-size` propagation, and invalid LLM
+JSON debug output. It does not call external LLM APIs, Elasticsearch, Telegram,
+or SSH servers.
+
+### 7.2 Local Ollama Test Tips
+
+Ollama model quality and context/output limits vary by model. If a small local
+model returns truncated or invalid JSON, lower the analyzer chunk size first:
+
+```bash
+logsentinelai-httpd-access --mode batch --log-path ./sample-logs/access-100.log --chunk-size 1
+logsentinelai-httpd-access --mode batch --log-path ./sample-logs/access-100.log --chunk-size 2
+```
+
+For `gemma3:1b`, `--chunk-size 1` or `--chunk-size 2` is a safer starting
+point than the default. If parsing still fails, check the debug block showing
+the raw LLM response preview, total response length, and JSON error context.
+
 ### Tip: Use More Public Sample Logs
 
 For testing additional log types and formats, leverage this public repository:
@@ -503,6 +530,23 @@ curl -X POST "http://localhost:5601/api/data_views/data_view" \
 - Check that the index pattern `logsentinelai-analysis*` matches your data
 - Ensure LogSentinelAI config has correct Elasticsearch settings
 - Run a test analysis to generate sample data
+- If Lens panels show errors such as `"events.severity.keyword" field can not be used filtering` or `"@processing_result.keyword" field can not be used filtering`, refresh the Kibana Data View field list:
+  1. Go to **Stack Management** → **Data Views**
+  2. Open `logsentinelai-analysis-*`
+  3. Click **Refresh field list**
+  4. Reload the dashboard
+- If refreshing the field list does not fix it, recreate the Kibana saved objects:
+  1. Delete the imported LogSentinelAI dashboard
+  2. Delete the related `logsentinelai-analysis-*` Data View
+  3. Create the Data View again with `@timestamp` as the time field
+  4. Re-import `Kibana-9.0.3-Advanced-Settings.ndjson`
+  5. Re-import `Kibana-9.0.3-Dashboard-LogSentinelAI.ndjson`
+- To confirm Elasticsearch mappings are usable by Lens filters:
+  ```bash
+  curl -u elastic:changeme \
+    'http://localhost:9200/logsentinelai-analysis*/_field_caps?fields=events.severity.keyword,@processing_result.keyword,@log_type.keyword,@timestamp,@log_count,@chunk_analysis_elapsed_time' | jq
+  ```
+  `events.severity.keyword`, `@processing_result.keyword`, and `@log_type.keyword` should be `searchable: true` and `aggregatable: true`.
 
 ---
 

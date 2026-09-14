@@ -172,7 +172,12 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
     try:
         response = model(prompt, model_class, **generate_kwargs)
         logger.debug(f"Raw response: {response}")
-        cleaned_response = response.strip()
+        cleaned_response = str(response or "").strip()
+        if not cleaned_response:
+            model_name = LLM_MODELS.get(provider, "unknown")
+            raise ValueError(
+                f"LLM returned an empty response (provider={provider}, model={model_name})"
+            )
         logger.info("Response generated and cleaned.")
         return cleaned_response
     except Exception as e:

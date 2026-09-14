@@ -103,6 +103,7 @@ def main():
                 prompt_template=get_httpd_access_prompt(),
                 analysis_title=analysis_title,
                 log_path=args.log_path,
+                chunk_size=args.chunk_size,
                 remote_mode=remote_mode,
                 ssh_config=ssh_config
             )
