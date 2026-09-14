@@ -95,6 +95,36 @@ systemctl start ollama
 ollama pull gemma3:1b
 ```
 
+Ollama defaults to a small runtime context window on many installations. For
+strict JSON schema output, increase the server context length before running
+LogSentinelAI with larger chunks. See the official
+[Ollama context length guide](https://docs.ollama.com/context-length):
+
+```bash
+OLLAMA_CONTEXT_LENGTH=8192 ollama serve
+```
+
+For systemd-based installs, set the environment on the Ollama service instead
+of only exporting it in your shell:
+
+```bash
+sudo systemctl edit ollama
+```
+
+Add:
+
+```ini
+[Service]
+Environment="OLLAMA_CONTEXT_LENGTH=8192"
+```
+
+Then reload and restart:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+```
+
 ### 4.3 (Optional) Install vLLM (Local GPU LLM)
 
 ```bash
@@ -319,8 +349,19 @@ or SSH servers.
 
 ### 7.2 Local Ollama Test Tips
 
-Ollama model quality and context/output limits vary by model. If a small local
-model returns truncated or invalid JSON, lower the analyzer chunk size first:
+Ollama model quality and context/output limits vary by model. The model's
+advertised context length is not always the runtime context length used by the
+Ollama server. If JSON is truncated with `finish_reason=length` or an
+`Unterminated string` parse error, increase the Ollama server context length
+as described in the official
+[Ollama context length guide](https://docs.ollama.com/context-length):
+
+```bash
+OLLAMA_CONTEXT_LENGTH=8192 ollama serve
+```
+
+If a small local model still returns truncated or invalid JSON, lower the
+analyzer chunk size:
 
 ```bash
 logsentinelai-httpd-access --mode batch --log-path ./sample-logs/access-100.log --chunk-size 1

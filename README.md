@@ -152,9 +152,17 @@ Run it from the repository root:
 uv run pytest
 ```
 
-When testing local Ollama models, start with a small chunk size. Small models
-such as `gemma3:1b` may fail to produce complete schema-valid JSON when too
-many log lines are sent at once:
+When testing local Ollama models, make sure the Ollama server has enough runtime
+context for strict JSON schema output. Many installations default to a small
+context window even when the model advertises a much larger limit. See the
+official [Ollama context length guide](https://docs.ollama.com/context-length):
+
+```bash
+OLLAMA_CONTEXT_LENGTH=8192 ollama serve
+```
+
+Then start with a small chunk size. Small models such as `gemma3:1b` may fail
+to produce complete schema-valid JSON when too many log lines are sent at once:
 
 ```bash
 logsentinelai-httpd-access --mode batch --log-path ./sample-logs/access-100.log --chunk-size 1
