@@ -41,7 +41,7 @@ dependencies = [
     "openai>=1.97.1",
     "outlines[gemini]>=1.1.1",
     "outlines-core>=0.1.26",
-    "paramiko>=3.5.1",
+    "paramiko>=5.0.0",
     "pydantic>=2.11.7",
     "pydantic-core>=2.33.2",
     "python-dateutil>=2.9.0.post0",
@@ -86,7 +86,7 @@ logsentinelai-geoip-download = "logsentinelai.utils.geoip_downloader:main"
 logsentinelai-geoip-lookup = "logsentinelai.utils.geoip_lookup:main"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
+requires = ["setuptools>=83.0.0", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
