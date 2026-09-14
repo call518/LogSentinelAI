@@ -10,7 +10,15 @@ import outlines
 import openai
 from google import genai
 
-from .config import LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
+from .config import (
+    LLM_PROVIDER,
+    LLM_MODELS,
+    LLM_API_HOSTS,
+    LLM_TEMPERATURE,
+    LLM_TOP_P,
+    LLM_MAX_TOKENS,
+    LLM_REASONING_EFFORT,
+)
 from .commons import setup_logger
 
 logger = setup_logger("logsentinelai.llm")
@@ -168,6 +176,9 @@ def generate_with_model(model, prompt, model_class, llm_provider=None):
         generate_kwargs: dict = {"temperature": LLM_TEMPERATURE, "top_p": LLM_TOP_P, "max_output_tokens": max_tokens}
     else:
         generate_kwargs = {"temperature": LLM_TEMPERATURE, "top_p": LLM_TOP_P, "max_tokens": max_tokens}
+        reasoning_effort = LLM_REASONING_EFFORT.get(provider, "")
+        if reasoning_effort:
+            generate_kwargs["reasoning_effort"] = reasoning_effort
 
     try:
         response = model(prompt, model_class, **generate_kwargs)

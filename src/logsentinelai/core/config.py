@@ -35,6 +35,7 @@ LLM_API_HOSTS: dict[str, str] = {}
 LLM_TEMPERATURE: float = 0.1
 LLM_TOP_P: float = 0.5
 LLM_MAX_TOKENS: dict[str, int] = {}
+LLM_REASONING_EFFORT: dict[str, str] = {}
 RESPONSE_LANGUAGE: str = "korean"
 ANALYSIS_MODE: str = "batch"
 LOG_PATHS: dict[str, str] = {}
@@ -54,7 +55,7 @@ TELEGRAM_ALERT_LEVEL: str = "CRITICAL"
 
 def _load_values() -> None:
     """Load all global configuration values from environment variables into module globals."""
-    global LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS
+    global LLM_PROVIDER, LLM_MODELS, LLM_API_HOSTS, LLM_TEMPERATURE, LLM_TOP_P, LLM_MAX_TOKENS, LLM_REASONING_EFFORT
     global RESPONSE_LANGUAGE, ANALYSIS_MODE, LOG_PATHS, REALTIME_CONFIG, DEFAULT_REMOTE_SSH_CONFIG
     global LOG_CHUNK_SIZES, GEOIP_CONFIG, ELASTICSEARCH_HOST, ELASTICSEARCH_USER
     global ELASTICSEARCH_PASSWORD, ELASTICSEARCH_INDEX, TELEGRAM_ENABLED, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_ALERT_LEVEL
@@ -83,6 +84,11 @@ def _load_values() -> None:
         "openai": int(os.getenv("LLM_MAX_TOKENS_OPENAI", "8192")),
         "gemini": int(os.getenv("LLM_MAX_TOKENS_GEMINI", "32768")),
         "anthropic": int(os.getenv("LLM_MAX_TOKENS_ANTHROPIC", "8192")),
+    }
+    LLM_REASONING_EFFORT = {
+        "ollama": os.getenv("LLM_REASONING_EFFORT_OLLAMA", "").strip(),
+        "vllm": os.getenv("LLM_REASONING_EFFORT_VLLM", "").strip(),
+        "openai": os.getenv("LLM_REASONING_EFFORT_OPENAI", "").strip(),
     }
 
     RESPONSE_LANGUAGE = os.getenv("RESPONSE_LANGUAGE", "korean")

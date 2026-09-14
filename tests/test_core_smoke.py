@@ -125,6 +125,24 @@ def test_raw_response_debug_shows_error_context(
     assert "Error position:" in output
 
 
+def test_ollama_reasoning_effort_is_passed_when_configured(
+    configured_project,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from logsentinelai.core import llm
+
+    captured: dict[str, object] = {}
+
+    def fake_model(prompt, model_class, **kwargs):
+        captured.update(kwargs)
+        return '{"ok": true}'
+
+    monkeypatch.setitem(llm.LLM_REASONING_EFFORT, "ollama", "none")
+
+    assert llm.generate_with_model(fake_model, "prompt", dict, "ollama")
+    assert captured["reasoning_effort"] == "none"
+
+
 @pytest.mark.parametrize(
     ("module_name", "log_type"),
     [

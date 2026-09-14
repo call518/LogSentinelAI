@@ -176,6 +176,16 @@ LLM_MAX_TOKENS_OPENAI=8192
 LLM_MAX_TOKENS_GEMINI=32768
 LLM_MAX_TOKENS_ANTHROPIC=8192
 
+# Optional reasoning effort for OpenAI-compatible reasoning models.
+# Leave empty/commented to omit the parameter.
+# Provider/model values differ:
+# - Ollama /v1: none, low, medium, high, max (depends on Ollama/model version)
+# - OpenAI: model/API dependent; commonly minimal, low, medium, high
+# - vLLM: server/model dependent; leave empty unless your backend supports it
+# For Gemma4 on Ollama structured outputs, "none" prevents reasoning tokens
+# from consuming the JSON output budget.
+LLM_REASONING_EFFORT_OLLAMA=none
+
 # Response language
 RESPONSE_LANGUAGE=korean   # or english
 
