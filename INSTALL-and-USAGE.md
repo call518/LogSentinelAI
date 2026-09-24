@@ -104,6 +104,10 @@ LogSentinelAI with larger chunks. See the official
 OLLAMA_CONTEXT_LENGTH=8192 ollama serve
 ```
 
+`8192` is a starting example, not a required value. You can raise it to
+`16384`, `32768`, or higher when the model supports it and sufficient memory is
+available; larger context windows require more memory.
+
 For systemd-based installs, set the environment on the Ollama service instead
 of only exporting it in your shell:
 
@@ -359,6 +363,9 @@ as described in the official
 ```bash
 OLLAMA_CONTEXT_LENGTH=8192 ollama serve
 ```
+
+`8192` is only an example. Increase it further when the model supports a larger
+context window and the host has enough memory.
 
 If a small local model still returns truncated or invalid JSON, lower the
 analyzer chunk size:

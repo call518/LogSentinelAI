@@ -161,6 +161,10 @@ official [Ollama context length guide](https://docs.ollama.com/context-length):
 OLLAMA_CONTEXT_LENGTH=8192 ollama serve
 ```
 
+`8192` is a starting example, not a required value. You can raise it to
+`16384`, `32768`, or higher when the model supports it and sufficient memory is
+available; larger context windows require more memory.
+
 Then start with a small chunk size. Small models such as `gemma3:1b` may fail
 to produce complete schema-valid JSON when too many log lines are sent at once:
 
