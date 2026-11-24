@@ -8,7 +8,7 @@ _Living document. Last updated: 2026-11-24._
 
 - **What this project is:** fork the open-source tool **LogSentinelAI**, prove it's vulnerable to prompt/log injection, add a defense, and measure the fix.
 - **Base repo to fork:** `github.com/call518/LogSentinelAI` (MIT). Confirm it's active (last commit, open issues) before forking.
-- **Current status (2026-11-24):** first task done ✅. Second task next.
+- **Current status (2026-11-24):** first task done ✅. Second task next. _(Summary only — full history in **Development Log** at the bottom.)_
   - Done: upstream checked (alive — last push 2026-11-04, mostly Dependabot; last maintainer commit 2026-10-24; 0 open issues; MIT). Forked to `timothy3276wong/Injection-Proof-LogSentinelAI` and cloned. uv + Python 3.12 installed; `.venv` built from `uv.lock`; `.python-version` set to 3.12; local `.env` configured for Ollama; CLI starts; 19/19 tests pass.
   - Done: Ollama 0.40.17 installed by the author, `qwen2.5:3b` pulled, context length 8192, runs on CPU.
   - Done: first end-to-end run — 4 lines of `sample-logs/access-10k.log`, chunk size 2, both chunks returned valid JSON that passed schema validation (details in `run-log.md`).
@@ -183,3 +183,23 @@ All free (except optional Claude API), runs on a laptop.
 - Which Loghub dataset to anchor evaluation on? (Leaning HDFS; Linux/Apache for injection demos.)
 - How many attack categories for the injection test set (start 1–2, expand if time allows).
 - ~~Exact Ollama model, pending the laptop's specs.~~ Resolved: `qwen2.5:3b` for dev, `qwen2.5:7b` for final runs (CPU-only laptop).
+
+## Development Log
+
+_Append-only, newest last. Each entry: date — what happened, and why for decisions. Test-run details live in `run-log.md`._
+
+### 2026-11-24
+- **Plan written.** Fork base chosen: LogSentinelAI (MIT). Project name: injection-proof-logsentinelai.
+- **Upstream checked.** Alive but quiet: last push 2026-11-04 (Dependabot), last maintainer commit 2026-10-24, 0 open issues, 68 stars. No visible maintainer replies to issues, so plan private disclosure via GitHub private vulnerability reporting or email rather than a public issue.
+- **Laptop checked.** i5-1235U, 16 GB RAM, Intel Iris Xe, no NVIDIA GPU, so Ollama runs on the CPU.
+- **Decision: model.** `qwen2.5:3b` for development (fast enough on CPU, reliable at strict JSON, no "thinking" mode), `qwen2.5:7b` for before/after runs. Same family, so the only difference is size. Larger models are too slow on CPU.
+- **Python.** Only 3.14/3.13 were installed, and LogSentinelAI needs >=3.11,<3.13. Installed uv (winget) and used it to install Python 3.12.16. Existing Pythons untouched.
+- **Fork + environment.** Author forked to `timothy3276wong/Injection-Proof-LogSentinelAI` and cloned. `uv sync --extra dev --locked` built `.venv` on 3.12. Changed `.python-version` 3.11 → 3.12 so uv doesn't rebuild the venv with 3.11.
+- **Config.** Created gitignored `.env` from the template: provider ollama, model qwen2.5:3b, max tokens 4096 (must fit the 8192 context), Telegram and GeoIP off, local log file path.
+- **Problem found: Windows encoding.** The tool logs emoji, which crash Python's logger under the default Windows cp1252 console. Fix: `PYTHONUTF8=1`.
+- **Tests.** 19/19 pass.
+- **Ollama.** Author installed Ollama 0.40.17 themselves and pulled `qwen2.5:3b`. Context 8192, CPU only.
+- **First task done.** Run 1: 4 lines, chunk size 2, both chunks gave valid, schema-checked JSON with correct INFO verdicts. Found already: a dropped source IP, a possible geographic hallucination, an `@log_path` metadata bug, and existing `<LOGS BEGIN>`/`<LOGS END>` delimiters with no "this is data" instruction. Details in `run-log.md` Run 1.
+- **Added `CLAUDE.md`** so every Claude Code session starts with the setup details and project state.
+- **Committed** on branch `setup/dev-environment` (`9e6b23f`), not pushed. Work happens on branches so `main` stays a clean copy of upstream and every change gets reviewed as a PR.
+- **Decision: logging rules.** Every test run goes into `run-log.md`, and every status change into this Development Log. Both are append-only and redacted. The rules are in `CLAUDE.md`.

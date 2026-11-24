@@ -10,6 +10,28 @@ Fork of LogSentinelAI (`call518/LogSentinelAI`, MIT) being hardened against prom
 - Public/synthetic data only (Loghub, `sample-logs/`). No Elasticsearch/Kibana/Telegram yet — printed/saved JSON only.
 - Only one Claude session should edit files at a time.
 
+## Logging rules (required)
+`run-log.md` and `project-plan.md` are the project's development record — the author uses them for the write-up and interviews.
+
+**Test runs → `run-log.md`**
+- Every test run gets an entry, including runs the author does and pastes in. Add it right after the run, before moving on.
+- Entry format: `## Run N — YYYY-MM-DD — short title`, then:
+  - Goal (one line)
+  - Settings table: date/time (UTC), code (commit hash + modified/unmodified), analyzer, input, chunk size, model (+ Ollama version), command
+  - Results table per chunk: time, prompt tokens, response tokens, valid JSON / schema, verdict
+  - Manual verdict check: was the verdict actually correct?
+  - Observations: errors, hallucinations, bugs, anything relevant to the injection work
+- Failed or aborted runs are logged too, with the error.
+
+**Project status → `project-plan.md`**
+- Any status change — task finished, decision made (with the reason), problem found, plan changed — gets a dated entry in the **Development Log** section, and the **Current status** summary is updated to match.
+
+**For both files**
+- Append-only: never rewrite or delete past entries. Corrections go in as a new dated entry that refers to the old one.
+- Log updates go in the same commit as the work they describe.
+- Redact private details (hostnames, home/LAN IPs, usernames) — the repo is public.
+- Before ending a session or a piece of work, check that both files are up to date.
+
 ## Environment (Windows 10, PowerShell)
 - Python **3.12** via uv (`.python-version` = 3.12; project requires >=3.11,<3.13). Venv: `.venv`.
 - Install/refresh deps: `uv sync --extra dev --locked`
